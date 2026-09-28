@@ -38,7 +38,20 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+# =========================================================
+# CREAR BASE DE DATOS Y TABLAS
+# =========================================================
 
+with app.app_context():
+    os.makedirs(
+        os.path.join(
+            basedir,
+            "instance"
+        ),
+        exist_ok=True
+    )
+
+    db.create_all()
 # =========================================================
 # MERCADO PAGO
 # =========================================================
