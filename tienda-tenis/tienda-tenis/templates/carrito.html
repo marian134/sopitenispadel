@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Tu carrito{% endblock %}
+
+{% block content %}
+
+<div class="carrito-page">
+
+<div class="carrito-header">
+    <span class="carrito-eyebrow">SOPI SPORTS</span>
+    <h1>Tu carrito</h1>
+    <p>Revisá tus productos antes de finalizar tu compra.</p>
+    <a href="{{ url_for('catalogo', deporte_slug='tenis') }}" class="carrito-seguir-comprando">
+    ← SEGUIR COMPRANDO
+</a>
+</div>
+
+{% if items %}
+
+<div class="carrito-layout">
+
+    <!-- PRODUCTOS -->
+    <section class="carrito-productos">
+
+        {% for item in items %}
+
+        <article class="carrito-producto">
+
+            <a
+                href="{{ url_for('producto', producto_id=item.producto.id) }}"
+                class="carrito-producto-imagen"
+            >
+
+                {% if item.producto.imagen %}
+
+                    <img
+                        src="{{ url_for('static', filename='img/' + item.producto.imagen) }}"
+                        alt="{{ item.producto.nombre }}"
+                    >
+
+                {% else %}
+
+                    <div class="placeholder-mini">
+                        {{ item.producto.marca or 'SOPI' }}
+                    </div>
+
+                {% endif %}
+
+            </a>
+
+
+            <div class="carrito-producto-info">
+
+                <small>
+                    {{ item.producto.deporte }}
+                </small>
+
+                <h2>
+                    {{ item.producto.nombre }}
+                </h2>
+
+                {% if item.producto.marca %}
+                    <span class="carrito-marca">
+                        {{ item.producto.marca }}
+                    </span>
+                {% endif %}
+
+                <strong class="carrito-precio-unitario">
+                    ${{ "{:,}".format(item.producto.precio).replace(",", ".") }}
+                </strong>
+
+            </div>
+
+
+            <!-- CANTIDAD -->
+
+            <div class="carrito-cantidad">
+
+                <span>Cantidad</span>
+
+                <form
+                    method="post"
+                    action="{{ url_for('carrito_actualizar', producto_id=item.producto.id) }}"
+                    class="cantidad-control"
+                >
+
+                    <button
+                        type="button"
+                        class="cantidad-btn"
+                        onclick="cambiarCantidad(this, -1)"
+                        aria-label="Disminuir cantidad"
+                    >
+                        −
+                    </button>
+
+                    <input
+                        type="number"
+                        name="cantidad"
+                        value="{{ item.cantidad }}"
+                        min="1"
+                        max="{{ item.producto.stock }}"
+                        readonly
+                    >
+
+                    <button
+                        type="button"
+                        class="cantidad-btn"
+                        onclick="cambiarCantidad(this, 1)"
+                        aria-label="Aumentar cantidad"
+                    >
+                        +
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- SUBTOTAL -->
+
+            <div class="carrito-subtotal">
+
+                <span>Subtotal</span>
+
+                <strong>
+                    ${{ "{:,}".format(item.subtotal).replace(",", ".") }}
+                </strong>
+
+            </div>
+
+
+            <!-- ELIMINAR -->
+
+            <form
+                method="post"
+                action="{{ url_for('carrito_eliminar', producto_id=item.producto.id) }}"
+                class="carrito-eliminar-form"
+            >
+
+                <button
+                    type="submit"
+                    class="carrito-eliminar"
+                    title="Eliminar producto"
+                    aria-label="Eliminar {{ item.producto.nombre }}"
+                >
+                    ×
+                </button>
+
+            </form>
+
+        </article>
+
+        {% endfor %}
+
+    </section>
+
+
+    <!-- RESUMEN -->
+
+    <aside class="carrito-resumen">
+
+        <h2>Resumen de compra</h2>
+
+        <div class="resumen-linea">
+            <span>Productos</span>
+            <span>{{ total_items_carrito }}</span>
+        </div>
+
+        <div class="resumen-linea resumen-total">
+            <span>Total</span>
+            <strong>
+                ${{ "{:,}".format(total).replace(",", ".") }}
+            </strong>
+        </div>
+
+        <div class="resumen-separador"></div>
+
+        <form
+            method="post"
+            action="{{ url_for('carrito_pagar') }}"
+        >
+
+            <button
+                type="submit"
+                class="btn-checkout"
+            >
+                FINALIZAR COMPRA
+            </button>
+
+        </form>
+
+        {% if whatsapp_numero %}
+
+            <a
+                class="btn-whatsapp"
+                href="https://wa.me/{{ whatsapp_numero }}?text={{ whatsapp_mensaje | urlencode }}"
+                target="_blank"
+                rel="noopener"
+            >
+                FINALIZAR POR WHATSAPP
+            </a>
+
+        {% endif %}
+
+
+        <form
+            method="post"
+            action="{{ url_for('carrito_vaciar') }}"
+        >
+
+            <button
+                type="submit"
+                class="btn-vaciar"
+            >
+                Vaciar carrito
+            </button>
+
+        </form>
+
+    </aside>
+
+</div>
+
+{% else %}
+
+<div class="carrito-vacio">
+
+    <div class="carrito-vacio-icono">
+        🛒
+    </div>
+
+    <h2>Tu carrito está vacío</h2>
+
+    <p>
+        Todavía no agregaste ningún producto.
+    </p>
+
+    <a
+        href="{{ url_for('portada') }}"
+        class="btn-checkout"
+    >
+        VER PRODUCTOS
+    </a>
+
+</div>
+
+{% endif %}
+
+</div>
+
+<script>
+
+function cambiarCantidad(button, cambio) {
+
+    const form = button.closest("form");
+    const input = form.querySelector("input[name='cantidad']");
+
+    let cantidad = parseInt(input.value) || 1;
+
+    const minimo = parseInt(input.min) || 1;
+    const maximo = parseInt(input.max) || 999;
+
+    cantidad += cambio;
+
+    if (cantidad < minimo) {
+        cantidad = minimo;
+    }
+
+    if (cantidad > maximo) {
+        cantidad = maximo;
+    }
+
+    input.value = cantidad;
+
+    form.submit();
+}
+
+</script>
+
+
+
+{% endblock %}

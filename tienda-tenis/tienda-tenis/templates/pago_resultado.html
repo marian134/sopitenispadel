@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Resultado del pago{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="resultado-pago {{ estado }}">
+    {% if estado == "exito" %}
+      <div class="resultado-icono">✓</div>
+      <h1>¡Gracias por tu compra!</h1>
+      <p>Estamos confirmando el pago con Mercado Pago. En un momento vas a recibir la confirmación definitiva.</p>
+    {% elif estado == "fallo" %}
+      <div class="resultado-icono">✕</div>
+      <h1>El pago no se pudo completar</h1>
+      <p>No se acreditó el pago. Podés volver a intentarlo desde tu carrito.</p>
+    {% else %}
+      <div class="resultado-icono">…</div>
+      <h1>Pago pendiente</h1>
+      <p>Tu pago está siendo procesado. Te vamos a confirmar apenas se acredite.</p>
+    {% endif %}
+    <a href="{{ url_for('portada') }}" class="btn btn-primary">Volver a la tienda</a>
+  </div>
+</div>
+{% endblock %}

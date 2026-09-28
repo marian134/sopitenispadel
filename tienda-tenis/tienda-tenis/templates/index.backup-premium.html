@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>SOPI TENIS</title>
+
+    <meta
+        name="description"
+        content="SOPI TENIS - Equipamiento para tenis y pádel."
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<header class="site-header">
+
+    <div class="header-inner">
+
+        <a href="{{ url_for('portada') }}" class="logo">
+            SOPI TENIS
+        </a>
+
+
+        <nav class="main-nav">
+
+            <a href="{{ url_for('catalogo', deporte_slug='tenis') }}">
+                Tenis
+            </a>
+
+            <a href="{{ url_for('catalogo', deporte_slug='padel') }}">
+                Pádel
+            </a>
+
+            <a href="{{ url_for('carrito_ver') }}">
+                🛒 Carrito
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+
+<main>
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <span class="hero-label">
+                TENIS · PÁDEL
+            </span>
+
+            <h1>
+                Jugá.<br>
+                Competí.<br>
+                <strong>Disfrutá.</strong>
+            </h1>
+
+            <p>
+                Todo lo que necesitás para llevar tu juego al próximo nivel.
+            </p>
+
+
+            <div class="hero-buttons">
+
+                <a
+                    href="{{ url_for('catalogo', deporte_slug='tenis') }}"
+                    class="btn btn-tenis"
+                >
+                    Ver tenis
+                </a>
+
+                <a
+                    href="{{ url_for('catalogo', deporte_slug='padel') }}"
+                    class="btn btn-padel"
+                >
+                    Ver pádel
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- PRODUCTOS -->
+
+    <section class="productos-section">
+
+        <div class="section-header">
+
+            <span class="section-kicker">
+                NUESTRA SELECCIÓN
+            </span>
+
+            <h2>
+                Productos destacados
+            </h2>
+
+        </div>
+
+
+
+        <div class="productos-grid">
+
+
+            {% for p in productos %}
+
+
+            <article class="producto-card">
+
+
+                <!-- IMAGEN -->
+
+                <div class="foto">
+
+                    {% if p.imagen %}
+
+                    <img
+                        src="{{ url_for('static', filename='img/' + p.imagen) }}"
+                        alt="{{ p.nombre }}"
+                        loading="lazy"
+                    >
+
+                    {% else %}
+
+                    <div class="placeholder">
+                        {{ p.marca }}
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+
+                <!-- INFORMACIÓN -->
+
+                <div class="info">
+
+                    <span class="marca">
+                        {{ p.marca }}
+                    </span>
+
+
+                    <a
+                       href="{{ url_for('producto', producto_id=p.id) }}"
+                        class="nombre"
+                    >
+                        {{ p.nombre }}
+                    </a>
+
+
+
+                    {% if p.stock <= 0 %}
+
+                    <span class="stock-badge sin">
+                        Sin stock
+                    </span>
+
+
+                    {% elif p.stock <= 3 %}
+
+                    <span class="stock-badge bajo">
+                        Últimas {{ p.stock }} unidades
+                    </span>
+
+
+                    {% else %}
+
+                    <span class="stock-badge ok">
+                        Disponible
+                    </span>
+
+                    {% endif %}
+
+
+
+                    <div class="producto-bottom">
+
+                        <span class="precio">
+                            ${{ "{:,.0f}".format(p.precio) }}
+                        </span>
+
+
+                        {% if p.stock > 0 %}
+
+                        <form
+                            method="post"
+                            action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
+                            class="form-agregar"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn-agregar"
+                            >
+                                + Agregar
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            {% else %}
+
+
+            <div class="sin-productos">
+
+                <h3>
+                    No hay productos disponibles
+                </h3>
+
+                <p>
+                    Estamos preparando nuestro catálogo.
+                </p>
+
+            </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- TENIS / PADEL -->
+
+    <section class="categorias-section">
+
+
+        <div class="categoria categoria-tenis">
+
+            <div class="categoria-content">
+
+                <span>
+                    TENIS
+                </span>
+
+                <h2>
+                    Potenciá<br>
+                    tu juego.
+                </h2>
+
+                <a
+                    href="{{ url_for('catalogo', deporte_slug='tenis') }}"
+                    class="categoria-link"
+                >
+                    Explorar tenis →
+                </a>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="categoria categoria-padel">
+
+            <div class="categoria-content">
+
+                <span>
+                    PÁDEL
+                </span>
+
+                <h2>
+                    Más potencia.<br>
+                    Más control.
+                </h2>
+
+                <a
+                    href="{{ url_for('catalogo', deporte_slug='padel') }}"
+                    class="categoria-link"
+                >
+                    Explorar pádel →
+                </a>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+
+<footer class="site-footer">
+
+    <div class="footer-inner">
+
+
+        <div class="footer-brand">
+
+            <div class="logo">
+                SOPI TENIS
+            </div>
+
+            <p>
+                Equipamiento para tenis y pádel.
+            </p>
+
+        </div>
+
+
+
+        <div class="footer-links">
+
+            <h4>
+                Comprar
+            </h4>
+
+            <a href="{{ url_for('catalogo', deporte_slug='tenis') }}">
+                Tenis
+            </a>
+
+            <a href="{{ url_for('catalogo', deporte_slug='padel') }}">
+                Pádel
+            </a>
+
+            <a href="{{ url_for('carrito_ver') }}">
+                Carrito
+            </a>
+
+        </div>
+
+
+
+        <div class="footer-links">
+
+            <h4>
+                Contacto
+            </h4>
+
+            <a href="#">
+                Instagram
+            </a>
+
+            <a href="#">
+                WhatsApp
+            </a>
+
+        </div>
+
+
+    </div>
+
+
+
+    <div class="footer-bottom">
+
+        © 2026 SOPI TENIS
+        · Todos los derechos reservados.
+
+    </div>
+
+
+</footer>
+
+
+</body>
+
+</html>

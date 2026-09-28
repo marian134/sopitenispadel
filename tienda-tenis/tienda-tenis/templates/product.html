@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ producto.nombre }} — {{ producto.deporte }}{% endblock %}
+
+{% block content %}
+
+<div class="container">
+<a href="{{ url_for('portada') }}" class="producto-volver">
+      ← Volver a SOPI
+</a>
+
+  <div class="producto-detalle">
+    
+    <!-- IMAGEN IZQUIERDA -->
+    <div class="foto-grande">
+      {% if producto.imagen %}
+        <img src="{{ url_for('static', filename='img/' + producto.imagen) }}" alt="{{ producto.nombre }}"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="placeholder" style="display:none;">{{ producto.marca }}</div>
+      {% else %}
+        <div class="placeholder">{{ producto.marca }}</div>
+      {% endif %}
+    </div>
+
+    <!-- DETALLES DERECHA -->
+    <div>
+      <!-- HEADER SOPI -->
+      <div class="header-sopi">
+        <img src="{{ url_for('static', filename='img/sopi_favicon.png') }}" alt="SOPI">
+        <h2>SOPI</h2>
+      </div>
+
+      <!-- MARCA -->
+      <span class="marca">{{ producto.marca }}</span>
+      
+      <!-- NOMBRE -->
+      <h1>{{ producto.nombre }}</h1>
+      
+      <!-- PRECIO -->
+      <div class="precio">${{ "{:,}".format(producto.precio).replace(",", ".") }}</div>
+
+      <!-- STOCK -->
+      {% if producto.stock <= 0 %}
+        <span class="stock-badge sin">Sin stock por el momento</span>
+      {% elif producto.stock <= 3 %}
+        <span class="stock-badge bajo">Últimas {{ producto.stock }} unidades</span>
+      {% else %}
+        <span class="stock-badge ok">✅ Disponible</span>
+      {% endif %}
+
+      <!-- DESCRIPCIÓN -->
+      {% if producto.descripcion %}
+        <p class="descripcion">{{ producto.descripcion }}</p>
+      {% endif %}
+
+      <!-- FORMULARIO -->
+      {% if producto.stock > 0 %}
+        <form method="post" action="{{ url_for('carrito_agregar', producto_id=producto.id) }}">
+          <div class="form-cantidad">
+            <label for="cantidad">Cantidad</label>
+            <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="{{ producto.stock }}">
+          </div>
+          <button type="submit" class="btn btn-primary">🛒 Agregar al carrito</button>
+        </form>
+      {% else %}
+        <button class="btn btn-outline" disabled>Sin stock</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

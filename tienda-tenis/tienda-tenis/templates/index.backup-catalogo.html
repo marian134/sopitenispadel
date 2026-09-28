@@ -1,0 +1,305 @@
+```html
+{% extends "base.html" %}
+
+{% block title %}{{ deporte }} | Che, Tenis•Pádel{% endblock %}
+
+{% block content %}
+
+<section class="catalogo-premium">
+
+    <!-- HERO DEL DEPORTE -->
+
+    <section class="catalogo-premium-hero
+        {% if deporte_slug == 'padel' %}
+            catalogo-padel
+        {% else %}
+            catalogo-tenis
+        {% endif %}">
+
+        <div class="catalogo-premium-hero-content">
+
+            <span class="catalogo-premium-kicker">
+                CHE, TENIS • PÁDEL
+            </span>
+
+            <h1>{{ deporte }}</h1>
+
+            {% if deporte_slug == 'padel' %}
+
+                <p>
+                    Potenciá tu juego con equipamiento para pádel
+                    seleccionado para competir y disfrutar.
+                </p>
+
+            {% else %}
+
+                <p>
+                    Equipamiento para tenis. Raquetas, pelotas y
+                    accesorios para llevar tu juego al próximo nivel.
+                </p>
+
+            {% endif %}
+
+            <div class="catalogo-premium-actions">
+
+                {% if deporte_slug == 'tenis' %}
+
+                    <a
+                        href="{{ url_for('catalogo', deporte_slug='padel') }}"
+                        class="catalogo-switch catalogo-switch-padel"
+                    >
+                        VER PÁDEL →
+                    </a>
+
+                {% else %}
+
+                    <a
+                        href="{{ url_for('catalogo', deporte_slug='tenis') }}"
+                        class="catalogo-switch catalogo-switch-tenis"
+                    >
+                        VER TENIS →
+                    </a>
+
+                {% endif %}
+
+                <span class="catalogo-product-count">
+                    {{ productos|length }} productos
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CATÁLOGO -->
+
+    <section class="catalogo-premium-content">
+
+        <div class="catalogo-premium-heading">
+
+            <div>
+
+                <span>
+                    NUESTRA COLECCIÓN
+                </span>
+
+                <h2>
+                    {{ deporte }}
+                </h2>
+
+            </div>
+
+            <p>
+                Encontrá el equipamiento ideal para tu juego.
+            </p>
+
+        </div>
+
+
+        <div class="catalogo-premium-layout">
+
+
+            <!-- FILTROS -->
+
+            <aside class="catalogo-premium-filtros">
+
+                <div class="filtro-titulo">
+                    FILTRAR
+                </div>
+
+
+                {% if categorias %}
+
+                <div class="filtro-grupo">
+
+                    <strong>CATEGORÍA</strong>
+
+                    <a
+                        href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}"
+                    >
+                        Todas
+                    </a>
+
+                    {% for categoria in categorias %}
+
+                    <a
+                        href="{{ url_for(
+                            'catalogo',
+                            deporte_slug=deporte_slug,
+                            categoria=categoria
+                        ) }}"
+                    >
+                        {{ categoria }}
+                    </a>
+
+                    {% endfor %}
+
+                </div>
+
+                {% endif %}
+
+
+                {% if marcas %}
+
+                <div class="filtro-grupo">
+
+                    <strong>MARCA</strong>
+
+                    {% for marca in marcas %}
+
+                    <a
+                        href="{{ url_for(
+                            'catalogo',
+                            deporte_slug=deporte_slug,
+                            marca=marca
+                        ) }}"
+                    >
+                        {{ marca }}
+                    </a>
+
+                    {% endfor %}
+
+                </div>
+
+                {% endif %}
+
+            </aside>
+
+
+            <!-- PRODUCTOS -->
+
+            <div class="catalogo-premium-grid">
+
+                {% for p in productos %}
+
+                <article class="premium-product-card">
+
+
+                    <a
+                        href="{{ url_for('producto', producto_id=p.id) }}"
+                        class="premium-product-image"
+                    >
+
+                        {% if p.imagen %}
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='img/' ~ p.imagen
+                            ) }}"
+                            alt="{{ p.nombre }}"
+                            width="700"
+                            height="700"
+                            loading="lazy"
+                        >
+
+                        {% else %}
+
+                        <div class="premium-placeholder">
+                            {{ p.marca }}
+                        </div>
+
+                        {% endif %}
+
+                    </a>
+
+
+                    <div class="premium-product-info">
+
+                        <span class="premium-product-brand">
+                            {{ p.marca }}
+                        </span>
+
+
+                        <a
+                            href="{{ url_for('producto', producto_id=p.id) }}"
+                            class="premium-product-name"
+                        >
+                            {{ p.nombre }}
+                        </a>
+
+
+                        {% if p.stock <= 0 %}
+
+                        <span class="premium-stock stock-none">
+                            SIN STOCK
+                        </span>
+
+                        {% elif p.stock <= 3 %}
+
+                        <span class="premium-stock stock-low">
+                            ÚLTIMAS {{ p.stock }} UNIDADES
+                        </span>
+
+                        {% else %}
+
+                        <span class="premium-stock stock-ok">
+                            DISPONIBLE
+                        </span>
+
+                        {% endif %}
+
+
+                        <div class="premium-product-bottom">
+
+                            <strong class="premium-price">
+                                ${{ "{:,.0f}".format(p.precio) }}
+                            </strong>
+
+
+                            {% if p.stock > 0 %}
+
+                            <form
+                                method="post"
+                                action="{{ url_for(
+                                    'carrito_agregar',
+                                    producto_id=p.id
+                                ) }}"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="premium-add"
+                                    title="Agregar al carrito"
+                                >
+                                    +
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+                {% else %}
+
+                <div class="premium-empty">
+
+                    <h3>
+                        No encontramos productos
+                    </h3>
+
+                    <p>
+                        Estamos preparando esta colección.
+                    </p>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </section>
+
+</section>
+
+{% endblock %}
+```

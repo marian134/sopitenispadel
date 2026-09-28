@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Página no encontrada{% endblock %}
+{% block content %}
+<div class="container pagina-404">
+  <h1>404</h1>
+  <p>No encontramos esa página.</p>
+  <a href="{{ url_for('portada') }}" class="btn btn-primary">Volver a la tienda</a>
+</div>
+{% endblock %}

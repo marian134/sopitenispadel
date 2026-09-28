@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Productos — Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="admin-shell">
+  <nav class="admin-nav">
+    <div class="container">
+      <span class="brand-admin">Panel de administración</span>
+      <div style="display:flex; gap:1.2rem; align-items:center;">
+        <a href="{{ url_for('portada') }}">Ver tienda</a>
+        <a href="{{ url_for('admin_logout') }}">Cerrar sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="padding: 2rem 1.5rem 3rem;">
+    {% with mensajes = get_flashed_messages() %}
+      {% if mensajes %}
+        <ul class="flashes">
+          {% for mensaje in mensajes %}<li class="flash">{{ mensaje }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h1 style="margin:0;">Productos</h1>
+      <a href="{{ url_for('admin_nuevo') }}" class="btn btn-primary">+ Nuevo producto</a>
+    </div>
+
+    {% if productos %}
+      <div class="admin-tabla-wrap">
+        <table class="admin-tabla">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Nombre</th>
+              <th>Deporte</th>
+              <th>Categoría</th>
+              <th>Marca</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in productos %}
+              <tr>
+                <td>
+                  {% if p.imagen %}
+                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt=""
+                         onerror="this.style.visibility='hidden';">
+                  {% endif %}
+                </td>
+                <td>{{ p.nombre }}</td>
+                <td>
+                  <span class="badge-deporte {{ 'tenis' if p.deporte == 'Tenis' else 'padel' }}">{{ p.deporte }}</span>
+                </td>
+                <td>{{ p.categoria }}</td>
+                <td>{{ p.marca }}</td>
+                <td>${{ "{:,}".format(p.precio).replace(",", ".") }}</td>
+                <td>{{ p.stock }}</td>
+                <td>
+                  <div class="admin-tabla-acciones">
+                    <a href="{{ url_for('admin_editar', producto_id=p.id) }}" class="btn btn-outline btn-sm">Editar</a>
+                    <form method="post" action="{{ url_for('admin_eliminar', producto_id=p.id) }}"
+                          onsubmit="return confirm('¿Eliminar {{ p.nombre }}?');">
+                      <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>Todavía no cargaste productos. <a href="{{ url_for('admin_nuevo') }}">Cargá el primero</a>.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

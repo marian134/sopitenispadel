@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Medios de pago — SOPI Tenis•Pádel{% endblock %}
+
+{% block content %}
+
+<div class="pago-page">
+
+    <div class="pago-header">
+        <span class="pago-eyebrow">SOPI SPORTS</span>
+        <h1>Elegí cómo pagar</h1>
+        <p>Seleccioná el medio de pago que preferís para completar tu compra.</p>
+    </div>
+
+    <div class="pago-layout">
+
+        <section class="pago-metodos">
+
+            <form method="post" action="{{ url_for('carrito_pagar') }}">
+
+                <label class="pago-opcion">
+                    <input type="radio" name="medio_pago" value="mercadopago" required>
+                    <div>
+                        <strong>💳 Mercado Pago</strong>
+                        <span>Pagá de forma segura con Mercado Pago.</span>
+                    </div>
+                </label>
+
+                <label class="pago-opcion">
+                    <input type="radio" name="medio_pago" value="transferencia">
+                    <div>
+                        <strong>🏦 Transferencia bancaria</strong>
+                        <span>Recibí los datos bancarios para realizar la transferencia.</span>
+                    </div>
+                </label>
+
+                <label class="pago-opcion pago-efectivo">
+                    <input type="radio" name="medio_pago" value="efectivo">
+                    <div>
+                        <strong>💵 Efectivo — 5% de descuento</strong>
+                        <span>Pagando en efectivo obtenés un 5% de descuento.</span>
+                    </div>
+                </label>
+
+                <button type="submit" class="btn-checkout">
+                    CONTINUAR
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <aside class="pago-resumen">
+
+            <h2>Resumen de compra</h2>
+
+            <div class="resumen-linea">
+                <span>Productos</span>
+                <span>{{ total_items_carrito }}</span>
+            </div>
+
+            <div class="resumen-linea resumen-total">
+                <span>Total</span>
+                <strong>
+                    ${{ "{:,}".format(total).replace(",", ".") }}
+                </strong>
+            </div>
+
+            <div class="pago-descuento">
+                💵 Pagando en efectivo ahorrás
+                <strong>
+                    ${{ "{:,.0f}".format(total * 0.05).replace(",", ".") }}
+                </strong>
+            </div>
+
+            <div class="pago-efectivo-total">
+                Total en efectivo:
+                <strong>
+                   ${{ "{:,.0f}".format(total * 0.95).replace(",", ".") }}
+                </strong>
+            </div>
+
+            <a href="{{ url_for('carrito_ver') }}" class="carrito-seguir-comprando">
+                ← Volver al carrito
+            </a>
+
+        </aside>
+
+    </div>
+
+</div>
+
+{% endblock %}

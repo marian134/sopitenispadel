@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ "Editar" if producto else "Nuevo" }} producto — Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="admin-shell">
+  <nav class="admin-nav">
+    <div class="container">
+      <span class="brand-admin">Panel de administración</span>
+      <div style="display:flex; gap:1.2rem; align-items:center;">
+        <a href="{{ url_for('admin_index') }}">← Volver al listado</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="padding: 2rem 1.5rem 3rem;">
+    {% with mensajes = get_flashed_messages() %}
+      {% if mensajes %}
+        <ul class="flashes">
+          {% for mensaje in mensajes %}<li class="flash">{{ mensaje }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <h1>{{ "Editar producto" if producto else "Nuevo producto" }}</h1>
+
+    <div class="admin-card">
+      <form method="post" enctype="multipart/form-data">
+        <div class="campo-fila">
+          <div class="campo">
+            <label for="deporte">Deporte</label>
+            <select id="deporte" name="deporte">
+              {% for nombre in nav_deportes.values() %}
+                <option value="{{ nombre }}" {% if producto and producto.deporte == nombre %}selected{% endif %}>{{ nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="campo">
+            <label for="categoria">Categoría</label>
+            <input type="text" id="categoria" name="categoria" placeholder="Raquetas, Pelotas, Indumentaria..."
+                   value="{{ producto.categoria if producto else '' }}" required>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="nombre">Nombre</label>
+          <input type="text" id="nombre" name="nombre" value="{{ producto.nombre if producto else '' }}" required>
+        </div>
+
+        <div class="campo-fila">
+          <div class="campo">
+            <label for="marca">Marca</label>
+            <input type="text" id="marca" name="marca" value="{{ producto.marca if producto else '' }}" required>
+          </div>
+          <div class="campo">
+            <label for="precio">Precio (ARS)</label>
+            <input type="number" id="precio" name="precio" min="0" value="{{ producto.precio if producto else '' }}" required>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" name="descripcion">{{ producto.descripcion if producto else '' }}</textarea>
+        </div>
+
+        <div class="campo-fila">
+          <div class="campo">
+            <label for="stock">Stock</label>
+            <input type="number" id="stock" name="stock" min="0" value="{{ producto.stock if producto else 0 }}" required>
+          </div>
+          <div class="campo">
+            <label for="imagen_archivo">Foto (png, jpg, jpeg, webp — hasta 5 MB)</label>
+            <input type="file" id="imagen_archivo" name="imagen_archivo" accept=".png,.jpg,.jpeg,.webp">
+          </div>
+        </div>
+
+        {% if producto and producto.imagen %}
+          <div class="campo">
+            <label>Foto actual</label>
+            <img src="{{ url_for('static', filename='img/' + producto.imagen) }}" alt=""
+                 style="width:90px; height:90px; object-fit:cover; border-radius:3px;">
+          </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">{{ "Guardar cambios" if producto else "Crear producto" }}</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

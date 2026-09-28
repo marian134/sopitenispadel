@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Tienda de Tenis y Pádel{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
+
+  <header class="nav">
+    <div class="container nav-row">
+      <a href="{{ url_for('portada') }}" class="brand">SOPI Tenis<span class="dot">•</span>Pádel</a>
+      <nav class="nav-sports">
+        {% for slug, nombre in nav_deportes.items() %}
+          <a href="{{ url_for('catalogo', deporte_slug=slug) }}"
+             class="nav-sport-link{% if deporte_slug == slug %} activo{% endif %}">{{ nombre }}</a>
+        {% endfor %}
+      </nav>
+      <div class="nav-actions">
+        <a href="{{ url_for('carrito_ver') }}" class="nav-cart">
+          Carrito
+          {% if total_items_carrito %}<span class="nav-cart-count">{{ total_items_carrito }}</span>{% endif %}
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Che Tenis • Pádel</h3>
+          <p>Tu tienda online de artículos para tenis y pádel en Argentina</p>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Seguinos</h4>
+      <div class="social-links">
+  <a href="https://www.instagram.com/sopi.tenispadel/" target="_blank" rel="noopener" class="social-icon">
+    <i class="fab fa-instagram"></i> Instagram
+  </a>
+
+  <a href="https://wa.me/5491128321531" target="_blank" rel="noopener" class="social-icon">
+    <i class="fab fa-whatsapp"></i> WhatsApp
+  </a>
+</div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2024 Che Tenis • Pádel. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

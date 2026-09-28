@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deporte }} | Che, Tenis•Pádel{% endblock %}
+
+{% block content %}
+
+<section class="shop-page">
+
+    <!-- HERO DEL CATÁLOGO -->
+    <section class="shop-hero {% if deporte_slug == 'padel' %}shop-hero-padel{% else %}shop-hero-tenis{% endif %}">
+        <div class="shop-hero-inner">
+
+            <div class="shop-hero-copy">
+                <span class="shop-eyebrow">CHE, TENIS • PÁDEL</span>
+
+                <h1>{{ deporte }}</h1>
+
+                {% if deporte_slug == 'padel' %}
+                    <p>
+                        Equipamiento para pádel seleccionado para
+                        entrenar, competir y disfrutar.
+                    </p>
+                {% else %}
+                    <p>
+                        Raquetas, pelotas y accesorios para llevar
+                        tu juego de tenis al próximo nivel.
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="shop-hero-action">
+                {% if deporte_slug == 'tenis' %}
+                    <a href="{{ url_for('catalogo', deporte_slug='padel') }}">
+                        VER PÁDEL
+                        <span>→</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('catalogo', deporte_slug='tenis') }}">
+                        VER TENIS
+                        <span>→</span>
+                    </a>
+                {% endif %}
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- CONTENIDO -->
+    <section class="shop-content">
+
+        <!-- ENCABEZADO -->
+        <div class="shop-heading">
+
+            <div>
+                <span class="shop-kicker">NUESTRA COLECCIÓN</span>
+                <h2>{{ deporte }}</h2>
+            </div>
+
+            <span class="shop-count">
+                {{ productos|length }} productos
+            </span>
+
+        </div>
+
+
+        <!-- BARRA DE FILTROS -->
+        <div class="shop-toolbar">
+
+            <div class="shop-filters">
+
+                {% if categorias %}
+                <details class="shop-filter">
+                    <summary>
+                        Categoría
+                        <span>⌄</span>
+                    </summary>
+
+                    <div class="shop-filter-menu">
+                        <a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}">
+                            Todas
+                        </a>
+
+                        {% for categoria in categorias %}
+                        <a href="{{ url_for('catalogo',
+                            deporte_slug=deporte_slug,
+                            categoria=categoria) }}">
+                            {{ categoria }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+
+
+                {% if marcas %}
+                <details class="shop-filter">
+                    <summary>
+                        Marca
+                        <span>⌄</span>
+                    </summary>
+
+                    <div class="shop-filter-menu">
+                        <a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}">
+                            Todas
+                        </a>
+
+                        {% for marca in marcas %}
+                        <a href="{{ url_for('catalogo',
+                            deporte_slug=deporte_slug,
+                            marca=marca) }}">
+                            {{ marca }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+
+            </div>
+
+
+            <div class="shop-sort">
+
+                <span>Ordenar por</span>
+
+                <select onchange="ordenarProductos(this.value)">
+                    <option value="">Recomendados</option>
+                    <option value="precio-menor">Precio: menor a mayor</option>
+                    <option value="precio-mayor">Precio: mayor a menor</option>
+                    <option value="nombre">Nombre</option>
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- PRODUCTOS -->
+        <div class="shop-grid" id="shopGrid">
+
+            {% for p in productos %}
+
+            <article
+                class="shop-product-card"
+                data-price="{{ p.precio }}"
+                data-name="{{ p.nombre|lower }}"
+            >
+
+                <!-- FOTO -->
+                <div class="shop-product-image">
+
+                    <a href="{{ url_for('producto', producto_id=p.id) }}">
+
+                        {% if p.imagen %}
+
+                        <img
+                            src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
+                            alt="{{ p.nombre }}"
+                            width="700"
+                            height="700"
+                            loading="lazy"
+                        >
+
+                        {% else %}
+
+                        <div class="shop-placeholder">
+                            {{ p.marca }}
+                        </div>
+
+                        {% endif %}
+
+                    </a>
+
+
+                    <!-- FAVORITO VISUAL -->
+                    <button
+                        type="button"
+                        class="shop-favorite"
+                        aria-label="Agregar a favoritos"
+                        title="Favoritos"
+                    >
+                        ♡
+                    </button>
+
+
+                    <!-- ETIQUETA -->
+                    {% if p.stock <= 3 and p.stock > 0 %}
+
+                    <span class="shop-badge shop-badge-low">
+                        ÚLTIMAS {{ p.stock }}
+                    </span>
+
+                    {% elif p.stock <= 0 %}
+
+                    <span class="shop-badge shop-badge-out">
+                        SIN STOCK
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- INFORMACIÓN -->
+                <div class="shop-product-info">
+
+                    <span class="shop-product-brand">
+                        {{ p.marca }}
+                    </span>
+
+                    <a
+                        href="{{ url_for('producto', producto_id=p.id) }}"
+                        class="shop-product-name"
+                    >
+                        {{ p.nombre }}
+                    </a>
+
+
+                    <div class="shop-product-bottom">
+
+                        <strong class="shop-product-price">
+                            ${{ "{:,.0f}".format(p.precio) }}
+                        </strong>
+
+
+                        {% if p.stock > 0 %}
+
+                        <form
+                            method="post"
+                            action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
+                        >
+
+                            <button
+                                type="submit"
+                                class="shop-add"
+                                title="Agregar al carrito"
+                            >
+                                +
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </article>
+
+            {% else %}
+
+            <div class="shop-empty">
+
+                <h3>No encontramos productos</h3>
+
+                <p>
+                    Estamos preparando esta colección.
+                </p>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</section>
+
+
+<script>
+function ordenarProductos(valor) {
+
+    const grid = document.getElementById("shopGrid");
+
+    if (!grid || !valor) {
+        return;
+    }
+
+    const productos = Array.from(
+        grid.querySelectorAll(".shop-product-card")
+    );
+
+    productos.sort(function(a, b) {
+
+        if (valor === "precio-menor") {
+            return Number(a.dataset.price) -
+                   Number(b.dataset.price);
+        }
+
+        if (valor === "precio-mayor") {
+            return Number(b.dataset.price) -
+                   Number(a.dataset.price);
+        }
+
+        if (valor === "nombre") {
+            return a.dataset.name.localeCompare(
+                b.dataset.name
+            );
+        }
+
+        return 0;
+    });
+
+    productos.forEach(function(producto) {
+        grid.appendChild(producto);
+    });
+}
+</script>
+
+{% endblock %}

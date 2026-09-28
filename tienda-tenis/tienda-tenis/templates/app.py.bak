@@ -1,0 +1,557 @@
+import os
+from functools import wraps
+
+import mercadopago
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, abort, request, redirect, url_for, session, flash
+from models import db, Producto, Pedido, LineaPedido, ESTADO_PAGADO, ESTADO_FALLIDO
+
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tienda.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.secret_key = os.environ.get("SECRET_KEY", "cambiar-esta-clave-en-produccion")
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB máximo por imagen
+
+# Contraseña del panel de admin. Para producción, definila como variable
+# de entorno ADMIN_PASSWORD en vez de dejarla en el código.
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "tenis2026")
+
+# Access Token de Mercado Pago (de prueba o de producción). Se consigue
+# en https://www.mercadopago.com.ar/developers/panel
+MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+
+# URL pública base del sitio, necesaria para que Mercado Pago sepa a
+# dónde volver después del pago (ej: https://mitienda.onrender.com).
+# En desarrollo local dejala en localhost.
+URL_BASE = os.environ.get("URL_BASE", "http://127.0.0.1:5000")
+
+EXTENSIONES_PERMITIDAS = {"png", "jpg", "jpeg", "webp"}
+CARPETA_IMAGENES = os.path.join(app.root_path, "static", "img")
+
+db.init_app(app)
+
+# Número de WhatsApp del vendedor para el botón de "finalizar pedido"
+# (formato internacional sin +, ej: 5491122334455). Configurable por
+# variable de entorno.
+WHATSAPP_VENDEDOR = os.environ.get("WHATSAPP_VENDEDOR", "")
+
+
+def obtener_carrito():
+    """Devuelve el carrito de la sesión como {producto_id: cantidad}."""
+    return session.setdefault("carrito", {})
+
+
+def extension_permitida(nombre_archivo):
+    return (
+        "." in nombre_archivo
+        and nombre_archivo.rsplit(".", 1)[1].lower() in EXTENSIONES_PERMITIDAS
+    )
+
+
+def guardar_imagen_subida(producto_id, archivo):
+    """
+    Guarda el archivo de imagen subido en static/img/, con nombre
+    'producto-<id>.<extensión>' para que sea fácil de identificar y
+    no choque con nombres repetidos. Devuelve el nombre de archivo
+    guardado, o None si no se subió nada válido.
+    """
+    if not archivo or archivo.filename == "":
+        return None
+    if not extension_permitida(archivo.filename):
+        flash("Formato de imagen no soportado (usá png, jpg, jpeg o webp).")
+        return None
+
+    extension = secure_filename(archivo.filename).rsplit(".", 1)[1].lower()
+    nombre_final = f"producto-{producto_id}.{extension}"
+    os.makedirs(CARPETA_IMAGENES, exist_ok=True)
+    archivo.save(os.path.join(CARPETA_IMAGENES, nombre_final))
+    return nombre_final
+
+
+def login_requerido(vista):
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if not session.get("admin_logueado"):
+            return redirect(url_for("admin_login"))
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+@app.context_processor
+def inyectar_total_carrito():
+    carrito = session.get("carrito", {})
+    return {"total_items_carrito": sum(carrito.values()), "nav_deportes": DEPORTES}
+
+
+# ---------- Tienda pública ----------
+
+DEPORTES = {"tenis": "Tenis", "padel": "Pádel"}
+
+
+@app.route("/")
+def portada():
+    contadores = {
+        slug: Producto.query.filter(Producto.deporte == nombre).count()
+        for slug, nombre in DEPORTES.items()
+    }
+    return render_template("portada.html", deportes=DEPORTES, contadores=contadores)
+
+
+@app.route("/tenis")
+def catalogo_tenis():
+    return _catalogo("tenis")
+
+
+@app.route("/padel")
+def catalogo_padel():
+    return _catalogo("padel")
+
+
+def _catalogo(deporte_slug):
+    if deporte_slug not in DEPORTES:
+        abort(404)
+    deporte = DEPORTES[deporte_slug]
+
+    q = request.args.get("q", "").strip()
+    categoria = request.args.get("categoria", "").strip()
+    marca = request.args.get("marca", "").strip()
+    max_precio_raw = request.args.get("max_precio", "").strip()
+    orden = request.args.get("orden", "relevancia").strip()
+
+    consulta = Producto.query.filter(Producto.deporte == deporte)
+    if q:
+        termino = f"%{q}%"
+        consulta = consulta.filter(db.or_(
+            Producto.nombre.ilike(termino),
+            Producto.marca.ilike(termino),
+            Producto.descripcion.ilike(termino),
+        ))
+    if categoria:
+        consulta = consulta.filter(Producto.categoria == categoria)
+    if marca:
+        consulta = consulta.filter(Producto.marca == marca)
+
+    if max_precio_raw:
+        try:
+            consulta = consulta.filter(Producto.precio <= int(max_precio_raw))
+        except ValueError:
+            pass
+
+    if orden == "precio_asc":
+        consulta = consulta.order_by(Producto.precio.asc(), Producto.nombre.asc())
+    elif orden == "precio_desc":
+        consulta = consulta.order_by(Producto.precio.desc(), Producto.nombre.asc())
+    elif orden == "nombre":
+        consulta = consulta.order_by(Producto.nombre.asc())
+    elif orden == "stock":
+        consulta = consulta.order_by(Producto.stock.desc(), Producto.nombre.asc())
+    else:
+        consulta = consulta.order_by(Producto.categoria.asc(), Producto.nombre.asc())
+
+    productos = consulta.all()
+    todos = Producto.query.filter(Producto.deporte == deporte).all()
+    categorias = sorted({p.categoria for p in todos if p.categoria})
+    marcas = sorted({p.marca for p in todos if p.marca})
+
+    # El modelo actual no tiene columnas "destacado" u "oferta".
+    # Por eso estas secciones se calculan usando stock y precio existentes.
+    destacados = sorted([p for p in todos if p.stock > 0], key=lambda p: (-p.stock, p.nombre.lower()))[:4]
+    precios_destacados = sorted([p for p in todos if p.stock > 0], key=lambda p: (p.precio, p.nombre.lower()))[:4]
+
+    return render_template(
+        "index.html", productos=productos, categorias=categorias, marcas=marcas,
+        deporte_slug=deporte_slug, deporte=deporte,
+        destacados=destacados, precios_destacados=precios_destacados,
+        filtros={"q": q, "categoria": categoria, "marca": marca,
+                 "max_precio": max_precio_raw, "orden": orden},
+    )
+
+
+@app.route("/producto/<int:producto_id>")
+def producto(producto_id):
+    p = Producto.query.get(producto_id)
+    if p is None:
+        abort(404)
+    slug_por_nombre = {v: k for k, v in DEPORTES.items()}
+    deporte_slug = slug_por_nombre.get(p.deporte)
+    return render_template("product.html", producto=p, deporte_slug=deporte_slug)
+
+
+@app.errorhandler(404)
+def no_encontrado(error):
+    return render_template("404.html"), 404
+
+
+# ---------- Carrito de compras ----------
+
+@app.route("/carrito/agregar/<int:producto_id>", methods=["POST"])
+def carrito_agregar(producto_id):
+    p = Producto.query.get(producto_id)
+    if p is None:
+        abort(404)
+
+    cantidad = int(request.form.get("cantidad", 1) or 1)
+    carrito = obtener_carrito()
+    clave = str(producto_id)
+    cantidad_actual = carrito.get(clave, 0)
+    nueva_cantidad = cantidad_actual + cantidad
+
+    if p.stock and nueva_cantidad > p.stock:
+        nueva_cantidad = p.stock
+        flash(f"Solo quedan {p.stock} unidades de {p.nombre}.")
+
+    carrito[clave] = nueva_cantidad
+    session.modified = True
+    flash(f'"{p.nombre}" agregado al carrito.')
+    return redirect(request.referrer or url_for("portada"))
+
+
+@app.route("/carrito")
+def carrito_ver():
+    carrito = obtener_carrito()
+    items = []
+    total = 0
+    for producto_id, cantidad in carrito.items():
+        p = Producto.query.get(int(producto_id))
+        if p is None:
+            continue
+        subtotal = p.precio * cantidad
+        total += subtotal
+        items.append({"producto": p, "cantidad": cantidad, "subtotal": subtotal})
+
+    mensaje_whatsapp = ""
+    if items:
+        lineas = [f"{i['cantidad']}x {i['producto'].nombre}" for i in items]
+        mensaje_whatsapp = "Hola! Quiero consultar por: " + ", ".join(lineas)
+
+    return render_template(
+        "carrito.html",
+        items=items,
+        total=total,
+        whatsapp_numero=WHATSAPP_VENDEDOR,
+        whatsapp_mensaje=mensaje_whatsapp,
+    )
+
+
+@app.route("/carrito/actualizar/<int:producto_id>", methods=["POST"])
+def carrito_actualizar(producto_id):
+    carrito = obtener_carrito()
+    clave = str(producto_id)
+    cantidad = int(request.form.get("cantidad", 1) or 1)
+
+    if cantidad <= 0:
+        carrito.pop(clave, None)
+    else:
+        p = Producto.query.get(producto_id)
+        if p and p.stock:
+            cantidad = min(cantidad, p.stock)
+        carrito[clave] = cantidad
+
+    session.modified = True
+    return redirect(url_for("carrito_ver"))
+
+
+@app.route("/carrito/eliminar/<int:producto_id>", methods=["POST"])
+def carrito_eliminar(producto_id):
+    carrito = obtener_carrito()
+    carrito.pop(str(producto_id), None)
+    session.modified = True
+    return redirect(url_for("carrito_ver"))
+
+
+@app.route("/carrito/vaciar", methods=["POST"])
+def carrito_vaciar():
+    session["carrito"] = {}
+    session.modified = True
+    return redirect(url_for("carrito_ver"))
+
+
+@app.route("/carrito/pagar", methods=["POST"])
+def carrito_pagar():
+    if not MP_ACCESS_TOKEN:
+        flash("El pago con Mercado Pago todavía no está configurado (falta MP_ACCESS_TOKEN).")
+        return redirect(url_for("carrito_ver"))
+
+    carrito = obtener_carrito()
+    items_mp = []
+    lineas_pedido = []
+    total_pedido = 0
+    sin_stock = []
+    for producto_id, cantidad in carrito.items():
+        p = Producto.query.get(int(producto_id))
+        if p is None or cantidad <= 0:
+            continue
+
+        # Revalidamos el stock acá, no solo cuando se agregó al carrito:
+        # puede haber pasado tiempo, o haberse vendido por otro pago que
+        # ya se confirmó, y no queremos vender algo que ya no está.
+        if p.stock is not None and cantidad > p.stock:
+            sin_stock.append(p)
+            continue
+
+        items_mp.append({
+            "title": p.nombre,
+            "quantity": cantidad,
+            "unit_price": float(p.precio),
+            "currency_id": "ARS",
+        })
+        lineas_pedido.append(LineaPedido(
+            producto_id=p.id,
+            nombre_producto=p.nombre,
+            precio_unitario=p.precio,
+            cantidad=cantidad,
+        ))
+        total_pedido += p.precio * cantidad
+
+    if sin_stock:
+        # Corregimos el carrito en la sesión para que quede consistente
+        # con lo que realmente hay disponible, y avisamos qué se sacó.
+        for p in sin_stock:
+            carrito.pop(str(p.id), None)
+        session.modified = True
+        nombres = ", ".join(p.nombre for p in sin_stock)
+        flash(f"Se actualizó tu carrito: no hay stock suficiente de {nombres}.")
+
+    if not items_mp:
+        flash("Tu carrito está vacío.")
+        return redirect(url_for("carrito_ver"))
+
+    if sin_stock:
+        # Preferimos que el comprador vea el carrito corregido y confirme
+        # de nuevo, en vez de mandarlo a pagar algo distinto a lo que pidió.
+        return redirect(url_for("carrito_ver"))
+
+    # Creamos el pedido en estado "pendiente" ANTES de ir a Mercado Pago.
+    # Así, pase lo que pase con el pago, queda un registro. El webhook
+    # es el único que lo pasa a "pagado" o "fallido".
+    pedido = Pedido(total=total_pedido, lineas=lineas_pedido)
+    db.session.add(pedido)
+    db.session.commit()
+
+    sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
+    preference_data = {
+        "items": items_mp,
+        "external_reference": str(pedido.id),
+        "notification_url": f"{URL_BASE}{url_for('mp_webhook')}",
+        "back_urls": {
+            "success": f"{URL_BASE}{url_for('pago_exito', pedido_id=pedido.id)}",
+            "failure": f"{URL_BASE}{url_for('pago_fallo', pedido_id=pedido.id)}",
+            "pending": f"{URL_BASE}{url_for('pago_pendiente', pedido_id=pedido.id)}",
+        },
+        "auto_return": "approved",
+    }
+
+    try:
+        resultado = sdk.preference().create(preference_data)
+    except Exception:
+        app.logger.exception("Error al crear la preferencia de Mercado Pago")
+        flash("No se pudo iniciar el pago. Revisá que MP_ACCESS_TOKEN sea válido.")
+        return redirect(url_for("carrito_ver"))
+
+    if resultado.get("status") not in (200, 201):
+        flash("No se pudo iniciar el pago. Intentá de nuevo en unos minutos.")
+        return redirect(url_for("carrito_ver"))
+
+    preferencia = resultado["response"]
+    pedido.mp_preference_id = preferencia.get("id")
+    db.session.commit()
+
+    # init_point = producción, sandbox_init_point = credenciales de prueba
+    link_pago = preferencia.get("init_point") or preferencia.get("sandbox_init_point")
+    return redirect(link_pago)
+
+
+@app.route("/pago/exito")
+def pago_exito():
+    # OJO: esta página se muestra apenas Mercado Pago redirige al
+    # comprador, pero el webhook puede tardar unos segundos en llegar.
+    # El estado que se confirma de verdad es el que graba mp_webhook(),
+    # no lo que diga esta pantalla.
+    session["carrito"] = {}
+    session.modified = True
+    pedido = _buscar_pedido_de_query()
+    return render_template("pago_resultado.html", estado="exito", pedido=pedido)
+
+
+@app.route("/pago/fallo")
+def pago_fallo():
+    pedido = _buscar_pedido_de_query()
+    return render_template("pago_resultado.html", estado="fallo", pedido=pedido)
+
+
+@app.route("/pago/pendiente")
+def pago_pendiente():
+    pedido = _buscar_pedido_de_query()
+    return render_template("pago_resultado.html", estado="pendiente", pedido=pedido)
+
+
+def _buscar_pedido_de_query():
+    pedido_id = request.args.get("pedido_id")
+    if not pedido_id:
+        return None
+    return Pedido.query.get(int(pedido_id))
+
+
+@app.route("/webhook/mercadopago", methods=["POST", "GET"])
+def mp_webhook():
+    """
+    Mercado Pago llama a esta URL cuando cambia el estado de un pago.
+    Puede mandar los datos por query string (?topic=payment&id=123) o
+    en el body JSON ({"type": "payment", "data": {"id": "123"}}),
+    según la versión de la integración, así que revisamos ambos.
+
+    Esta ruta tiene que ser accesible públicamente (no server local) y
+    configurada en tu panel de Mercado Pago > Tus integraciones >
+    Webhooks, o va a llegar sola porque la mandamos como
+    notification_url en la preferencia.
+    """
+    body = request.get_json(silent=True) or {}
+    topic = request.args.get("topic") or body.get("type")
+    payment_id = request.args.get("id") or (body.get("data") or {}).get("id")
+
+    if topic != "payment" or not payment_id:
+        # Mercado Pago también manda notificaciones de tipo "merchant_order"
+        # u otras; las ignoramos, solo nos interesan los pagos.
+        return "", 200
+
+    if not MP_ACCESS_TOKEN:
+        app.logger.warning("Llegó un webhook de MP pero falta MP_ACCESS_TOKEN")
+        return "", 200
+
+    sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
+    try:
+        info = sdk.payment().get(payment_id)
+    except Exception:
+        app.logger.exception("Error consultando el pago %s en Mercado Pago", payment_id)
+        # Devolvemos 500 para que Mercado Pago reintente más tarde
+        return "", 500
+
+    pago = info.get("response") or {}
+    estado_mp = pago.get("status")  # approved, rejected, pending, in_process, etc.
+    external_reference = pago.get("external_reference")
+
+    if not external_reference:
+        return "", 200
+
+    pedido = Pedido.query.get(int(external_reference))
+    if pedido is None:
+        return "", 200
+
+    # Idempotencia: si ya lo habíamos marcado pagado, no descontamos
+    # stock dos veces aunque llegue la misma notificación repetida.
+    if pedido.estado == ESTADO_PAGADO:
+        return "", 200
+
+    pedido.mp_payment_id = str(payment_id)
+
+    if estado_mp == "approved":
+        for linea in pedido.lineas:
+            if linea.producto_id is None:
+                continue
+            p = Producto.query.get(linea.producto_id)
+            if p is not None:
+                p.stock = max(0, p.stock - linea.cantidad)
+        pedido.estado = ESTADO_PAGADO
+    elif estado_mp in ("rejected", "cancelled"):
+        pedido.estado = ESTADO_FALLIDO
+    # Si es "pending" o "in_process", dejamos el pedido como estaba
+    # (pendiente) y esperamos la próxima notificación.
+
+    db.session.commit()
+    return "", 200
+
+
+# ---------- Panel de administración ----------
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["admin_logueado"] = True
+            return redirect(url_for("admin_index"))
+        flash("Contraseña incorrecta.")
+    return render_template("admin_login.html")
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logueado", None)
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin")
+@login_requerido
+def admin_index():
+    productos = Producto.query.order_by(Producto.categoria, Producto.nombre).all()
+    return render_template("admin_index.html", productos=productos)
+
+
+@app.route("/admin/nuevo", methods=["GET", "POST"])
+@login_requerido
+def admin_nuevo():
+    if request.method == "POST":
+        p = Producto(
+            deporte=request.form.get("deporte", "Tenis").strip() or "Tenis",
+            categoria=request.form["categoria"].strip(),
+            nombre=request.form["nombre"].strip(),
+            marca=request.form["marca"].strip(),
+            precio=int(request.form["precio"] or 0),
+            descripcion=request.form.get("descripcion", "").strip(),
+            imagen="",
+            stock=int(request.form["stock"] or 0),
+        )
+        db.session.add(p)
+        db.session.commit()  # necesitamos el id ya asignado para nombrar la imagen
+
+        archivo = request.files.get("imagen_archivo")
+        nombre_imagen = guardar_imagen_subida(p.id, archivo)
+        if nombre_imagen:
+            p.imagen = nombre_imagen
+            db.session.commit()
+
+        flash(f'Producto "{p.nombre}" creado.')
+        return redirect(url_for("admin_index"))
+    return render_template("admin_form.html", producto=None)
+
+
+@app.route("/admin/editar/<int:producto_id>", methods=["GET", "POST"])
+@login_requerido
+def admin_editar(producto_id):
+    p = Producto.query.get(producto_id)
+    if p is None:
+        abort(404)
+    if request.method == "POST":
+        p.deporte = request.form.get("deporte", p.deporte).strip() or p.deporte
+        p.categoria = request.form["categoria"].strip()
+        p.nombre = request.form["nombre"].strip()
+        p.marca = request.form["marca"].strip()
+        p.precio = int(request.form["precio"] or 0)
+        p.descripcion = request.form.get("descripcion", "").strip()
+        p.stock = int(request.form["stock"] or 0)
+
+        archivo = request.files.get("imagen_archivo")
+        nombre_imagen = guardar_imagen_subida(p.id, archivo)
+        if nombre_imagen:
+            p.imagen = nombre_imagen
+
+        db.session.commit()
+        flash(f'Producto "{p.nombre}" actualizado.')
+        return redirect(url_for("admin_index"))
+    return render_template("admin_form.html", producto=p)
+
+
+@app.route("/admin/eliminar/<int:producto_id>", methods=["POST"])
+@login_requerido
+def admin_eliminar(producto_id):
+    p = Producto.query.get(producto_id)
+    if p is None:
+        abort(404)
+    nombre = p.nombre
+    db.session.delete(p)
+    db.session.commit()
+    flash(f'Producto "{nombre}" eliminado.')
+    return redirect(url_for("admin_index"))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

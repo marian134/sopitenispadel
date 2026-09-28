@@ -1,0 +1,659 @@
+{% extends "base.html" %}
+
+{% block title %}Tu carrito{% endblock %}
+
+{% block content %}
+
+<div class="carrito-page">
+
+```
+<div class="carrito-header">
+    <span class="carrito-eyebrow">SOPI SPORTS</span>
+    <h1>Tu carrito</h1>
+    <p>Revisá tus productos antes de finalizar tu compra.</p>
+</div>
+
+{% if items %}
+
+<div class="carrito-layout">
+
+    <!-- PRODUCTOS -->
+    <section class="carrito-productos">
+
+        {% for item in items %}
+
+        <article class="carrito-producto">
+
+            <a
+                href="{{ url_for('producto', producto_id=item.producto.id) }}"
+                class="carrito-producto-imagen"
+            >
+
+                {% if item.producto.imagen %}
+
+                    <img
+                        src="{{ url_for('static', filename='img/' + item.producto.imagen) }}"
+                        alt="{{ item.producto.nombre }}"
+                    >
+
+                {% else %}
+
+                    <div class="placeholder-mini">
+                        {{ item.producto.marca or 'SOPI' }}
+                    </div>
+
+                {% endif %}
+
+            </a>
+
+
+            <div class="carrito-producto-info">
+
+                <small>
+                    {{ item.producto.deporte }}
+                </small>
+
+                <h2>
+                    {{ item.producto.nombre }}
+                </h2>
+
+                {% if item.producto.marca %}
+                    <span class="carrito-marca">
+                        {{ item.producto.marca }}
+                    </span>
+                {% endif %}
+
+                <strong class="carrito-precio-unitario">
+                    ${{ "{:,}".format(item.producto.precio).replace(",", ".") }}
+                </strong>
+
+            </div>
+
+
+            <!-- CANTIDAD -->
+
+            <div class="carrito-cantidad">
+
+                <span>Cantidad</span>
+
+                <form
+                    method="post"
+                    action="{{ url_for('carrito_actualizar', producto_id=item.producto.id) }}"
+                    class="cantidad-control"
+                >
+
+                    <button
+                        type="button"
+                        class="cantidad-btn"
+                        onclick="cambiarCantidad(this, -1)"
+                        aria-label="Disminuir cantidad"
+                    >
+                        −
+                    </button>
+
+                    <input
+                        type="number"
+                        name="cantidad"
+                        value="{{ item.cantidad }}"
+                        min="1"
+                        max="{{ item.producto.stock }}"
+                        readonly
+                    >
+
+                    <button
+                        type="button"
+                        class="cantidad-btn"
+                        onclick="cambiarCantidad(this, 1)"
+                        aria-label="Aumentar cantidad"
+                    >
+                        +
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- SUBTOTAL -->
+
+            <div class="carrito-subtotal">
+
+                <span>Subtotal</span>
+
+                <strong>
+                    ${{ "{:,}".format(item.subtotal).replace(",", ".") }}
+                </strong>
+
+            </div>
+
+
+            <!-- ELIMINAR -->
+
+            <form
+                method="post"
+                action="{{ url_for('carrito_eliminar', producto_id=item.producto.id) }}"
+                class="carrito-eliminar-form"
+            >
+
+                <button
+                    type="submit"
+                    class="carrito-eliminar"
+                    title="Eliminar producto"
+                    aria-label="Eliminar {{ item.producto.nombre }}"
+                >
+                    ×
+                </button>
+
+            </form>
+
+        </article>
+
+        {% endfor %}
+
+    </section>
+
+
+    <!-- RESUMEN -->
+
+    <aside class="carrito-resumen">
+
+        <h2>Resumen de compra</h2>
+
+        <div class="resumen-linea">
+            <span>Productos</span>
+            <span>{{ total_items_carrito }}</span>
+        </div>
+
+        <div class="resumen-linea resumen-total">
+            <span>Total</span>
+            <strong>
+                ${{ "{:,}".format(total).replace(",", ".") }}
+            </strong>
+        </div>
+
+        <div class="resumen-separador"></div>
+
+        <form
+            method="post"
+            action="{{ url_for('carrito_pagar') }}"
+        >
+
+            <button
+                type="submit"
+                class="btn-checkout"
+            >
+                FINALIZAR COMPRA
+            </button>
+
+        </form>
+
+        {% if whatsapp_numero %}
+
+            <a
+                class="btn-whatsapp"
+                href="https://wa.me/{{ whatsapp_numero }}?text={{ whatsapp_mensaje | urlencode }}"
+                target="_blank"
+                rel="noopener"
+            >
+                FINALIZAR POR WHATSAPP
+            </a>
+
+        {% endif %}
+
+
+        <form
+            method="post"
+            action="{{ url_for('carrito_vaciar') }}"
+        >
+
+            <button
+                type="submit"
+                class="btn-vaciar"
+            >
+                Vaciar carrito
+            </button>
+
+        </form>
+
+    </aside>
+
+</div>
+
+{% else %}
+
+<div class="carrito-vacio">
+
+    <div class="carrito-vacio-icono">
+        🛒
+    </div>
+
+    <h2>Tu carrito está vacío</h2>
+
+    <p>
+        Todavía no agregaste ningún producto.
+    </p>
+
+    <a
+        href="{{ url_for('portada') }}"
+        class="btn-checkout"
+    >
+        VER PRODUCTOS
+    </a>
+
+</div>
+
+{% endif %}
+```
+
+</div>
+
+<script>
+
+function cambiarCantidad(button, cambio) {
+
+    const form = button.closest("form");
+    const input = form.querySelector("input[name='cantidad']");
+
+    let cantidad = parseInt(input.value) || 1;
+
+    const minimo = parseInt(input.min) || 1;
+    const maximo = parseInt(input.max) || 999;
+
+    cantidad += cambio;
+
+    if (cantidad < minimo) {
+        cantidad = minimo;
+    }
+
+    if (cantidad > maximo) {
+        cantidad = maximo;
+    }
+
+    input.value = cantidad;
+
+    form.submit();
+}
+
+</script>
+
+<style>
+
+/* =========================================================
+   CARRITO SOPI SPORTS
+   ========================================================= */
+
+.carrito-page {
+    width: min(1200px, 94%);
+    margin: 50px auto 80px;
+}
+
+.carrito-header {
+    margin-bottom: 35px;
+}
+
+.carrito-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: #b86645;
+}
+
+.carrito-header h1 {
+    margin: 8px 0;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 900;
+    color: #102a43;
+}
+
+.carrito-header p {
+    margin: 0;
+    color: #64748b;
+}
+
+
+/* LAYOUT */
+
+.carrito-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 30px;
+    align-items: start;
+}
+
+
+/* PRODUCTOS */
+
+.carrito-productos {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.carrito-producto {
+    position: relative;
+    display: grid;
+    grid-template-columns: 115px minmax(180px, 1fr) 125px 120px 30px;
+    gap: 20px;
+    align-items: center;
+    padding: 18px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.carrito-producto:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(15, 23, 42, .08);
+}
+
+
+/* IMAGEN */
+
+.carrito-producto-imagen {
+    width: 115px;
+    height: 115px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.carrito-producto-imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+
+/* INFO */
+
+.carrito-producto-info small,
+.carrito-cantidad > span,
+.carrito-subtotal > span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.carrito-producto-info h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    line-height: 1.25;
+    color: #102a43;
+}
+
+.carrito-marca {
+    display: block;
+    margin-bottom: 10px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.carrito-precio-unitario {
+    color: #102a43;
+    font-size: 15px;
+}
+
+
+/* CANTIDAD */
+
+.cantidad-control {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.cantidad-btn {
+    width: 34px;
+    height: 36px;
+    border: 0;
+    background: #f8fafc;
+    color: #102a43;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cantidad-btn:hover {
+    background: #e2e8f0;
+}
+
+.cantidad-control input {
+    width: 38px;
+    height: 36px;
+    border: 0;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+    font-weight: 700;
+    color: #102a43;
+    background: white;
+}
+
+
+/* SUBTOTAL */
+
+.carrito-subtotal strong {
+    font-size: 17px;
+    color: #102a43;
+}
+
+
+/* ELIMINAR */
+
+.carrito-eliminar-form {
+    margin: 0;
+}
+
+.carrito-eliminar {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.carrito-eliminar:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+
+/* RESUMEN */
+
+.carrito-resumen {
+    position: sticky;
+    top: 25px;
+    padding: 25px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+}
+
+.carrito-resumen h2 {
+    margin: 0 0 25px;
+    font-size: 21px;
+    color: #102a43;
+}
+
+.resumen-linea {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    color: #64748b;
+}
+
+.resumen-total {
+    align-items: center;
+    margin-top: 20px;
+    color: #102a43;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.resumen-total strong {
+    font-size: 25px;
+}
+
+.resumen-separador {
+    height: 1px;
+    margin: 22px 0;
+    background: #e2e8f0;
+}
+
+
+/* BOTONES */
+
+.btn-checkout,
+.btn-whatsapp,
+.btn-vaciar {
+    width: 100%;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border-radius: 10px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-checkout {
+    border: 0;
+    background: #102a43;
+    color: #ffffff;
+}
+
+.btn-checkout:hover {
+    background: #163d66;
+}
+
+.btn-whatsapp {
+    margin-top: 10px;
+    background: #25d366;
+    color: #ffffff;
+}
+
+.btn-vaciar {
+    margin-top: 14px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: #64748b;
+}
+
+.btn-vaciar:hover {
+    background: #f8fafc;
+}
+
+
+/* VACÍO */
+
+.carrito-vacio {
+    max-width: 550px;
+    margin: 70px auto;
+    padding: 60px 30px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+}
+
+.carrito-vacio-icono {
+    margin-bottom: 15px;
+    font-size: 55px;
+}
+
+.carrito-vacio h2 {
+    margin: 0 0 8px;
+    color: #102a43;
+}
+
+.carrito-vacio p {
+    margin: 0 0 25px;
+    color: #64748b;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+
+    .carrito-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .carrito-resumen {
+        position: static;
+    }
+
+    .carrito-producto {
+        grid-template-columns: 95px 1fr 30px;
+    }
+
+    .carrito-producto-imagen {
+        width: 95px;
+        height: 95px;
+    }
+
+    .carrito-cantidad,
+    .carrito-subtotal {
+        grid-column: 2;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .carrito-page {
+        width: 92%;
+        margin-top: 30px;
+    }
+
+    .carrito-producto {
+        grid-template-columns: 80px 1fr 25px;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .carrito-producto-imagen {
+        width: 80px;
+        height: 80px;
+    }
+
+    .carrito-producto-info h2 {
+        font-size: 14px;
+    }
+
+    .carrito-cantidad,
+    .carrito-subtotal {
+        grid-column: 1 / -1;
+    }
+
+    .carrito-cantidad {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+}
+
+</style>
+
+{% endblock %}
