@@ -300,7 +300,33 @@ with app.app_context():
             "PRODUCTOS INICIALES CARGADOS:",
             len(productos_iniciales)
         )
+
+    productos_sin_imagen = [
+        "Wilson US Open",
+        "Dunlop Australian Open",
+        "Short Adidas Club",
+        "Remera Nike Court Dri-FIT",
+        "Bolso Head Elite",
+        "Grip Wilson Pro",
+    ]
+
+    productos_eliminar = Producto.query.filter(
+        Producto.deporte == "Tenis",
+        Producto.nombre.in_(productos_sin_imagen)
+    ).all()
+
+    if productos_eliminar:
+        for producto in productos_eliminar:
+            db.session.delete(producto)
+
+        db.session.commit()
+
+        print(
+            "PRODUCTOS SIN IMAGEN ELIMINADOS:",
+            len(productos_eliminar)
+        )
 # =========================================================
+
 # MERCADO PAGO
 # =========================================================
 
