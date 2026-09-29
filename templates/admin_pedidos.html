@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Pedidos — Admin{% endblock %}
+{% block content %}
+<div class="container" style="padding:32px 0">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <h1>Pedidos</h1>
+    <form method="post" action="{{ url_for('admin_logout') }}">
+      <button type="submit" class="btn">Cerrar sesión</button>
+    </form>
+  </div>
+
+  <p>
+    Filtrar:
+    <a href="{{ url_for('admin_pedidos') }}">Todos</a> ·
+    <a href="{{ url_for('admin_pedidos', estado='pendiente') }}">Pendientes</a> ·
+    <a href="{{ url_for('admin_pedidos', estado='pagado') }}">Pagados</a> ·
+    <a href="{{ url_for('admin_pedidos', estado='fallido') }}">Fallidos / cancelados</a>
+  </p>
+
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse">
+    <thead>
+      <tr style="text-align:left;border-bottom:2px solid #111">
+        <th>#</th><th>Fecha</th><th>Medio</th><th>Detalle</th><th>Total</th><th>Estado</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in pedidos %}
+      <tr style="border-bottom:1px solid #ddd;vertical-align:top">
+        <td>{{ p.id }}</td>
+        <td>{{ p.creado_en | hora_ar }}</td>
+        <td>{{ p.medio_pago or "—" }}</td>
+        <td>
+          {% for l in p.lineas %}{{ l.cantidad }} × {{ l.nombre_producto }}<br>{% endfor %}
+        </td>
+        <td>{{ p.total | pesos }}</td>
+        <td><strong>{{ p.estado }}</strong></td>
+        <td>
+          {% if p.estado == "pendiente" %}
+            <form method="post" action="{{ url_for('admin_pedido_pagado', pedido_id=p.id) }}" style="display:inline">
+              <input type="hidden" name="volver" value="{{ estado }}">
+              <button type="submit" class="btn btn-primary"
+                      onclick="return confirm('¿Marcar el pedido #{{ p.id }} como pagado? Se descuenta el stock.')">
+                Marcar pagado
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('admin_pedido_cancelar', pedido_id=p.id) }}" style="display:inline">
+              <input type="hidden" name="volver" value="{{ estado }}">
+              <button type="submit" class="btn"
+                      onclick="return confirm('¿Cancelar el pedido #{{ p.id }}?')">
+                Cancelar
+              </button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" style="padding:24px 0">No hay pedidos.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+</div>
+{% endblock %}

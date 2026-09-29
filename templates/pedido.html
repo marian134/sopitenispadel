@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Tu pedido #{{ pedido.id }} — SOPI Tenis•Pádel{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="resultado-pago pendiente">
+    <div class="resultado-icono">✓</div>
+    <h1>¡Recibimos tu pedido #{{ pedido.id }}!</h1>
+
+    <p>Total a pagar:
+      <strong>${{ "{:,.0f}".format(pedido.total).replace(",", ".") }}</strong>
+    </p>
+
+    <ul>
+      {% for linea in pedido.lineas %}
+        <li>{{ linea.cantidad }} × {{ linea.nombre_producto }}</li>
+      {% endfor %}
+    </ul>
+
+    {% if pedido.medio_pago == "transferencia" %}
+      <h2>Datos para la transferencia</h2>
+      <ul>
+        <li>Titular: <strong>{{ transferencia.titular }}</strong></li>
+        <li>CBU/CVU: <strong>{{ transferencia.cbu }}</strong></li>
+        <li>Alias: <strong>{{ transferencia.alias }}</strong></li>
+      </ul>
+      <p>Una vez hecha la transferencia, mandanos el comprobante por WhatsApp
+         para confirmar tu pedido.</p>
+    {% else %}
+      <h2>Pago en efectivo</h2>
+      <p>Pagás al retirar o al recibir tu pedido (ya incluye el 5% de descuento).
+         Coordinamos la entrega por WhatsApp.</p>
+    {% endif %}
+
+    {% if whatsapp %}
+      <a class="btn btn-primary"
+         href="https://wa.me/{{ whatsapp }}?text={{ texto_whatsapp | urlencode }}">
+        Escribir por WhatsApp
+      </a>
+    {% endif %}
+    <a href="{{ url_for('portada') }}" class="btn">Volver a la tienda</a>
+  </div>
+</div>
+{% endblock %}

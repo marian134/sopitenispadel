@@ -1,8 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 import os
+import hmac
 import mercadopago
+from datetime import timedelta
+from functools import wraps
 
-from models import db, Producto
+from sqlalchemy import inspect, text
+
+from models import (
+    db, Producto, Pedido, LineaPedido,
+    ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
+)
 
 
 # =========================================================
@@ -11,9 +19,23 @@ from models import db, Producto
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "clave-desarrollo-tienda-tenis"
+ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+if not SECRET_KEY:
+    if ES_PRODUCCION:
+        # La clave por defecto es pública (está en el repo): con ella cualquiera
+        # podría falsificar la sesión, incluida la de administrador.
+        raise RuntimeError("Falta la variable de entorno SECRET_KEY")
+    SECRET_KEY = "clave-desarrollo-tienda-tenis"
+
+app.secret_key = SECRET_KEY
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",   # frena CSRF en los formularios del admin
+    SESSION_COOKIE_SECURE=ES_PRODUCCION,
 )
 
 
@@ -25,14 +47,17 @@ basedir = os.path.abspath(
     os.path.dirname(__file__)
 )
 
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "sqlite:///"
-    + os.path.join(
-        basedir,
-        "instance",
-        "tienda.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    # Render entrega postgres://, SQLAlchemy 2 necesita postgresql://
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = (
+        "sqlite:///" + os.path.join(basedir, "instance", "tienda.db")
     )
-)
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -52,6 +77,12 @@ with app.app_context():
     )
 
     db.create_all()
+
+    # Migración liviana: agrega medio_pago si la tabla pedidos ya existía sin esa columna
+    columnas_pedidos = [c["name"] for c in inspect(db.engine).get_columns("pedidos")]
+    if "medio_pago" not in columnas_pedidos:
+        db.session.execute(text("ALTER TABLE pedidos ADD COLUMN medio_pago VARCHAR(20)"))
+        db.session.commit()
 
     # -----------------------------------------------------
     # CARGAR PRODUCTOS AUTOMÁTICAMENTE SI LA TABLA ESTÁ VACÍA
@@ -344,9 +375,33 @@ else:
 # URL PÚBLICA PARA MERCADO PAGO
 # =========================================================
 
-URL_PUBLICA = (
-    "https://maintain-market-disclosure-switch.trycloudflare.com"
-)
+# En Render definir URL_BASE=https://sopitenispadel.com.ar (sin barra final)
+URL_PUBLICA = os.environ.get("URL_BASE", "http://127.0.0.1:5000").rstrip("/")
+
+DESCUENTO_EFECTIVO = 0.05
+
+# Datos que se muestran al cliente que paga por transferencia
+DATOS_TRANSFERENCIA = {
+    "titular": os.environ.get("TRANSFER_TITULAR", ""),
+    "cbu": os.environ.get("TRANSFER_CBU", ""),
+    "alias": os.environ.get("TRANSFER_ALIAS", ""),
+}
+WHATSAPP_VENDEDOR = os.environ.get("WHATSAPP_VENDEDOR", "")
+
+# =========================================================
+# FILTROS DE PLANTILLA
+# =========================================================
+
+@app.template_filter("pesos")
+def filtro_pesos(valor):
+    return "$" + "{:,.0f}".format(valor or 0).replace(",", ".")
+
+
+@app.template_filter("hora_ar")
+def filtro_hora_ar(fecha):
+    # Las fechas se guardan en UTC; Argentina es UTC-3 todo el año
+    return (fecha - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
+
 
 # =========================================================
 # NAVEGACIÓN
@@ -882,433 +937,345 @@ def carrito_vaciar():
 
 
 # =========================================================
-# PAGAR - CHECKOUT PRO
+# PEDIDOS: HELPERS
 # =========================================================
 
-@app.route(
-    "/carrito/pagar",
-    methods=["GET", "POST"]
-)
-def carrito_pagar():
-
-    carrito = session.get(
-        "carrito",
-        {}
-    )
-
-    if not carrito:
-
-        return redirect(
-            url_for(
-                "carrito_ver"
-            )
-        )
-
-    contexto = obtener_contexto_base()
-
-    items = []
-
-    total = 0
-
-    total_items = 0
-
-    # ---------------------------------------------------------
-    # ARMAR CARRITO
-    # ---------------------------------------------------------
+def armar_items_carrito():
+    """Lee el carrito de la sesión y devuelve (items, total, total_items).
+    Los precios salen SIEMPRE de la base de datos, nunca del navegador."""
+    carrito = session.get("carrito", {})
+    items, total, total_items = [], 0, 0
 
     for producto_id, cantidad in carrito.items():
-
-        producto = db.session.get(
-            Producto,
-            int(producto_id)
-        )
-
-        if not producto:
+        producto = db.session.get(Producto, int(producto_id))
+        if not producto or cantidad <= 0:
             continue
-
-        subtotal = (
-            producto.precio
-            * cantidad
-        )
-
-        items.append({
-
-            "producto": producto,
-
-            "cantidad": cantidad,
-
-            "subtotal": subtotal
-        })
-
+        subtotal = producto.precio * cantidad
+        items.append({"producto": producto, "cantidad": cantidad, "subtotal": subtotal})
         total += subtotal
-
         total_items += cantidad
 
-    # ---------------------------------------------------------
-    # POST
-    # ---------------------------------------------------------
+    return items, total, total_items
 
-    if request.method == "POST":
 
-        medio_pago = request.form.get(
-            "medio_pago"
-        )
+def crear_pedido(items, medio_pago, total):
+    """Registra el pedido (estado pendiente) con un snapshot de cada línea."""
+    pedido = Pedido(estado=ESTADO_PENDIENTE, medio_pago=medio_pago, total=int(total))
+    for item in items:
+        p = item["producto"]
+        pedido.lineas.append(LineaPedido(
+            producto_id=p.id,
+            nombre_producto=p.nombre,
+            precio_unitario=p.precio,
+            cantidad=int(item["cantidad"]),
+        ))
+    db.session.add(pedido)
+    db.session.commit()
 
-        # =====================================================
-        # MERCADO PAGO
-        # =====================================================
+    # El cliente solo puede ver los pedidos que creó en su sesión
+    pedidos = session.get("pedidos", [])
+    pedidos.append(pedido.id)
+    session["pedidos"] = pedidos
+    session.modified = True
+    return pedido
 
-        if medio_pago == "mercadopago":
 
-            if mp is None:
+def confirmar_pago(pedido):
+    """Marca el pedido como pagado y descuenta el stock (una sola vez)."""
+    if pedido.estado == ESTADO_PAGADO:
+        return
+    for linea in pedido.lineas:
+        producto = db.session.get(Producto, linea.producto_id) if linea.producto_id else None
+        if producto:
+            producto.stock = max(0, producto.stock - linea.cantidad)
+    pedido.estado = ESTADO_PAGADO
+    db.session.commit()
 
-                return (
-                    "Mercado Pago no está configurado. "
-                    "Falta MP_ACCESS_TOKEN.",
-                    500
-                )
 
-            items_mp = []
+def pagar_con_mercadopago(items, total):
+    if mp is None:
+        return "Mercado Pago no está configurado. Falta MP_ACCESS_TOKEN.", 500
 
-            for item in items:
+    pedido = crear_pedido(items, "mercadopago", total)
 
-                producto = item[
-                    "producto"
-                ]
-
-                cantidad = item[
-                    "cantidad"
-                ]
-
-                if cantidad <= 0:
-                    continue
-
-                if cantidad > producto.stock:
-
-                    return (
-                        f"No hay stock suficiente de "
-                        f"{producto.nombre}.",
-                        400
-                    )
-
-                items_mp.append({
-
-                    "title":
-                        producto.nombre,
-
-                    "quantity":
-                        int(cantidad),
-
-                    "unit_price":
-                        float(
-                            producto.precio
-                        ),
-
-                    "currency_id":
-                        "ARS"
-                })
-
-            if not items_mp:
-
-                return redirect(
-                    url_for(
-                        "carrito_ver"
-                    )
-                )
-
-            # -------------------------------------------------
-            # PREFERENCIA MERCADO PAGO
-            # -------------------------------------------------
-            preference_data = {
-                "items": items_mp,
-                "back_urls": {
-                    "success": (
-                        f"{URL_PUBLICA}/pago/exitoso"
-                    ),
-                    "failure": (
-                        f"{URL_PUBLICA}/pago/fallido"
-                    ),
-                    "pending": (
-                        f"{URL_PUBLICA}/pago/pendiente"
-                    )
-                },
-                "auto_return": "approved",
-                "external_reference": (
-                    f"TIENDA-"
-                    f"{total_items}-"
-                    f"{int(total)}"
-                )
+    preference_data = {
+        "items": [
+            {
+                "title": i["producto"].nombre,
+                "quantity": int(i["cantidad"]),
+                "unit_price": float(i["producto"].precio),
+                "currency_id": "ARS",
             }
+            for i in items
+        ],
+        "external_reference": str(pedido.id),
+        "back_urls": {
+            "success": f"{URL_PUBLICA}/pago/exitoso",
+            "failure": f"{URL_PUBLICA}/pago/fallido",
+            "pending": f"{URL_PUBLICA}/pago/pendiente",
+        },
+    }
 
-            # -------------------------------------------------
-            # CREAR PREFERENCIA
-            # -------------------------------------------------
+    # auto_return y webhook exigen una URL pública con https
+    if URL_PUBLICA.startswith("https://"):
+        preference_data["auto_return"] = "approved"
+        preference_data["notification_url"] = f"{URL_PUBLICA}/mp/webhook"
 
-            try:
+    try:
+        resultado = mp.preference().create(preference_data)
+    except Exception:
+        app.logger.exception("Error al crear la preferencia de Mercado Pago")
+        pedido.estado = ESTADO_FALLIDO
+        db.session.commit()
+        return "No se pudo crear el pago con Mercado Pago.", 500
 
-                resultado = (
-                    mp
-                    .preference()
-                    .create(
-                        preference_data
-                    )
-                )
+    respuesta = resultado.get("response", {})
+    if resultado.get("status") != 201 or not respuesta.get("init_point"):
+        app.logger.error("Mercado Pago rechazó la preferencia: %s", resultado)
+        pedido.estado = ESTADO_FALLIDO
+        db.session.commit()
+        return "Mercado Pago no pudo iniciar el pago.", 500
 
-                print(
-                    "RESPUESTA MERCADO PAGO:"
-                )
+    pedido.mp_preference_id = respuesta.get("id")
+    db.session.commit()
+    return redirect(respuesta["init_point"])
 
-                print(
-                    resultado
-                )
 
-                status_code = (
-                    resultado.get(
-                        "status"
-                    )
-                )
+# =========================================================
+# PAGAR - ELEGIR MEDIO DE PAGO
+# =========================================================
 
-                response = (
-                    resultado.get(
-                        "response",
-                        {}
-                    )
-                )
+@app.route("/carrito/pagar", methods=["GET", "POST"])
+def carrito_pagar():
 
-                # -------------------------------------------------
-                # ERROR MERCADO PAGO
-                # -------------------------------------------------
+    items, total, total_items = armar_items_carrito()
 
-                if status_code != 201:
+    if not items:
+        return redirect(url_for("carrito_ver"))
 
-                    print(
-                        "STATUS MERCADO PAGO:",
-                        status_code
-                    )
+    contexto = obtener_contexto_base()
 
-                    return (
-                        "Mercado Pago rechazó "
-                        "la creación del pago. "
-                        "Revisá la consola.",
-                        500
-                    )
-
-                # -------------------------------------------------
-                # LINK CHECKOUT PRO
-                # -------------------------------------------------
-
-                init_point = (
-                    response.get(
-                        "init_point"
-                    )
-                )
-
-                if not init_point:
-
-                    print(
-                        "NO SE ENCONTRÓ INIT_POINT"
-                    )
-
-                    print(
-                        "RESPONSE:",
-                        response
-                    )
-
-                    return (
-                        "Mercado Pago no devolvió "
-                        "el enlace de pago.",
-                        500
-                    )
-
-                print(
-                    "INIT POINT:"
-                )
-
-                print(
-                    init_point
-                )
-
-                return redirect(
-                    init_point
-                )
-
-            except Exception as e:
-
-                print(
-                    "ERROR MERCADO PAGO:"
-                )
-
-                print(
-                    repr(e)
-                )
-
-                return (
-                    "No se pudo crear el pago "
-                    "con Mercado Pago.",
-                    500
-                )
-
-        # =====================================================
-        # EFECTIVO
-        # =====================================================
-
-        if medio_pago == "efectivo":
-
-            total_final = (
-                total * 0.95
-            )
-
-        else:
-
-            total_final = total
-
+    if request.method == "GET":
         return render_template(
-
-            "pago.html",
-
-            **contexto,
-
-            items=items,
-
-            total=total,
-
-            total_final=total_final,
-
-            medio_pago=medio_pago
+            "pago.html", **contexto,
+            items=items, total=total, total_final=total,
         )
 
-    # ---------------------------------------------------------
-    # GET
-    # ---------------------------------------------------------
+    medio_pago = request.form.get("medio_pago")
+
+    if medio_pago not in ("mercadopago", "transferencia", "efectivo"):
+        return redirect(url_for("carrito_pagar"))
+
+    for item in items:
+        if item["cantidad"] > item["producto"].stock:
+            return f"No hay stock suficiente de {item['producto'].nombre}.", 400
+
+    if medio_pago == "mercadopago":
+        return pagar_con_mercadopago(items, total)
+
+    # Transferencia y efectivo: se registra el pedido y se muestran las instrucciones
+    if medio_pago == "efectivo":
+        total_final = round(total * (1 - DESCUENTO_EFECTIVO))
+    else:
+        total_final = total
+
+    pedido = crear_pedido(items, medio_pago, total_final)
+
+    session["carrito"] = {}
+    session.modified = True
+
+    return redirect(url_for("pedido_detalle", pedido_id=pedido.id))
+
+
+# =========================================================
+# DETALLE DE PEDIDO (transferencia / efectivo)
+# =========================================================
+
+@app.route("/pedido/<int:pedido_id>")
+def pedido_detalle(pedido_id):
+
+    if pedido_id not in session.get("pedidos", []):
+        abort(404)
+
+    pedido = db.session.get(Pedido, pedido_id)
+    if not pedido:
+        abort(404)
+
+    texto_whatsapp = f"Hola! Te escribo por el pedido #{pedido.id} (total ${pedido.total:,.0f})".replace(",", ".")
+
+    contexto = obtener_contexto_base()
 
     return render_template(
-
-        "pago.html",
-
-        **contexto,
-
-        items=items,
-
-        total=total,
-
-        total_final=total
+        "pedido.html", **contexto,
+        pedido=pedido,
+        transferencia=DATOS_TRANSFERENCIA,
+        whatsapp=WHATSAPP_VENDEDOR,
+        texto_whatsapp=texto_whatsapp,
     )
 
 
 # =========================================================
-# RESULTADO PAGO EXITOSO
+# RESULTADO DEL PAGO (vuelta desde Mercado Pago)
+# Solo informativo: el estado real lo confirma el webhook.
 # =========================================================
 
-@app.route(
-    "/pago/exitoso"
-)
+def resultado_pago(estado):
+
+    if estado in ("exito", "pendiente"):
+        session["carrito"] = {}
+        session.modified = True
+
+    contexto = obtener_contexto_base()
+
+    return render_template(
+        "pago_resultado.html", **contexto,
+        estado=estado,
+        payment_id=request.args.get("payment_id"),
+        status=request.args.get("status"),
+    )
+
+
+@app.route("/pago/exitoso")
 def pago_exitoso():
-
-    payment_id = request.args.get(
-        "payment_id"
-    )
-
-    status = request.args.get(
-        "status"
-    )
-
-    contexto = obtener_contexto_base()
-
-    return render_template(
-
-        "pago_resultado.html",
-
-        **contexto,
-
-        estado="success",
-
-        payment_id=payment_id,
-
-        status=status
-    )
+    return resultado_pago("exito")
 
 
-# =========================================================
-# RESULTADO PAGO PENDIENTE
-# =========================================================
-
-@app.route(
-    "/pago/pendiente"
-)
+@app.route("/pago/pendiente")
 def pago_pendiente():
-
-    payment_id = request.args.get(
-        "payment_id"
-    )
-
-    status = request.args.get(
-        "status"
-    )
-
-    contexto = obtener_contexto_base()
-
-    return render_template(
-
-        "pago_resultado.html",
-
-        **contexto,
-
-        estado="pending",
-
-        payment_id=payment_id,
-
-        status=status
-    )
+    return resultado_pago("pendiente")
 
 
-# =========================================================
-# RESULTADO PAGO FALLIDO
-# =========================================================
-
-@app.route(
-    "/pago/fallido"
-)
+@app.route("/pago/fallido")
 def pago_fallido():
-
-    payment_id = request.args.get(
-        "payment_id"
-    )
-
-    status = request.args.get(
-        "status"
-    )
-
-    contexto = obtener_contexto_base()
-
-    return render_template(
-
-        "pago_resultado.html",
-
-        **contexto,
-
-        estado="failure",
-
-        payment_id=payment_id,
-
-        status=status
-    )
+    return resultado_pago("fallo")
 
 
 # =========================================================
-# ADMIN LOGIN
+# WEBHOOK MERCADO PAGO
 # =========================================================
 
-@app.route(
-    "/admin/login"
-)
+@app.route("/mp/webhook", methods=["POST"])
+def mp_webhook():
+
+    if mp is None:
+        return "", 200
+
+    data = request.get_json(silent=True) or {}
+    tipo = request.args.get("type") or data.get("type")
+    payment_id = request.args.get("data.id") or (data.get("data") or {}).get("id")
+
+    if tipo != "payment" or not payment_id:
+        return "", 200
+
+    # Se consulta el pago a la API de MP: no se confía en lo que llega en el POST
+    r = mp.payment().get(payment_id)
+    if r.get("status") != 200:
+        return "", 500  # MP reintenta
+
+    pago = r["response"]
+
+    try:
+        pedido = db.session.get(Pedido, int(pago.get("external_reference") or 0))
+    except ValueError:
+        return "", 200
+
+    if not pedido or pedido.medio_pago != "mercadopago":
+        return "", 200
+
+    pedido.mp_payment_id = str(payment_id)
+    estado_mp = pago.get("status")
+
+    if estado_mp == "approved":
+        if float(pago.get("transaction_amount", 0)) >= pedido.total:
+            confirmar_pago(pedido)
+        else:
+            app.logger.error("Monto pagado menor al del pedido %s", pedido.id)
+    elif estado_mp in ("rejected", "cancelled") and pedido.estado != ESTADO_PAGADO:
+        pedido.estado = ESTADO_FALLIDO
+
+    db.session.commit()
+    return "", 200
+
+
+# =========================================================
+# ADMIN
+# =========================================================
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+
+def admin_requerido(vista):
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if not session.get("admin"):
+            return redirect(url_for("admin_login"))
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
 
+    error = None
+
+    if request.method == "POST":
+        # Tolera distintos nombres de campo para no obligarte a tocar tu template
+        clave = ""
+        for nombre in ("password", "clave", "contrasena", "contraseña", "pass"):
+            if request.form.get(nombre):
+                clave = request.form[nombre]
+                break
+        else:
+            clave = next(iter(request.form.values()), "")
+        if ADMIN_PASSWORD and hmac.compare_digest(clave.encode(), ADMIN_PASSWORD.encode()):
+            session["admin"] = True
+            return redirect(url_for("admin_pedidos"))
+        error = "Contraseña incorrecta."
+
     contexto = obtener_contexto_base()
 
-    return render_template(
-        "admin_login.html",
-        **contexto
-    )
+    return render_template("admin_login.html", **contexto, error=error)
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    session.pop("admin", None)
+    return redirect(url_for("portada"))
+
+
+@app.route("/admin/pedidos")
+@admin_requerido
+def admin_pedidos():
+
+    estado = request.args.get("estado", "")
+
+    query = Pedido.query
+    if estado in (ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO):
+        query = query.filter_by(estado=estado)
+
+    pedidos = query.order_by(Pedido.creado_en.desc()).limit(200).all()
+
+    contexto = obtener_contexto_base()
+
+    return render_template("admin_pedidos.html", **contexto, pedidos=pedidos, estado=estado)
+
+
+@app.route("/admin/pedidos/<int:pedido_id>/pagado", methods=["POST"])
+@admin_requerido
+def admin_pedido_pagado(pedido_id):
+    pedido = db.get_or_404(Pedido, pedido_id)
+    confirmar_pago(pedido)  # descuenta stock una sola vez
+    return redirect(url_for("admin_pedidos", estado=request.form.get("volver", "")))
+
+
+@app.route("/admin/pedidos/<int:pedido_id>/cancelar", methods=["POST"])
+@admin_requerido
+def admin_pedido_cancelar(pedido_id):
+    pedido = db.get_or_404(Pedido, pedido_id)
+    if pedido.estado == ESTADO_PENDIENTE:
+        pedido.estado = ESTADO_FALLIDO
+        db.session.commit()
+    return redirect(url_for("admin_pedidos", estado=request.form.get("volver", "")))
 
 
 # =========================================================

@@ -48,6 +48,7 @@ class Pedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     estado = db.Column(db.String(20), nullable=False, default=ESTADO_PENDIENTE)
     total = db.Column(db.Integer, nullable=False, default=0)
+    medio_pago = db.Column(db.String(20), nullable=True)  # mercadopago | transferencia | efectivo
     mp_payment_id = db.Column(db.String(50), nullable=True)
     mp_preference_id = db.Column(db.String(50), nullable=True)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
