@@ -22,6 +22,7 @@ class Producto(db.Model):
     descripcion = db.Column(db.Text, nullable=False, default="")
     imagen = db.Column(db.String(120), nullable=False, default="")
     stock = db.Column(db.Integer, nullable=False, default=0)
+    costo = db.Column(db.Integer, nullable=True)  # lo que se paga al mayorista (uso interno)
 
     def to_dict(self):
         return {

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Actualizar precios{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Actualizar precios y stock</h1>
+
+  <p>CSV con columnas:
+    <code>nombre;marca;deporte;categoria;costo;precio;stock</code>
+  </p>
+  <p>
+    Si <code>precio</code> va vacío se calcula desde <code>costo</code>
+    con un margen del {{ (margen * 100)|round|int }}%.
+    Los productos se buscan por <code>nombre</code>: si existe se actualiza,
+    si no existe se crea (en ese caso hacen falta <code>deporte</code>
+    "Tenis" o "Pádel" y un precio o costo).
+    Los números van sin puntos ni comas (por ejemplo 450000).
+  </p>
+
+  <form method="post" enctype="multipart/form-data">
+    <input type="file" name="csv" accept=".csv" required>
+    <button class="btn btn-primary" type="submit">Subir</button>
+  </form>
+
+  {% if resultado %}
+    <h2>Resultado</h2>
+    <p>Creados: {{ resultado.creados }} · Actualizados: {{ resultado.actualizados }}</p>
+    {% if resultado.errores %}
+      <p>Filas con problemas:</p>
+      <ul>
+        {% for e in resultado.errores %}
+          <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
