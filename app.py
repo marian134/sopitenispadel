@@ -1045,7 +1045,12 @@ def admin_precios():
         creados, actualizados, errores = 0, 0, []
 
         if archivo:
-            texto = archivo.read().decode("utf-8-sig")
+            datos = archivo.read()
+            try:
+                texto = datos.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                texto = datos.decode("cp1252")   # CSV guardado por Excel
+
             try:
                 dialecto = csv.Sniffer().sniff(texto[:2048], delimiters=",;")
             except csv.Error:
@@ -1064,6 +1069,8 @@ def admin_precios():
                     errores.append(f"Fila {n} ({nombre}): número inválido")
                     continue
 
+                imagen = (fila.get("imagen") or "").strip()
+
                 if precio is None and costo is not None:
                     precio = precio_desde_costo(costo)
 
@@ -1078,6 +1085,8 @@ def admin_precios():
                         p.precio = precio
                     if stock is not None:
                         p.stock = stock
+                    if imagen:
+                        p.imagen = imagen
                     actualizados += 1
                 else:
                     deporte = (fila.get("deporte") or "").strip()
@@ -1092,7 +1101,7 @@ def admin_precios():
                         deporte=deporte,
                         categoria=(fila.get("categoria") or "").strip(),
                         descripcion=(fila.get("descripcion") or "").strip(),
-                        imagen="",
+                        imagen=imagen,
                         costo=costo,
                         precio=precio,
                         stock=stock or 0,
