@@ -1087,6 +1087,15 @@ def admin_precios():
                         p.stock = stock
                     if imagen:
                         p.imagen = imagen
+                    categoria = (fila.get("categoria") or "").strip()
+                    marca = (fila.get("marca") or "").strip()
+                    deporte = (fila.get("deporte") or "").strip()
+                    if categoria:
+                        p.categoria = categoria
+                    if marca:
+                        p.marca = marca
+                    if deporte in ("Tenis", "Pádel"):
+                        p.deporte = deporte
                     actualizados += 1
                 else:
                     deporte = (fila.get("deporte") or "").strip()
@@ -1118,6 +1127,44 @@ def admin_precios():
         "admin_precios.html", **contexto,
         resultado=resultado, margen=MARGEN,
     )
+
+
+# =========================================================
+# ADMIN: INICIO Y LISTADO DE PRODUCTOS
+# =========================================================
+
+@app.route("/admin/")
+@admin_requerido
+def admin_inicio():
+    return redirect(url_for("admin_pedidos"))
+
+
+@app.route("/admin/productos")
+@admin_requerido
+def admin_productos():
+
+    productos = (
+        Producto.query
+        .order_by(Producto.deporte, Producto.categoria, Producto.nombre)
+        .all()
+    )
+
+    contexto = obtener_contexto_base()
+
+    return render_template("admin_productos.html", **contexto, productos=productos)
+
+
+@app.route("/admin/productos/<int:producto_id>/borrar", methods=["POST"])
+@admin_requerido
+def admin_producto_borrar(producto_id):
+    producto = db.get_or_404(Producto, producto_id)
+
+    # Los pedidos conservan nombre y precio (snapshot): solo se suelta la referencia
+    LineaPedido.query.filter_by(producto_id=producto.id).update({"producto_id": None})
+
+    db.session.delete(producto)
+    db.session.commit()
+    return redirect(url_for("admin_productos"))
 
 
 # =========================================================

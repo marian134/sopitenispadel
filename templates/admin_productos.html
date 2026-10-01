@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Productos — Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Productos ({{ productos|length }})</h1>
+  <p>
+    <a href="{{ url_for('admin_pedidos') }}">Pedidos</a> ·
+    <a href="{{ url_for('admin_precios') }}">Cargar CSV</a>
+  </p>
+
+  <table style="width:100%; border-collapse:collapse; text-align:left;">
+    <thead>
+      <tr>
+        <th>ID</th><th>Nombre</th><th>Marca</th><th>Deporte</th><th>Categoría</th>
+        <th>Costo</th><th>Precio</th><th>Stock</th><th>Imagen</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in productos %}
+      <tr style="border-top:1px solid #ddd;">
+        <td>{{ p.id }}</td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.marca }}</td>
+        <td>{{ p.deporte }}</td>
+        <td>{{ p.categoria }}</td>
+        <td>{{ p.costo|pesos if p.costo else "-" }}</td>
+        <td>{{ p.precio|pesos }}</td>
+        <td>{{ p.stock }}</td>
+        <td>{{ p.imagen or "-" }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_producto_borrar', producto_id=p.id) }}"
+                onsubmit="return confirm('¿Borrar {{ p.nombre|e }}?');">
+            <button type="submit" class="btn btn-outline">Borrar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
