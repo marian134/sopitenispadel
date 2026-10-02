@@ -1,4 +1,3 @@
-
 /* =========================================================
    SOPI SPORTS — TENIS • PÁDEL
    STYLE.CSS — VERSIÓN UNIFICADA Y CORREGIDA
@@ -10,18 +9,14 @@
     --cream: #f5f5f2;
     --gray: #777;
     --light-gray: #deded9;
-
     --tenis: #a84d2d;
     --tenis-dark: #702916;
-
     --padel: #073e69;
     --padel-dark: #02233d;
-
     --sopi-red: #E63946;
     --sopi-green: #06A77D;
     --sopi-yellow: #F4A261;
     --sopi-blue: #2563EB;
-
     --whatsapp: #25d366;
 }
 
@@ -365,14 +360,18 @@ a {
     margin: 0 auto;
     padding: 60px 0;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
     border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
 }
 
 .home-benefit {
+    min-width: 0;
     padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
     border-right: 1px solid #ddd;
 }
 
@@ -380,17 +379,28 @@ a {
     border-right: 0;
 }
 
-.home-benefit h3 {
-    margin: 0 0 8px;
+.home-benefit-icon {
+    flex-shrink: 0;
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.home-benefit strong {
+    display: block;
+    margin-bottom: 4px;
     font-size: 13px;
+    font-weight: 900;
     text-transform: uppercase;
 }
 
-.home-benefit p {
-    margin: 0;
+.home-benefit span {
+    display: block;
     color: #777;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 /* =========================================================
@@ -2208,6 +2218,7 @@ form {
 
     .home-benefits {
         grid-template-columns: 1fr;
+        gap: 0;
     }
 
     .home-benefit {
@@ -2562,5 +2573,291 @@ form {
 
     .pago-opcion {
         padding: 16px;
+    }
+}
+
+/* =========================================================
+   SOPI HOME — HERO LATERAL
+   ========================================================= */
+
+.home-hero-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: center;
+    gap: 60px;
+}
+
+.home-hero-side {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding-left: 35px;
+    border-left: 1px solid rgba(255, 255, 255, .35);
+}
+
+.home-hero-side-number {
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .2em;
+    opacity: .65;
+}
+
+.home-hero-side div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.home-hero-side strong {
+    font-size: 25px;
+    font-weight: 900;
+    letter-spacing: -.02em;
+}
+
+.home-hero-side span {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    line-height: 1.5;
+    opacity: .75;
+}
+
+/* =========================================================
+   SOPI HOME — SOBRE SOPI
+   ========================================================= */
+
+.home-brand {
+    background: #f5f5f2;
+    padding: 110px 0;
+}
+
+.home-brand-inner {
+    width: min(1180px, 92%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 180px minmax(0, 700px);
+    gap: 70px;
+    align-items: start;
+}
+
+.home-brand-number {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -.06em;
+    line-height: 1;
+}
+
+.home-brand-content > span {
+    display: block;
+    margin-bottom: 20px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .18em;
+    color: #777;
+}
+
+.home-brand-content h2 {
+    max-width: 700px;
+    margin: 0 0 25px;
+    font-size: clamp(38px, 5vw, 68px);
+    line-height: .95;
+    letter-spacing: -.055em;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.home-brand-content h2 em {
+    font-style: normal;
+    color: var(--tenis);
+}
+
+.home-brand-content p {
+    max-width: 560px;
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #666;
+}
+
+/* =========================================================
+   SOPI HOME — CTA FINAL
+   ========================================================= */
+
+.home-cta {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 110px 0;
+}
+
+.home-cta-content {
+    width: min(1000px, 92%);
+    margin: 0 auto;
+    text-align: center;
+}
+
+.home-cta-content > span {
+    display: block;
+    margin-bottom: 20px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .22em;
+    opacity: .55;
+}
+
+.home-cta-content h2 {
+    max-width: 850px;
+    margin: 0 auto 22px;
+    font-size: clamp(42px, 6vw, 76px);
+    line-height: .95;
+    letter-spacing: -.055em;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.home-cta-content p {
+    max-width: 540px;
+    margin: 0 auto 32px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .65);
+}
+
+.home-cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.home-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    min-width: 150px;
+    padding: 15px 22px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.home-cta-btn:hover {
+    transform: translateY(-2px);
+    background: #e9e9e9;
+}
+
+.home-cta-btn span {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* =========================================================
+   SOPI HOME — RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .home-hero {
+        min-height: 600px;
+    }
+
+    .home-hero-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding: 55px 0;
+    }
+
+    .home-hero h1 {
+        font-size: clamp(48px, 13vw, 72px);
+    }
+
+    .home-hero-side {
+        display: grid;
+        grid-template-columns: auto 1fr 1fr;
+        gap: 18px;
+        padding-left: 0;
+        padding-top: 25px;
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, .35);
+    }
+
+    .home-hero-side-number {
+        align-self: start;
+    }
+
+    .home-hero-side strong {
+        font-size: 20px;
+    }
+
+    .home-brand {
+        padding: 75px 0;
+    }
+
+    .home-brand-inner {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+
+    .home-brand-number {
+        font-size: 32px;
+    }
+
+    .home-brand-content h2 {
+        font-size: clamp(38px, 11vw, 58px);
+    }
+
+    .home-cta {
+        padding: 75px 0;
+    }
+
+    .home-cta-content h2 {
+        font-size: clamp(40px, 11vw, 62px);
+    }
+}
+
+@media (max-width: 500px) {
+
+    .home-hero-content {
+        width: 88%;
+    }
+
+    .home-hero h1 {
+        font-size: 48px;
+    }
+
+    .home-hero p {
+        font-size: 14px;
+    }
+
+    .home-hero-side {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .home-hero-side-number {
+        grid-column: 1 / -1;
+    }
+
+    .home-brand-inner {
+        width: 88%;
+    }
+
+    .home-brand-content h2 {
+        font-size: 40px;
+    }
+
+    .home-cta-content {
+        width: 88%;
+    }
+
+    .home-cta-content h2 {
+        font-size: 42px;
     }
 }
