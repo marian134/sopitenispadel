@@ -1,15 +1,10 @@
-nombre;marca;deporte;categoria;costo;precio;stock
-Head Radical Pro;Head;Tenis;Raquetas;280000;;5
-Yonex VCORE 100;Yonex;Tenis;Raquetas;450000;689000;3
-Pelotas Head Tour (tubo);Head;Tenis;Pelotas;12000;;30
-Overgrip Tourna;Tourna;Pádel;Accesorios;600;;50
-Dunlop Fort;Dunlop;Tenis;Accesorios;14000;21300;10
-Babolat Padel Tour;Babolat;Pádel;Raquetas;15000;17000;3
-Siux Pantalón;Siux;Pádel;Accesorios;45000;69000;3
-Babolat Polo;Babolat;Pádel;Accesorios;30000;55000;3
-NOX Mochila;NOX;Pádel;Accesorios;130000;185000;4
-Tourna Overgrip;Tourna;Pádel;Accesorios;4000;8500;2
-Graphene Radical;Head;Pádel;Raquetas;190000;295000;3
-Viper Tour;Babolat;Pádel;Raquetas;300000;575000;4
-Equation;NOX;Pádel;Raquetas;280000;380000;3
-Crossover;Siux;Pádel;Raquetas;250000;350000;2
+nombre;marca;deporte;categoria;costo;precio;stock;imagen
+Babolat Viper Tour;Babolat;Pádel;Raquetas;300000;575000;4;padel-babolat-viper.jpg
+NOX Equation;NOX;Pádel;Raquetas;280000;380000;3;padel-nox-equation.jpg
+Siux Crossover;Siux;Pádel;Raquetas;250000;350000;2;padel-siux-crossover.jpg
+Babolat Padel Tour;Babolat;Pádel;Pelotas;15000;17000;3;padel-babolat-pelota.jpg
+Pantalón Siux Premium;Siux;Pádel;Indumentaria;45000;69000;3;padel-siux-pantalon.jpg
+Polo Babolat Team;Babolat;Pádel;Indumentaria;30000;55000;3;padel-babolat-polo.jpg
+Mochila Padel NOX;NOX;Pádel;Accesorios;130000;185000;4;padel-nox-mochila.jpg
+Overgrip Tourna;Tourna;Pádel;Accesorios;600;6500;2;padel-tourna-overgrip.jpg
+HEAD Graphene Radical;HEAD;Pádel;Raquetas;190000;295000;3;padel-head-graphene.jpg

@@ -1,63 +1,254 @@
+```html
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Tienda de Tenis y Pádel{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <title>{% block title %}SOPI SPORTS | Tenis • Pádel{% endblock %}</title>
+
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}">
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
 
-  <header class="nav">
-    <div class="container nav-row">
-      <a href="{{ url_for('portada') }}" class="brand">SOPI Tenis<span class="dot">•</span>Pádel</a>
-      <nav class="nav-sports">
-        {% for slug, nombre in nav_deportes.items() %}
-          <a href="{{ url_for('catalogo', deporte_slug=slug) }}"
-             class="nav-sport-link{% if deporte_slug == slug %} activo{% endif %}">{{ nombre }}</a>
-        {% endfor %}
-      </nav>
-      <div class="nav-actions">
-        <a href="{{ url_for('carrito_ver') }}" class="nav-cart">
-          Carrito
-          {% if total_items_carrito %}<span class="nav-cart-count">{{ total_items_carrito }}</span>{% endif %}
-        </a>
-      </div>
+  <!-- =====================================================
+       BARRA PROMOCIONAL
+       ===================================================== -->
+
+  <div class="sopi-promo-bar">
+    <div class="sopi-promo-inner">
+
+      <span>
+        <i class="fas fa-credit-card"></i>
+        MERCADO PAGO
+      </span>
+
+      <span>
+        <i class="fas fa-percent"></i>
+        DESCUENTO POR TRANSFERENCIA
+      </span>
+
+      <span>
+        <i class="fas fa-truck"></i>
+        ENVÍOS A TODO EL PAÍS
+      </span>
+
     </div>
+  </div>
+
+
+  <!-- =====================================================
+       HEADER
+       ===================================================== -->
+
+  <header class="nav">
+
+    <div class="container nav-row">
+
+      <a href="{{ url_for('portada') }}" class="brand">
+        SOPI Tenis<span class="dot">•</span>Pádel
+      </a>
+
+      <nav class="nav-sports">
+
+        {% for slug, nombre in nav_deportes.items() %}
+
+          <a href="{{ url_for('catalogo', deporte_slug=slug) }}"
+             class="nav-sport-link{% if deporte_slug == slug %} activo{% endif %}">
+            {{ nombre }}
+          </a>
+
+        {% endfor %}
+
+      </nav>
+
+      <div class="nav-actions">
+
+        <a href="{{ url_for('carrito_ver') }}" class="nav-cart">
+
+          <i class="fas fa-shopping-cart"></i>
+
+          Carrito
+
+          {% if total_items_carrito %}
+            <span class="nav-cart-count">
+              {{ total_items_carrito }}
+            </span>
+          {% endif %}
+
+        </a>
+
+      </div>
+
+    </div>
+
   </header>
 
+
+  <!-- =====================================================
+       CONTENIDO
+       ===================================================== -->
+
   <main>
+
     {% block content %}{% endblock %}
+
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h3>Che Tenis • Pádel</h3>
-          <p>Tu tienda online de artículos para tenis y pádel en Argentina</p>
-        </div>
-        
-        <div class="footer-section">
-          <h4>Seguinos</h4>
-      <div class="social-links">
-  <a href="https://www.instagram.com/sopi.tenispadel/" target="_blank" rel="noopener" class="social-icon">
-    <i class="fab fa-instagram"></i> Instagram
-  </a>
 
-  <a href="https://wa.me/5491128321531" target="_blank" rel="noopener" class="social-icon">
-    <i class="fab fa-whatsapp"></i> WhatsApp
-  </a>
-</div>
+  <!-- =====================================================
+       FOOTER SOPI
+       ===================================================== -->
+
+  <footer class="footer">
+
+    <div class="container">
+
+      <div class="footer-content">
+
+
+        <!-- MARCA -->
+
+        <div class="footer-section">
+
+          <h3>SOPI SPORTS</h3>
+
+          <p>
+            Tu tienda online de artículos para
+            <strong>tenis y pádel</strong> en Argentina.
+          </p>
+
+          <p>
+            Equipamiento seleccionado para entrenar,
+            competir y disfrutar tu deporte.
+          </p>
+
         </div>
+
+
+        <!-- INFORMACIÓN -->
+
+        <div class="footer-section">
+
+          <h4>COMPRÁ CON CONFIANZA</h4>
+
+          <p>
+            <i class="fas fa-credit-card"></i>
+            Mercado Pago
+          </p>
+
+          <p>
+            <i class="fas fa-university"></i>
+            Transferencia bancaria
+          </p>
+
+          <p>
+            <i class="fas fa-truck"></i>
+            Envíos a todo el país
+          </p>
+
+        </div>
+
+
+        <!-- CONTACTO -->
+
+        <div class="footer-section">
+
+          <h4>CONTACTO</h4>
+
+          <div class="social-links">
+
+            <a
+              href="https://www.instagram.com/sopi.tenispadel/"
+              target="_blank"
+              rel="noopener"
+              class="social-icon"
+            >
+              <i class="fab fa-instagram"></i>
+              Instagram
+            </a>
+
+
+            <a
+              href="https://wa.me/5491128321531"
+              target="_blank"
+              rel="noopener"
+              class="social-icon"
+            >
+              <i class="fab fa-whatsapp"></i>
+              WhatsApp
+            </a>
+
+          </div>
+
+        </div>
+
       </div>
-      
+
+
+      <!-- BENEFICIOS -->
+
+      <div class="footer-benefits">
+
+        <div>
+          <i class="fas fa-shield-alt"></i>
+
+          <strong>COMPRA SEGURA</strong>
+
+          <span>
+            Pagá de forma segura
+          </span>
+
+        </div>
+
+
+        <div>
+          <i class="fas fa-truck"></i>
+
+          <strong>ENVÍOS</strong>
+
+          <span>
+            Enviamos a todo el país
+          </span>
+
+        </div>
+
+
+        <div>
+          <i class="fab fa-whatsapp"></i>
+
+          <strong>ATENCIÓN</strong>
+
+          <span>
+            Consultanos por WhatsApp
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <!-- COPYRIGHT -->
+
       <div class="footer-bottom">
-        <p>&copy; 2024 Che Tenis • Pádel. Todos los derechos reservados.</p>
+
+        <p>
+          &copy; 2026 <strong>SOPI SPORTS</strong>.
+          Todos los derechos reservados.
+        </p>
+
       </div>
+
     </div>
+
   </footer>
+
 
 </body>
 </html>
+```

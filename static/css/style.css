@@ -1,5 +1,6 @@
+```css
 /* =========================================================
-   CHE, TENIS • PÁDEL → SOPI TENIS • PADEL
+   SOPI SPORTS — TENIS • PÁDEL
    STYLE.CSS — VERSIÓN UNIFICADA
    ========================================================= */
 
@@ -34,15 +35,9 @@ html {
 
 body {
     margin: 0;
-
     background: var(--white);
     color: var(--black);
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
+    font-family: Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -67,40 +62,28 @@ a {
 .nav {
     position: sticky;
     top: 0;
-
     z-index: 100;
-
     width: 100%;
-
-    background: rgba(255,255,255,.96);
-
+    background: rgba(255, 255, 255, .96);
     border-bottom: 1px solid #e5e5e2;
-
     backdrop-filter: blur(12px);
 }
 
 .nav-row {
     width: min(1380px, 94%);
-
     min-height: 74px;
-
     margin: 0 auto;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     gap: 30px;
 }
 
 .brand {
     font-size: 22px;
     font-weight: 900;
-
     letter-spacing: -.04em;
-
     text-decoration: none;
-
     white-space: nowrap;
 }
 
@@ -111,39 +94,28 @@ a {
 .nav-sports {
     display: flex;
     align-items: center;
-
     gap: 30px;
-
     margin-left: auto;
 }
 
 .nav-sport-link {
     position: relative;
-
     padding: 28px 0;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .08em;
-
     text-decoration: none;
     text-transform: uppercase;
 }
 
 .nav-sport-link::after {
     content: "";
-
     position: absolute;
-
     left: 0;
     bottom: 20px;
-
     width: 0;
     height: 2px;
-
     background: var(--black);
-
     transition: width .2s ease;
 }
 
@@ -161,10 +133,8 @@ a {
     display: flex;
     align-items: center;
     gap: 8px;
-
     font-size: 11px;
     font-weight: 900;
-
     text-decoration: none;
     text-transform: uppercase;
 }
@@ -172,16 +142,12 @@ a {
 .nav-cart-count {
     min-width: 21px;
     height: 21px;
-
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
     border-radius: 50%;
-
     background: var(--black);
     color: var(--white);
-
     font-size: 10px;
 }
 
@@ -196,14 +162,10 @@ a {
 
 .home-hero {
     position: relative;
-
     min-height: 650px;
-
     display: flex;
     align-items: center;
-
     overflow: hidden;
-
     background:
         linear-gradient(
             110deg,
@@ -216,49 +178,35 @@ a {
 
 .home-hero-content {
     width: min(1380px, 94%);
-
     margin: 0 auto;
-
     color: white;
 }
 
 .home-eyebrow {
     display: block;
-
     margin-bottom: 20px;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .25em;
-
     opacity: .75;
 }
 
 .home-hero h1 {
     max-width: 800px;
-
     margin: 0;
-
     font-size: clamp(70px, 10vw, 150px);
     line-height: .82;
-
     letter-spacing: -.07em;
-
     font-weight: 900;
-
     text-transform: uppercase;
 }
 
 .home-hero p {
     max-width: 500px;
-
     margin: 30px 0;
-
     font-size: 17px;
     line-height: 1.6;
-
-    color: rgba(255,255,255,.85);
+    color: rgba(255, 255, 255, .85);
 }
 
 .home-hero-buttons {
@@ -270,22 +218,15 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
     min-width: 150px;
-
     padding: 16px 22px;
-
     background: #fff;
     color: #111;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .1em;
-
     text-decoration: none;
     text-transform: uppercase;
-
     transition:
         transform .2s ease,
         background .2s ease;
@@ -303,9 +244,7 @@ a {
 
 .home-sports {
     width: min(1380px, 94%);
-
     margin: 0 auto;
-
     padding: 100px 0;
 }
 
@@ -315,37 +254,26 @@ a {
 
 .home-section-heading h2 {
     margin: 0;
-
     font-size: 44px;
-
     letter-spacing: -.05em;
-
     text-transform: uppercase;
 }
 
 .home-sports-grid {
     display: grid;
-
     grid-template-columns: 1fr 1fr;
-
     gap: 18px;
 }
 
 .home-sport-card {
     min-height: 430px;
-
     padding: 38px;
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
     color: #fff;
-
     text-decoration: none;
-
     overflow: hidden;
-
     transition: transform .3s ease;
 }
 
@@ -379,13 +307,9 @@ a {
 
 .home-sport-card h3 {
     margin: 0;
-
     font-size: 70px;
-
     line-height: .9;
-
     letter-spacing: -.06em;
-
     text-transform: uppercase;
 }
 
@@ -396,25 +320,17 @@ a {
 
 .home-benefits {
     width: min(1380px, 94%);
-
     margin: 0 auto;
-
     padding: 60px 0;
-
     display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-
     border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
 }
 
 .home-benefit {
     padding: 15px 25px;
-
     border-right: 1px solid #ddd;
 }
 
@@ -424,17 +340,13 @@ a {
 
 .home-benefit h3 {
     margin: 0 0 8px;
-
     font-size: 13px;
-
     text-transform: uppercase;
 }
 
 .home-benefit p {
     margin: 0;
-
     color: #777;
-
     font-size: 13px;
     line-height: 1.5;
 }
@@ -446,18 +358,13 @@ a {
 
 .home-products {
     width: min(1380px, 94%);
-
     margin: 0 auto;
-
     padding: 100px 0;
 }
 
 .home-products-grid {
     display: grid;
-
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
-
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -467,18 +374,14 @@ a {
 
 .home-product-image {
     height: 330px;
-
     overflow: hidden;
-
     background: #f3f3f1;
 }
 
 .home-product-image img {
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-
     transition: transform .4s ease;
 }
 
@@ -492,21 +395,17 @@ a {
 
 .home-product-info h3 {
     margin: 5px 0;
-
     font-size: 15px;
 }
 
 .home-product-info p {
     margin: 0;
-
     color: #777;
-
     font-size: 12px;
 }
 
 .home-product-bottom {
     margin-top: 15px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -515,12 +414,9 @@ a {
 .home-product-cart {
     width: 38px;
     height: 38px;
-
     border: 0;
-
     background: #111;
     color: #fff;
-
     cursor: pointer;
 }
 
@@ -540,10 +436,8 @@ a {
 
 .shop-hero {
     min-height: 390px;
-
     display: flex;
     align-items: center;
-
     overflow: hidden;
 }
 
@@ -569,11 +463,8 @@ a {
 
 .shop-hero-inner {
     width: min(1380px, 94%);
-
     min-height: 390px;
-
     margin: 0 auto;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -581,67 +472,47 @@ a {
 
 .shop-hero-copy {
     max-width: 720px;
-
     color: #fff;
 }
 
 .shop-eyebrow {
     display: block;
-
     margin-bottom: 18px;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .22em;
-
     opacity: .75;
 }
 
 .shop-hero h1 {
     margin: 0;
-
     font-size: clamp(80px, 11vw, 150px);
-
     line-height: .82;
-
     letter-spacing: -.07em;
-
     font-weight: 900;
-
     text-transform: uppercase;
 }
 
 .shop-hero p {
     max-width: 520px;
-
     margin: 28px 0 0;
-
     font-size: 16px;
     line-height: 1.6;
-
-    color: rgba(255,255,255,.82);
+    color: rgba(255, 255, 255, .82);
 }
 
 .shop-hero-action a {
     display: inline-flex;
     align-items: center;
     gap: 25px;
-
     padding: 18px 24px;
-
     background: #fff;
     color: #111;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .12em;
-
     text-decoration: none;
-
     text-transform: uppercase;
-
     transition: transform .2s ease;
 }
 
@@ -660,9 +531,7 @@ a {
 
 .shop-content {
     width: min(1380px, 94%);
-
     margin: 0 auto;
-
     padding: 72px 0 120px;
 }
 
@@ -670,40 +539,29 @@ a {
     display: flex;
     align-items: end;
     justify-content: space-between;
-
     margin-bottom: 35px;
 }
 
 .shop-kicker {
     display: block;
-
     margin-bottom: 10px;
-
     font-size: 10px;
     font-weight: 900;
-
     letter-spacing: .18em;
-
     color: #777;
 }
 
 .shop-heading h2 {
     margin: 0;
-
     font-size: 42px;
-
     line-height: 1;
-
     letter-spacing: -.045em;
-
     font-weight: 900;
-
     text-transform: uppercase;
 }
 
 .shop-count {
     font-size: 12px;
-
     color: #777;
 }
 
@@ -714,51 +572,37 @@ a {
 
 .shop-toolbar {
     min-height: 64px;
-
     margin-bottom: 30px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
 }
 
 .shop-filters {
     height: 64px;
-
     display: flex;
     align-items: center;
 }
 
 .shop-filter {
     position: relative;
-
     height: 100%;
 }
 
 .shop-filter summary {
     height: 100%;
-
     padding: 0 28px;
-
     display: flex;
     align-items: center;
-
     gap: 35px;
-
     list-style: none;
-
     cursor: pointer;
-
     border-right: 1px solid #ddd;
-
     font-size: 11px;
     font-weight: 900;
-
     letter-spacing: .04em;
-
     text-transform: uppercase;
 }
 
@@ -772,32 +616,21 @@ a {
 
 .shop-filter-menu {
     position: absolute;
-
     top: calc(100% + 1px);
     left: 0;
-
     z-index: 50;
-
     min-width: 220px;
-
     padding: 10px 0;
-
     background: #fff;
-
     border: 1px solid #ddd;
-
-    box-shadow: 0 15px 35px rgba(0,0,0,.12);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, .12);
 }
 
 .shop-filter-menu a {
     display: block;
-
     padding: 12px 18px;
-
     color: #222;
-
     font-size: 12px;
-
     text-decoration: none;
 }
 
@@ -808,33 +641,24 @@ a {
 .shop-sort {
     display: flex;
     align-items: center;
-
     gap: 12px;
-
     padding-right: 5px;
 }
 
 .shop-sort span {
     font-size: 10px;
     font-weight: 900;
-
     color: #777;
-
     text-transform: uppercase;
 }
 
 .shop-sort select {
     min-width: 190px;
-
     padding: 11px 12px;
-
     background: #fff;
-
     border: 0;
-
     font-size: 12px;
     font-weight: 700;
-
     cursor: pointer;
 }
 
@@ -845,10 +669,7 @@ a {
 
 .shop-grid {
     display: grid;
-
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
-
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 38px 18px;
 }
 
@@ -859,11 +680,8 @@ a {
 
 .shop-product-card {
     min-width: 0;
-
     background: #fff;
-
-    transition:
-        transform .25s ease;
+    transition: transform .25s ease;
 }
 
 .shop-product-card:hover {
@@ -877,32 +695,24 @@ a {
 
 .shop-product-image {
     position: relative;
-
     width: 100%;
     height: 365px;
-
     overflow: hidden;
-
     background: #f2f2ef;
 }
 
 .shop-product-image a {
     display: block;
-
     width: 100%;
     height: 100%;
 }
 
 .shop-product-image img {
     display: block;
-
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-
-    transition:
-        transform .5s cubic-bezier(.2,.7,.2,1);
+    transition: transform .5s cubic-bezier(.2, .7, .2, 1);
 }
 
 .shop-product-card:hover .shop-product-image img {
@@ -916,32 +726,21 @@ a {
 
 .shop-favorite {
     position: absolute;
-
     top: 14px;
     right: 14px;
-
     width: 40px;
     height: 40px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border: 0;
     border-radius: 50%;
-
-    background: rgba(255,255,255,.94);
-
+    background: rgba(255, 255, 255, .94);
     color: #111;
-
     font-size: 23px;
-
     cursor: pointer;
-
     z-index: 5;
-
-    transition:
-        transform .2s ease;
+    transition: transform .2s ease;
 }
 
 .shop-favorite:hover {
@@ -955,19 +754,13 @@ a {
 
 .shop-badge {
     position: absolute;
-
     left: 14px;
     bottom: 14px;
-
     padding: 7px 10px;
-
     color: #fff;
-
     font-size: 9px;
     font-weight: 900;
-
     letter-spacing: .08em;
-
     text-transform: uppercase;
 }
 
@@ -990,31 +783,21 @@ a {
 
 .shop-product-brand {
     display: block;
-
     margin-bottom: 6px;
-
     font-size: 10px;
     font-weight: 900;
-
     letter-spacing: .12em;
-
     color: #777;
-
     text-transform: uppercase;
 }
 
 .shop-product-name {
     display: block;
-
     min-height: 38px;
-
     color: #111;
-
     font-size: 15px;
     line-height: 1.25;
-
     font-weight: 700;
-
     text-decoration: none;
 }
 
@@ -1024,7 +807,6 @@ a {
 
 .shop-product-bottom {
     margin-top: 15px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1042,20 +824,14 @@ a {
 .shop-add {
     width: 40px;
     height: 40px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border: 1px solid #111;
-
     background: #111;
     color: #fff;
-
     font-size: 23px;
-
     cursor: pointer;
-
     transition:
         background .2s ease,
         color .2s ease;
@@ -1074,16 +850,12 @@ a {
 .shop-placeholder {
     width: 100%;
     height: 100%;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     background: #eee;
-
     font-size: 18px;
     font-weight: 900;
-
     text-transform: uppercase;
 }
 
@@ -1094,11 +866,8 @@ a {
 
 .shop-empty {
     grid-column: 1 / -1;
-
     padding: 100px 20px;
-
     text-align: center;
-
     border: 1px solid #ddd;
 }
 
@@ -1108,7 +877,6 @@ a {
 
 .shop-empty p {
     margin: 0;
-
     color: #777;
 }
 
@@ -1119,49 +887,36 @@ a {
 
 .cart-page {
     width: min(1100px, 94%);
-
     margin: 0 auto;
-
     padding: 70px 0 120px;
 }
 
 .cart-page h1 {
     margin: 0 0 40px;
-
     font-size: 46px;
-
     letter-spacing: -.05em;
-
     text-transform: uppercase;
 }
 
 .cart-item {
     display: grid;
-
     grid-template-columns: 100px 1fr auto auto;
-
     align-items: center;
-
     gap: 20px;
-
     padding: 20px 0;
-
     border-bottom: 1px solid #ddd;
 }
 
 .cart-item img {
     width: 100px;
     height: 100px;
-
     object-fit: cover;
 }
 
 .cart-total {
     margin-top: 35px;
-
     display: flex;
     justify-content: flex-end;
-
     font-size: 24px;
     font-weight: 900;
 }
@@ -1177,7 +932,6 @@ a {
     align-items: flex-start;
 }
 
-/* Imagen izquierda */
 .foto-grande {
     flex: 1;
     min-width: 300px;
@@ -1194,7 +948,11 @@ a {
 .placeholder {
     width: 100%;
     aspect-ratio: 1;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+    background: linear-gradient(
+        135deg,
+        #f0f0f0 0%,
+        #e8e8e8 100%
+    );
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -1204,13 +962,14 @@ a {
     font-weight: 500;
 }
 
-/* Detalles derecha */
 .producto-detalle > div:last-child {
     flex: 1;
     min-width: 300px;
 }
 
-/* Header SOPI */
+
+/* HEADER SOPI */
+
 .header-sopi {
     display: flex;
     align-items: center;
@@ -1233,7 +992,9 @@ a {
     letter-spacing: -.04em;
 }
 
-/* Breadcrumb */
+
+/* BREADCRUMB */
+
 .breadcrumb {
     display: inline-block;
     margin-bottom: 20px;
@@ -1248,7 +1009,9 @@ a {
     color: var(--sopi-red);
 }
 
-/* Marca */
+
+/* MARCA */
+
 .marca {
     display: block;
     color: #777;
@@ -1259,7 +1022,9 @@ a {
     margin-bottom: 10px;
 }
 
-/* Nombre producto */
+
+/* NOMBRE PRODUCTO */
+
 .producto-detalle h1 {
     font-size: 32px;
     color: #333;
@@ -1269,7 +1034,9 @@ a {
     letter-spacing: -.05em;
 }
 
-/* Precio */
+
+/* PRECIO */
+
 .precio {
     font-size: 36px;
     color: var(--sopi-red);
@@ -1277,7 +1044,9 @@ a {
     margin: 20px 0;
 }
 
-/* Stock badges */
+
+/* STOCK */
+
 .stock-badge {
     display: inline-block;
     padding: 8px 16px;
@@ -1303,7 +1072,9 @@ a {
     color: #c62828;
 }
 
-/* Descripción */
+
+/* DESCRIPCIÓN */
+
 .descripcion {
     color: #666;
     font-size: 15px;
@@ -1311,7 +1082,9 @@ a {
     margin: 20px 0 30px 0;
 }
 
-/* Formulario */
+
+/* FORMULARIO */
+
 form {
     display: flex;
     flex-direction: column;
@@ -1350,7 +1123,9 @@ form {
     box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
 }
 
-/* Botones */
+
+/* BOTONES */
+
 .btn {
     padding: 14px 30px;
     border: none;
@@ -1394,61 +1169,99 @@ form {
 
 .footer {
     padding: 60px 0 25px;
-
     background: #0a0a0a;
     color: #fff;
 }
 
 .footer .container {
     width: min(1380px, 94%);
-
     margin: 0 auto;
 }
 
 .footer-content {
     display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    gap: 40px;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 50px;
 }
 
-.footer-section h3,
-.footer-section h4 {
-    margin-top: 0;
+.footer-section h3 {
+    margin: 0 0 15px;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+}
 
-    text-transform: uppercase;
+.footer-section h4 {
+    margin: 0 0 18px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .1em;
 }
 
 .footer-section p {
     color: #aaa;
-
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.7;
+}
+
+.footer-section p i {
+    width: 20px;
+    margin-right: 6px;
+    color: #fff;
 }
 
 .social-links {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .social-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
     color: #fff;
-
-    text-decoration: none;
-
     font-size: 13px;
+    text-decoration: none;
+    transition: opacity .2s ease;
 }
 
-.footer-bottom {
+.social-icon:hover {
+    opacity: .65;
+}
+
+
+/* FOOTER — BENEFICIOS */
+
+.footer-benefits {
     margin-top: 50px;
-
-    padding-top: 20px;
-
+    padding: 25px 0;
     border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
 
-    color: #777;
+.footer-benefits > div {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    align-items: center;
+    column-gap: 10px;
+}
 
+.footer-benefits i {
+    grid-row: span 2;
+    font-size: 18px;
+}
+
+.footer-benefits strong {
+    font-size: 10px;
+    letter-spacing: .08em;
+}
+
+.footer-benefits span {
+    color: #888;
     font-size: 11px;
 }
 
@@ -1461,8 +1274,7 @@ form {
 
     .shop-grid,
     .home-products-grid {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .shop-product-image {
@@ -1503,8 +1315,7 @@ form {
     }
 
     .home-products-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .shop-hero {
@@ -1513,9 +1324,7 @@ form {
 
     .shop-hero-inner {
         min-height: 430px;
-
         display: block;
-
         padding-top: 100px;
     }
 
@@ -1525,7 +1334,6 @@ form {
 
     .shop-toolbar {
         display: block;
-
         height: auto;
     }
 
@@ -1535,26 +1343,20 @@ form {
 
     .shop-sort {
         min-height: 58px;
-
         padding: 0 15px;
-
         border-top: 1px solid #ddd;
     }
 
     .shop-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .shop-product-image {
         height: 300px;
     }
 
-    .footer-content {
-        grid-template-columns: 1fr;
-    }
-
     /* Responsive producto detalle */
+
     .producto-detalle {
         flex-direction: column;
         gap: 30px;
@@ -1599,7 +1401,6 @@ form {
 
     .home-hero {
         min-height: 580px;
-
         background:
             linear-gradient(
                 180deg,
@@ -1644,7 +1445,6 @@ form {
 
     .shop-count {
         display: block;
-
         margin-top: 12px;
     }
 
@@ -1670,6 +1470,7 @@ form {
     }
 
     /* Mobile producto detalle */
+
     .header-sopi {
         margin-bottom: 15px;
     }
@@ -1699,6 +1500,8 @@ form {
         width: 100%;
     }
 }
+
+
 /* =========================================================
    PRODUCTO — NUEVA FICHA PREMIUM
    ========================================================= */
@@ -1725,13 +1528,10 @@ form {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-
     color: #0a0a0a;
     text-decoration: none;
-
     font-size: 14px;
     font-weight: 800;
-
     transition: opacity .2s ease;
 }
 
@@ -1744,14 +1544,12 @@ form {
 
 .product-detail {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(400px, .95fr);
-
+    grid-template-columns:
+        minmax(0, 1.05fr)
+        minmax(400px, .95fr);
     gap: 70px;
-
     background: #fff;
-
     padding: 48px;
-
     border: 1px solid #deded9;
 }
 
@@ -1767,24 +1565,18 @@ form {
 .product-main-image {
     width: 100%;
     aspect-ratio: 1 / 1;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     background: #f7f7f5;
-
     overflow: hidden;
 }
 
 .product-main-image img {
     width: 100%;
     height: 100%;
-
     display: block;
-
     object-fit: contain;
-
     transition: transform .35s ease;
 }
 
@@ -1804,40 +1596,30 @@ form {
 .product-info {
     display: flex;
     flex-direction: column;
-
     padding-top: 8px;
 }
 
 .product-brand {
     color: #777;
-
     font-size: 12px;
     font-weight: 900;
-
     letter-spacing: .16em;
     text-transform: uppercase;
-
     margin-bottom: 12px;
 }
 
 .product-title {
     margin: 0;
-
     color: #0a0a0a;
-
     font-size: clamp(32px, 4vw, 50px);
     line-height: .98;
-
     letter-spacing: -.045em;
-
     font-weight: 900;
 }
 
 .product-price {
     margin-top: 25px;
-
     color: #0a0a0a;
-
     font-size: 32px;
     font-weight: 900;
 }
@@ -1851,11 +1633,8 @@ form {
 
 .product-stock .stock-badge {
     display: inline-flex;
-
     padding: 9px 14px;
-
     border-radius: 999px;
-
     font-size: 12px;
     font-weight: 900;
 }
@@ -1880,27 +1659,21 @@ form {
 
 .product-description {
     margin-top: 34px;
-
     padding-top: 28px;
-
     border-top: 1px solid #deded9;
 }
 
 .product-description h3 {
     margin: 0 0 10px;
-
     font-size: 14px;
     font-weight: 900;
-
     text-transform: uppercase;
     letter-spacing: .08em;
 }
 
 .product-description p {
     margin: 0;
-
     color: #666;
-
     font-size: 15px;
     line-height: 1.7;
 }
@@ -1916,9 +1689,11 @@ form {
     display: flex;
     align-items: center;
     gap: 22px;
-
     margin-bottom: 16px;
 }
+
+
+/* CANTIDAD */
 
 .product-quantity label {
     font-size: 12px;
@@ -1926,15 +1701,10 @@ form {
     letter-spacing: .08em;
 }
 
-
-/* CANTIDAD */
-
 .quantity-control {
     display: flex;
     align-items: center;
-
     height: 46px;
-
     border: 1px solid #d5d5d0;
     background: #fff;
 }
@@ -1942,12 +1712,9 @@ form {
 .quantity-btn {
     width: 42px;
     height: 44px;
-
     border: 0;
     background: transparent;
-
     font-size: 22px;
-
     cursor: pointer;
 }
 
@@ -1958,14 +1725,10 @@ form {
 .quantity-control input {
     width: 45px;
     height: 44px;
-
     border: 0;
-
     text-align: center;
-
     font-size: 15px;
     font-weight: 800;
-
     outline: none;
 }
 
@@ -1986,19 +1749,13 @@ form {
 .product-add-button {
     width: 100%;
     min-height: 56px;
-
     border: 0;
-
     background: #0a0a0a;
     color: #fff;
-
     font-size: 13px;
     font-weight: 900;
-
     letter-spacing: .08em;
-
     cursor: pointer;
-
     transition:
         transform .2s ease,
         background .2s ease;
@@ -2019,7 +1776,6 @@ form {
 
 .product-extra {
     margin-top: 30px;
-
     border-top: 1px solid #deded9;
 }
 
@@ -2027,9 +1783,7 @@ form {
     display: flex;
     align-items: flex-start;
     gap: 13px;
-
     padding: 15px 0;
-
     border-bottom: 1px solid #deded9;
 }
 
@@ -2039,22 +1793,18 @@ form {
 
 .product-extra-item strong {
     display: block;
-
     font-size: 13px;
 }
 
 .product-extra-item small {
     display: block;
-
     margin-top: 3px;
-
     color: #777;
-
     font-size: 12px;
 }
 
 
-/* RESPONSIVE */
+/* RESPONSIVE PRODUCTO */
 
 @media (max-width: 850px) {
 
@@ -2073,7 +1823,6 @@ form {
         font-size: 38px;
     }
 }
-
 
 @media (max-width: 520px) {
 
@@ -2098,6 +1847,8 @@ form {
         justify-content: space-between;
     }
 }
+
+
 /* =========================================================
    CARRITO SOPI SPORTS
    ========================================================= */
@@ -2152,14 +1903,21 @@ form {
 .carrito-producto {
     position: relative;
     display: grid;
-    grid-template-columns: 115px minmax(180px, 1fr) 125px 120px 30px;
+    grid-template-columns:
+        115px
+        minmax(180px, 1fr)
+        125px
+        120px
+        30px;
     gap: 20px;
     align-items: center;
     padding: 18px;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    transition: box-shadow .2s ease, transform .2s ease;
+    transition:
+        box-shadow .2s ease,
+        transform .2s ease;
 }
 
 .carrito-producto:hover {
@@ -2411,7 +2169,7 @@ form {
 }
 
 
-/* RESPONSIVE */
+/* RESPONSIVE CARRITO */
 
 @media (max-width: 950px) {
 
@@ -2436,7 +2194,6 @@ form {
     .carrito-subtotal {
         grid-column: 2;
     }
-
 }
 
 @media (max-width: 600px) {
@@ -2471,7 +2228,6 @@ form {
         align-items: center;
         justify-content: space-between;
     }
-
 }
 
 
@@ -2492,6 +2248,7 @@ form {
     background: #163d66;
     color: #ffffff;
 }
+
 .producto-volver {
     display: inline-flex;
     align-items: center;
@@ -2509,6 +2266,8 @@ form {
 .producto-volver:hover {
     background: #f8fafc;
 }
+
+
 /* =========================================================
    PÁGINA DE MEDIOS DE PAGO
    ========================================================= */
@@ -2583,9 +2342,10 @@ form {
     border-radius: 12px;
     background: #fff;
     cursor: pointer;
-    transition: border-color 0.2s ease,
-                box-shadow 0.2s ease,
-                transform 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
 
 .pago-opcion:hover {
@@ -2637,8 +2397,9 @@ form {
     font-weight: 900;
     letter-spacing: 0.5px;
     cursor: pointer;
-    transition: background 0.2s ease,
-                transform 0.2s ease;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 .pago-metodos .btn-checkout:hover {
@@ -2781,3 +2542,180 @@ form {
     }
 }
 
+
+/* =========================================================
+   SOPI — BARRA PROMOCIONAL
+   ========================================================= */
+
+.sopi-promo-bar {
+    width: 100%;
+    background: #0a0a0a;
+    color: #fff;
+    border-bottom: 1px solid #222;
+}
+
+.sopi-promo-inner {
+    width: min(1380px, 94%);
+    min-height: 38px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 45px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.sopi-promo-inner span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sopi-promo-inner i {
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SOPI — FOOTER MEJORADO
+   ========================================================= */
+
+.footer-content {
+    display: grid;
+    grid-template-columns:
+        1.5fr
+        1fr
+        1fr;
+    gap: 50px;
+}
+
+.footer-section h3 {
+    margin: 0 0 15px;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+}
+
+.footer-section h4 {
+    margin: 0 0 18px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .1em;
+}
+
+.footer-section p {
+    color: #aaa;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.footer-section p i {
+    width: 20px;
+    margin-right: 6px;
+    color: #fff;
+}
+
+.social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.social-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: #fff;
+    font-size: 13px;
+    text-decoration: none;
+    transition: opacity .2s ease;
+}
+
+.social-icon:hover {
+    opacity: .65;
+}
+
+
+/* =========================================================
+   FOOTER — BENEFICIOS
+   ========================================================= */
+
+.footer-benefits {
+    margin-top: 50px;
+    padding: 25px 0;
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.footer-benefits > div {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    align-items: center;
+    column-gap: 10px;
+}
+
+.footer-benefits i {
+    grid-row: span 2;
+    font-size: 18px;
+}
+
+.footer-benefits strong {
+    font-size: 10px;
+    letter-spacing: .08em;
+}
+
+.footer-benefits span {
+    color: #888;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   SOPI — RESPONSIVE PROMO
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .sopi-promo-inner {
+        gap: 18px;
+        padding: 9px 0;
+        flex-wrap: wrap;
+        font-size: 9px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-benefits {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+}
+
+@media (max-width: 520px) {
+
+    .sopi-promo-inner {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        text-align: center;
+    }
+
+    .sopi-promo-inner span {
+        justify-content: center;
+        flex-direction: column;
+        gap: 4px;
+        line-height: 1.2;
+    }
+
+    .sopi-promo-inner i {
+        font-size: 11px;
+    }
+}
