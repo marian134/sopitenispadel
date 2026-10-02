@@ -194,9 +194,13 @@ a {
     background: #fff;
 }
 
+/* =========================================================
+   HOME — HERO
+   ========================================================= */
+
 .home-hero {
     position: relative;
-    min-height: 650px;
+    min-height: 560px;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -211,54 +215,60 @@ a {
 }
 
 .home-hero-content {
-    width: min(1380px, 94%);
+    width: min(1180px, 92%);
     margin: 0 auto;
-    color: white;
+    color: #fff;
+}
+
+.home-hero-copy {
+    max-width: 720px;
 }
 
 .home-eyebrow {
     display: block;
-    margin-bottom: 20px;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .25em;
-    opacity: .75;
+    margin-bottom: 18px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .16em;
+    line-height: 1.4;
+    opacity: .8;
 }
 
 .home-hero h1 {
-    max-width: 800px;
+    max-width: 650px;
     margin: 0;
-    font-size: clamp(70px, 10vw, 150px);
-    line-height: .82;
-    letter-spacing: -.07em;
+    font-size: clamp(52px, 6.5vw, 92px);
+    line-height: .9;
+    letter-spacing: -.045em;
     font-weight: 900;
     text-transform: uppercase;
 }
 
 .home-hero p {
-    max-width: 500px;
-    margin: 30px 0;
-    font-size: 17px;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, .85);
+    max-width: 470px;
+    margin: 25px 0;
+    font-size: 16px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .88);
 }
 
 .home-hero-buttons {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .home-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 150px;
-    padding: 16px 22px;
+    min-width: 145px;
+    padding: 14px 20px;
     background: #fff;
     color: #111;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 900;
-    letter-spacing: .1em;
+    letter-spacing: .08em;
     text-decoration: none;
     text-transform: uppercase;
     transition:
@@ -267,7 +277,7 @@ a {
 }
 
 .home-btn:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     background: #f1f1ef;
 }
 
