@@ -271,6 +271,25 @@ def obtener_productos_por_deporte(
     return query.all()
 
 
+# Orden en que se muestran las categorías en el catálogo.
+# Las que no estén acá van después, por orden alfabético.
+ORDEN_CATEGORIAS = ["Palas", "Pelotas", "Accesorios"]
+
+
+def clave_categoria(categoria):
+    if categoria in ORDEN_CATEGORIAS:
+        return (0, ORDEN_CATEGORIAS.index(categoria), "")
+    return (1, 0, categoria.lower())
+
+
+def agrupar_por_categoria(productos):
+    """[(categoria, [productos...]), ...] respetando el orden de ORDEN_CATEGORIAS."""
+    grupos = {}
+    for p in productos:
+        grupos.setdefault(p.categoria or "Otros", []).append(p)
+    return sorted(grupos.items(), key=lambda g: clave_categoria(g[0]))
+
+
 def obtener_categorias_y_marcas(
     deporte_slug
 ):
@@ -280,13 +299,8 @@ def obtener_categorias_y_marcas(
     ).all()
 
     categorias = sorted(
-        list(
-            set(
-                p.categoria
-                for p in productos
-                if p.categoria
-            )
-        )
+        {p.categoria for p in productos if p.categoria},
+        key=clave_categoria
     )
 
     marcas = sorted(
@@ -401,6 +415,8 @@ def catalogo(deporte_slug):
         "destacados": destacados,
 
         "productos": productos,
+
+        "secciones": agrupar_por_categoria(productos),
 
         "categorias": categorias,
 

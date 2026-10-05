@@ -135,120 +135,142 @@
         </div>
 
 
-        <!-- PRODUCTOS -->
-        <div class="shop-grid" id="shopGrid">
+        <!-- PRODUCTOS POR CATEGORÍA -->
+        {% for categoria, lista in secciones %}
 
-            {% for p in productos %}
+        <div class="shop-heading" id="{{ categoria|lower }}">
 
-            <article
-                class="shop-product-card"
-                data-price="{{ p.precio }}"
-                data-name="{{ p.nombre|lower }}"
-            >
+            <div>
+                <span class="shop-kicker">{{ deporte|upper }}</span>
+                <h2>{{ categoria }}</h2>
+            </div>
 
-                <!-- FOTO -->
-                <div class="shop-product-image">
+            <span class="shop-count">
+                {{ lista|length }} productos
+            </span>
 
-                    <a href="{{ url_for('producto', producto_id=p.id) }}">
+        </div>
 
-                        {% if p.imagen %}
+        <div class="shop-grid">
 
-                        <img
-                            src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
-                            alt="{{ p.nombre }}"
-                            width="700"
-                            height="700"
-                            loading="lazy"
-                        >
+            {% for p in lista %}
+                <article
+                    class="shop-product-card"
+                    data-price="{{ p.precio }}"
+                    data-name="{{ p.nombre|lower }}"
+                >
 
-                        {% else %}
+                    <!-- FOTO -->
+                    <div class="shop-product-image">
 
-                        <div class="shop-placeholder">
-                            {{ p.marca }}
-                        </div>
+                        <a href="{{ url_for('producto', producto_id=p.id) }}">
 
-                        {% endif %}
+                            {% if p.imagen %}
 
-                    </a>
-
-
-                    <!-- FAVORITO VISUAL -->
-                    <button
-                        type="button"
-                        class="shop-favorite"
-                        aria-label="Agregar a favoritos"
-                        title="Favoritos"
-                    >
-                        ♡
-                    </button>
-
-
-                    <!-- ETIQUETA -->
-                    {% if p.stock <= 3 and p.stock > 0 %}
-
-                    <span class="shop-badge shop-badge-low">
-                        ÚLTIMAS {{ p.stock }}
-                    </span>
-
-                    {% elif p.stock <= 0 %}
-
-                    <span class="shop-badge shop-badge-out">
-                        SIN STOCK
-                    </span>
-
-                    {% endif %}
-
-                </div>
-
-
-                <!-- INFORMACIÓN -->
-                <div class="shop-product-info">
-
-                    <span class="shop-product-brand">
-                        {{ p.marca }}
-                    </span>
-
-                    <a
-                        href="{{ url_for('producto', producto_id=p.id) }}"
-                        class="shop-product-name"
-                    >
-                        {{ p.nombre }}
-                    </a>
-
-
-                    <div class="shop-product-bottom">
-
-                        <strong class="shop-product-price">
-                            ${{ "{:,.0f}".format(p.precio) }}
-                        </strong>
-
-
-                        {% if p.stock > 0 %}
-
-                        <form
-                            method="post"
-                            action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
-                        >
-
-                            <button
-                                type="submit"
-                                class="shop-add"
-                                title="Agregar al carrito"
+                            <img
+                                src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
+                                alt="{{ p.nombre }}"
+                                width="700"
+                                height="700"
+                                loading="lazy"
                             >
-                                +
-                            </button>
 
-                        </form>
+                            {% else %}
+
+                            <div class="shop-placeholder">
+                                {{ p.marca }}
+                            </div>
+
+                            {% endif %}
+
+                        </a>
+
+
+                        <!-- FAVORITO VISUAL -->
+                        <button
+                            type="button"
+                            class="shop-favorite"
+                            aria-label="Agregar a favoritos"
+                            title="Favoritos"
+                        >
+                            ♡
+                        </button>
+
+
+                        <!-- ETIQUETA -->
+                        {% if p.stock <= 3 and p.stock > 0 %}
+
+                        <span class="shop-badge shop-badge-low">
+                            ÚLTIMAS {{ p.stock }}
+                        </span>
+
+                        {% elif p.stock <= 0 %}
+
+                        <span class="shop-badge shop-badge-out">
+                            SIN STOCK
+                        </span>
 
                         {% endif %}
 
                     </div>
 
-                </div>
 
-            </article>
+                    <!-- INFORMACIÓN -->
+                    <div class="shop-product-info">
 
-            {% else %}
+                        <span class="shop-product-brand">
+                            {{ p.marca }}
+                        </span>
+
+                        <a
+                            href="{{ url_for('producto', producto_id=p.id) }}"
+                            class="shop-product-name"
+                        >
+                            {{ p.nombre }}
+                        </a>
+
+
+                        <div class="shop-product-bottom">
+
+                            <strong class="shop-product-price">
+                                ${{ "{:,.0f}".format(p.precio) }}
+                            </strong>
+
+
+                            {% if p.stock > 0 %}
+
+                            <form
+                                method="post"
+                                action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="shop-add"
+                                    title="Agregar al carrito"
+                                >
+                                    +
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <div class="shop-grid">
 
             <div class="shop-empty">
 
@@ -260,9 +282,9 @@
 
             </div>
 
-            {% endfor %}
-
         </div>
+
+        {% endfor %}
 
     </section>
 
@@ -272,39 +294,41 @@
 <script>
 function ordenarProductos(valor) {
 
-    const grid = document.getElementById("shopGrid");
-
-    if (!grid || !valor) {
+    if (!valor) {
         return;
     }
 
-    const productos = Array.from(
-        grid.querySelectorAll(".shop-product-card")
-    );
+    // Ordena cada categoría por separado
+    document.querySelectorAll(".shop-grid").forEach(function(grid) {
 
-    productos.sort(function(a, b) {
+        const productos = Array.from(
+            grid.querySelectorAll(".shop-product-card")
+        );
 
-        if (valor === "precio-menor") {
-            return Number(a.dataset.price) -
-                   Number(b.dataset.price);
-        }
+        productos.sort(function(a, b) {
 
-        if (valor === "precio-mayor") {
-            return Number(b.dataset.price) -
-                   Number(a.dataset.price);
-        }
+            if (valor === "precio-menor") {
+                return Number(a.dataset.price) -
+                       Number(b.dataset.price);
+            }
 
-        if (valor === "nombre") {
-            return a.dataset.name.localeCompare(
-                b.dataset.name
-            );
-        }
+            if (valor === "precio-mayor") {
+                return Number(b.dataset.price) -
+                       Number(a.dataset.price);
+            }
 
-        return 0;
-    });
+            if (valor === "nombre") {
+                return a.dataset.name.localeCompare(
+                    b.dataset.name
+                );
+            }
 
-    productos.forEach(function(producto) {
-        grid.appendChild(producto);
+            return 0;
+        });
+
+        productos.forEach(function(producto) {
+            grid.appendChild(producto);
+        });
     });
 }
 </script>
