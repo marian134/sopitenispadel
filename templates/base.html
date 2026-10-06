@@ -12,7 +12,35 @@
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+<a class="wa-float"
+   href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20hacer%20una%20consulta"
+   target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp">
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+
+<style>
+  .wa-float {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+    z-index: 1000;
+    transition: transform .2s;
+  }
+  .wa-float:hover { transform: scale(1.08); }
+</style>
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
 
   <!-- =====================================================
