@@ -1,3 +1,4 @@
+
 /* =========================================================
    SOPI SPORTS — TENIS • PÁDEL
    STYLE.CSS — VERSIÓN UNIFICADA Y CORREGIDA
@@ -740,7 +741,7 @@ a {
 .shop-product-image {
     position: relative;
     width: 100%;
-    height: 365px;
+    height: 300px;
     overflow: hidden;
     background: #f2f2ef;
 }
@@ -755,12 +756,13 @@ a {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    padding: 18px;
     transition: transform .5s cubic-bezier(.2, .7, .2, 1);
 }
 
 .shop-product-card:hover .shop-product-image img {
-    transform: scale(1.055);
+    transform: scale(1.035);
 }
 
 /* ---------------------------------------------------------
@@ -997,11 +999,6 @@ a {
     color: #999;
     font-size: 16px;
     font-weight: 500;
-}
-
-.producto-detalle > div:last-child {
-    flex: 1;
-    min-width: 300px;
 }
 
 /* HEADER SOPI */
@@ -2186,7 +2183,7 @@ form {
     }
 
     .shop-product-image {
-        height: 320px;
+        height: 280px;
     }
 
     .home-hero h1 {
@@ -2268,7 +2265,7 @@ form {
     }
 
     .shop-product-image {
-        height: 300px;
+        height: 260px;
     }
 
     .producto-detalle {
@@ -2473,7 +2470,7 @@ form {
     }
 
     .shop-product-image {
-        height: 380px;
+        height: 300px;
     }
 
     .shop-sort select {
@@ -2861,3 +2858,4 @@ form {
         font-size: 42px;
     }
 }
+
