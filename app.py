@@ -14,9 +14,7 @@ from models import (
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
 )
 
-@app.route("/health", methods=["GET", "HEAD"])
-def health():
-    return "ok", 200
+
 # =========================================================
 # APP
 # =========================================================
@@ -26,7 +24,9 @@ app = Flask(__name__)
 ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
+@app.route("/health", methods=["GET", "HEAD"])
+def health():
+    return "ok", 200
 if not SECRET_KEY:
     if ES_PRODUCCION:
         # La clave por defecto es pública (está en el repo): con ella cualquiera
