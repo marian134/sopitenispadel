@@ -14,7 +14,9 @@ from models import (
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
 )
 
-
+@app.route("/health", methods=["GET", "HEAD"])
+def health():
+    return "ok", 200
 # =========================================================
 # APP
 # =========================================================
