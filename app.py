@@ -6,6 +6,7 @@ import io
 import hmac
 import unicodedata
 import mercadopago
+import legales
 from datetime import timedelta
 from functools import wraps
 
@@ -15,7 +16,6 @@ from models import (
     db, Producto, Pedido, LineaPedido,
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
 )
-
 
 # =========================================================
 # APP
@@ -1308,7 +1308,10 @@ def productos():
         )
     )
 
-
+# =========================================================
+# PÁGINAS LEGALES
+# =========================================================
+legales.init_app(app, obtener_contexto_base)
 # =========================================================
 # INICIO
 # =========================================================
@@ -1317,3 +1320,4 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
