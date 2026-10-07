@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} | SOPI Sports{% endblock %}
+{% block meta_description %}{{ descripcion }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 820px; padding: 32px 16px 80px; line-height: 1.65;">
+
+  <h1>{{ titulo }}</h1>
+
+  {% if pagina == 'envios' %}
+
+    <p>Enviamos a todo el país desde {{ negocio.localidad }} a través de <strong>Andreani</strong>.</p>
+
+    <h2>Plazo de entrega</h2>
+    <p>El plazo de entrega es de <strong>{{ negocio.plazo_envio }}</strong> desde que se acredita el pago.</p>
+
+    <h2>Costo de envío</h2>
+    <p>El envío tiene un costo que depende del destino, calculado con la tarifa de Andreani. Consultanos por
+       <a href="{{ negocio.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a> y te informamos el valor para tu domicilio.</p>
+    <p><strong>Envío gratis</strong> en compras desde {{ negocio.envio_gratis_desde|pesos }}.</p>
+
+    <h2>Seguimiento</h2>
+    <p>Cuando despachamos tu pedido te pasamos el número de seguimiento para que puedas ver dónde está.</p>
+
+  {% elif pagina == 'devoluciones' %}
+
+    <h2>Derecho de arrepentimiento</h2>
+    <p>Podés arrepentirte de tu compra dentro de los <strong>{{ negocio.dias_arrepentimiento }} días corridos</strong>
+       de haber recibido el producto, según el artículo 34 de la Ley 24.240 de Defensa del Consumidor.
+       <strong>Los gastos de devolución corren por nuestra cuenta.</strong></p>
+    <p>Para hacerlo, usá el <a href="{{ url_for('legales.arrepentimiento') }}">botón de arrepentimiento</a>.
+       Dentro de las 24 horas te enviamos por email tu código de identificación de la revocación y los pasos para devolver el producto.</p>
+
+    <h2>Cómo devolverlo</h2>
+    <p>Te pedimos devolverlo en el mismo estado en que lo recibiste, con su embalaje y accesorios.
+       Una vez que recibimos el producto, te reintegramos el dinero por el mismo medio de pago que usaste.</p>
+
+    <h2>Productos con defecto o distintos al pedido</h2>
+    <p>Si recibiste un producto con falla o distinto al que compraste, escribinos por
+       <a href="{{ negocio.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a> o a
+       <a href="mailto:{{ negocio.email }}">{{ negocio.email }}</a> y lo resolvemos con cambio, reparación o reintegro,
+       según corresponda por la garantía legal.</p>
+
+  {% elif pagina == 'contacto' %}
+
+    <p>Estamos para ayudarte con tu compra, un cambio o cualquier consulta.</p>
+
+    <ul>
+      <li><strong>WhatsApp:</strong> <a href="{{ negocio.whatsapp_url }}" target="_blank" rel="noopener">{{ negocio.whatsapp_texto }}</a></li>
+      <li><strong>Email:</strong> <a href="mailto:{{ negocio.email }}">{{ negocio.email }}</a></li>
+      <li><strong>Instagram:</strong> <a href="{{ negocio.instagram_url }}" target="_blank" rel="noopener">@sopi.tenispadel</a></li>
+      <li><strong>Despachamos desde:</strong> {{ negocio.localidad }}</li>
+      {% if negocio.cuit %}<li><strong>CUIT:</strong> {{ negocio.cuit }}</li>{% endif %}
+    </ul>
+
+    <p>Si querés arrepentirte de una compra, usá el
+       <a href="{{ url_for('legales.arrepentimiento') }}">botón de arrepentimiento</a>.</p>
+
+  {% elif pagina == 'terminos' %}
+
+    <h2>Precios y stock</h2>
+    <p>Los precios están expresados en pesos argentinos y pueden cambiar sin previo aviso. Los productos están sujetos a disponibilidad de stock.
+       Si un producto se agota después de tu pedido, te avisamos y te ofrecemos un reintegro o una alternativa.</p>
+
+    <h2>Medios de pago</h2>
+    <p>Aceptamos Mercado Pago, transferencia bancaria y efectivo. Tu pedido se confirma cuando se acredita el pago.</p>
+
+    <h2>Envíos</h2>
+    <p>Las condiciones de entrega están detalladas en <a href="{{ url_for('legales.envios') }}">Envíos</a>.</p>
+
+    <h2>Cambios y devoluciones</h2>
+    <p>Podés arrepentirte de tu compra dentro de los {{ negocio.dias_arrepentimiento }} días corridos de recibida.
+       Más información en <a href="{{ url_for('legales.devoluciones') }}">Cambios y devoluciones</a>.</p>
+
+    <h2>Defensa del consumidor</h2>
+    <p>Estas condiciones se rigen por la Ley 24.240 de Defensa del Consumidor y el Código Civil y Comercial de la Nación.</p>
+
+  {% elif pagina == 'privacidad' %}
+
+    <h2>Qué datos recopilamos</h2>
+    <p>Cuando hacés un pedido, te pedimos los datos necesarios para procesarlo: nombre, datos de contacto, domicilio de entrega y detalle de la compra.</p>
+
+    <h2>Para qué los usamos</h2>
+    <p>Los usamos solo para gestionar tu pedido, coordinar el envío, responder tus consultas y cumplir obligaciones legales. No vendemos tus datos a terceros.</p>
+
+    <h2>Pagos</h2>
+    <p>Los pagos con tarjeta o dinero en cuenta se procesan en Mercado Pago. No almacenamos los datos de tu tarjeta.</p>
+
+    <h2>Tus derechos</h2>
+    <p>Podés pedir acceso, corrección o eliminación de tus datos escribiendo a
+       <a href="mailto:{{ negocio.email }}">{{ negocio.email }}</a>, conforme a la Ley 25.326 de Protección de Datos Personales.</p>
+
+  {% elif pagina == 'arrepentimiento' %}
+
+    <p>Si querés arrepentirte de tu compra, completá este formulario dentro de los
+       <strong>{{ negocio.dias_arrepentimiento }} días corridos</strong> de haber recibido el producto.
+       Los gastos de devolución corren por nuestra cuenta.</p>
+
+    {% if error %}<p style="color:#b00020;"><strong>{{ error }}</strong></p>{% endif %}
+
+    <form method="post" style="display:grid; gap:14px; max-width:520px;">
+      <label>Nombre y apellido
+        <input type="text" name="nombre" value="{{ form.get('nombre', '') }}" required maxlength="120" style="width:100%; padding:10px;">
+      </label>
+      <label>Email
+        <input type="email" name="email" value="{{ form.get('email', '') }}" required maxlength="120" style="width:100%; padding:10px;">
+      </label>
+      <label>Número de pedido (si lo tenés)
+        <input type="text" name="pedido" value="{{ form.get('pedido', '') }}" maxlength="60" style="width:100%; padding:10px;">
+      </label>
+      <label>Producto o detalle (opcional)
+        <textarea name="detalle" rows="4" maxlength="2000" style="width:100%; padding:10px;">{{ form.get('detalle', '') }}</textarea>
+      </label>
+      <button type="submit" class="btn btn-primary">Solicitar arrepentimiento</button>
+    </form>
+
+  {% elif pagina == 'arrepentimiento_ok' %}
+
+    <p>Recibimos tu solicitud. Este es tu <strong>código de identificación de la revocación</strong>:</p>
+    <p style="font-size:1.6rem; font-weight:700;">{{ revocacion.codigo }}</p>
+    <p>Guardalo. Dentro de las 24 horas te escribimos a <strong>{{ revocacion.email }}</strong> con los pasos para devolver el producto.</p>
+    <p><a href="{{ url_for('portada') }}">Volver al inicio</a></p>
+
+  {% elif pagina == 'admin_arrepentimientos' %}
+
+    {% if revocaciones %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="text-align:left; border-bottom:2px solid #ccc;">
+              <th style="padding:8px;">Código</th>
+              <th style="padding:8px;">Fecha</th>
+              <th style="padding:8px;">Nombre</th>
+              <th style="padding:8px;">Email</th>
+              <th style="padding:8px;">Pedido</th>
+              <th style="padding:8px;">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in revocaciones %}
+            <tr style="border-bottom:1px solid #eee;">
+              <td style="padding:8px;"><strong>{{ r.codigo }}</strong></td>
+              <td style="padding:8px;">{{ r.creado_en|hora_ar }}</td>
+              <td style="padding:8px;">{{ r.nombre }}</td>
+              <td style="padding:8px;"><a href="mailto:{{ r.email }}">{{ r.email }}</a></td>
+              <td style="padding:8px;">{{ r.pedido }}</td>
+              <td style="padding:8px;">{{ r.detalle }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p>Recordá responder a cada solicitud dentro de las 24 horas, por el mismo medio, con el código.</p>
+    {% else %}
+      <p>Todavía no hay solicitudes.</p>
+    {% endif %}
+
+  {% endif %}
+
+</div>
+{% endblock %}
