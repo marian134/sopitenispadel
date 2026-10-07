@@ -6,7 +6,7 @@ import io
 import hmac
 import unicodedata
 import mercadopago
-import legales
+from templates import legales
 from datetime import timedelta
 from functools import wraps
 
