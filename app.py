@@ -156,7 +156,15 @@ NAV_DEPORTES = {
 # =========================================================
 # CONTEXTO BASE
 # =========================================================
-
+def productos_destacados(deporte=None, cantidad=3):
+    """Últimos productos cargados, con stock y con foto."""
+    query = Producto.query.filter(
+        Producto.stock > 0,
+        db.func.coalesce(Producto.imagen, "") != "",
+    )
+    if deporte:
+        query = query.filter_by(deporte=deporte)
+    return query.order_by(Producto.id.desc()).limit(cantidad).all()
 def obtener_contexto_base(
     deporte_slug=None
 ):
@@ -170,14 +178,7 @@ def obtener_contexto_base(
         carrito.values()
     )
 
-    destacados = (
-        Producto.query
-        .filter(
-            Producto.stock > 0
-        )
-        .limit(3)
-        .all()
-    )
+    destacados = productos_destacados()
 
     return {
         "nav_deportes": NAV_DEPORTES,
@@ -390,19 +391,7 @@ def catalogo(deporte_slug):
         )
     )
 
-    destacados = (
-        Producto.query
-        .filter_by(
-            deporte=NAV_DEPORTES[
-                deporte_slug
-            ]
-        )
-        .filter(
-            Producto.stock > 0
-        )
-        .limit(3)
-        .all()
-    )
+ destacados = productos_destacados(NAV_DEPORTES[deporte_slug])
 
     contexto = obtener_contexto_base(
         deporte_slug

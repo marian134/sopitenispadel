@@ -1,5 +1,34 @@
 {% extends "base.html" %}
-{% block title %}{{ producto.nombre }} — {{ producto.deporte }}{% endblock %}
+
+{% block title %}{{ producto.nombre }}{% if producto.marca and producto.marca not in producto.nombre %} - {{ producto.marca }}{% endif %} | SOPI Sports{% endblock %}
+
+{% block meta_description %}Comprá {{ producto.nombre }} a {{ producto.precio|pesos }}. Envíos a todo el país, Mercado Pago y 5% de descuento por transferencia.{% endblock %}
+
+{% block og_type %}product{% endblock %}
+
+{% block og_image %}{% if producto.imagen %}{{ url_abs(url_for('static', filename='img/' + producto.imagen)) }}{% else %}{{ url_abs(url_for('static', filename='img/og-default.png')) }}{% endif %}{% endblock %}
+
+{% block head_extra %}
+{% set imagen_abs = url_abs(url_for('static', filename='img/' + producto.imagen)) if producto.imagen else None %}
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": producto.nombre,
+  "image": [imagen_abs] if imagen_abs else [],
+  "description": producto.descripcion or producto.nombre,
+  "brand": {"@type": "Brand", "name": producto.marca},
+  "offers": {
+    "@type": "Offer",
+    "url": canonical_default,
+    "priceCurrency": "ARS",
+    "price": producto.precio,
+    "itemCondition": "https://schema.org/NewCondition",
+    "availability": "https://schema.org/InStock" if producto.stock > 0 else "https://schema.org/OutOfStock"
+  }
+} | tojson }}
+</script>
+{% endblock %}
 
 {% block content %}
 

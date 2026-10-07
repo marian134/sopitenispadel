@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{{ deporte }} | SOPI SPORTS{% endblock %}
+{% block title %}{% if deporte == 'Pádel' %}Paletas, Pelotas y Accesorios de Pádel{% else %}Raquetas, Pelotas y Accesorios de Tenis{% endif %} | SOPI Sports{% endblock %}
+{% block meta_description %}Comprá {% if deporte == 'Pádel' %}paletas, pelotas y accesorios de pádel{% else %}raquetas, pelotas y accesorios de tenis{% endif %} online. Envíos a todo el país, Mercado Pago y 5% de descuento por transferencia.{% endblock %}
 
 {% block content %}
 
@@ -163,7 +164,7 @@
                     <!-- FOTO -->
                     <div class="shop-product-image">
 
-                        <a href="{{ url_for('producto', producto_id=p.id) }}">
+                        <a href="{{ url_producto(p) }}">
 
                             {% if p.imagen %}
 
@@ -223,7 +224,7 @@
                         </span>
 
                         <a
-                            href="{{ url_for('producto', producto_id=p.id) }}"
+                            href="{{ url_producto(p) }}"
                             class="shop-product-name"
                         >
                             {{ p.nombre }}

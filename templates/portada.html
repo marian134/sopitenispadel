@@ -272,7 +272,7 @@
         <article class="home-product-card">
 
             <a
-                href="{{ url_for('producto', producto_id=p.id) }}"
+                href="{{ url_producto(p) }}"
                 class="home-product-image"
             >
 
@@ -315,7 +315,7 @@
 
 
                 <h3>
-                    <a href="{{ url_for('producto', producto_id=p.id) }}">
+                    <a href="{{ url_producto(p) }}">
                         {{ p.nombre }}
                     </a>
                 </h3>
