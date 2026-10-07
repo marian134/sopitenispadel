@@ -17,7 +17,7 @@ class Producto(db.Model):
     deporte = db.Column(db.String(20), nullable=False, default="Tenis")
     categoria = db.Column(db.String(50), nullable=False)
     nombre = db.Column(db.String(120), nullable=False)
-     slug = db.Column(db.String(200), nullable=True)
+    slug = db.Column(db.String(200), nullable=True)
     marca = db.Column(db.String(60), nullable=False)
     precio = db.Column(db.Integer, nullable=False)
     descripcion = db.Column(db.Text, nullable=False, default="")

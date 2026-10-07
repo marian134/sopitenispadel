@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session, abort, Response
 import os
+import re
 import csv
 import io
 import hmac
+import unicodedata
 import mercadopago
 from datetime import timedelta
 from functools import wraps
@@ -24,9 +26,13 @@ app = Flask(__name__)
 ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
+
+
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
     return "ok", 200
+
+
 if not SECRET_KEY:
     if ES_PRODUCCION:
         # La clave por defecto es pública (está en el repo): con ella cualquiera
@@ -67,6 +73,30 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+
+# =========================================================
+# SLUGS (URLs amigables de producto)
+# Tienen que estar definidos ANTES del bloque de migración,
+# porque la migración los usa al arrancar.
+# =========================================================
+
+def slugify(texto):
+    texto = unicodedata.normalize("NFKD", texto or "")
+    texto = texto.encode("ascii", "ignore").decode("ascii").lower()
+    texto = re.sub(r"[^a-z0-9]+", "-", texto).strip("-")
+    return texto[:150] or "producto"
+
+
+def generar_slug(nombre):
+    """Slug único: 'bullpadel-vertex-04', y si ya existe '-2', '-3'..."""
+    base = slugify(nombre)
+    slug, n = base, 2
+    while Producto.query.filter_by(slug=slug).first():
+        slug = f"{base}-{n}"
+        n += 1
+    return slug
+
+
 # =========================================================
 # CREAR BASE DE DATOS Y TABLAS
 # =========================================================
@@ -94,10 +124,26 @@ with app.app_context():
         db.session.execute(text("ALTER TABLE productos ADD COLUMN costo INTEGER"))
         db.session.commit()
 
+    # Migración liviana: agrega slug y lo rellena en los productos existentes
+    columnas_productos = [c["name"] for c in inspect(db.engine).get_columns("productos")]
+    if "slug" not in columnas_productos:
+        db.session.execute(text("ALTER TABLE productos ADD COLUMN slug VARCHAR(200)"))
+        db.session.commit()
+
+    for p in Producto.query.filter(
+        (Producto.slug == None) | (Producto.slug == "")   # noqa: E711
+    ).all():
+        p.slug = generar_slug(p.nombre)
+        db.session.commit()
+
+    db.session.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_productos_slug ON productos (slug)"
+    ))
+    db.session.commit()
+
     # Los productos se cargan desde /admin/precios (CSV).
 
 # =========================================================
-
 # MERCADO PAGO
 # =========================================================
 
@@ -111,6 +157,7 @@ if MP_ACCESS_TOKEN:
     )
 else:
     mp = None
+
 # =========================================================
 # URL PÚBLICA PARA MERCADO PAGO
 # =========================================================
@@ -129,7 +176,7 @@ DATOS_TRANSFERENCIA = {
 WHATSAPP_VENDEDOR = os.environ.get("WHATSAPP_VENDEDOR", "")
 
 # =========================================================
-# FILTROS DE PLANTILLA
+# FILTROS Y HELPERS DE PLANTILLA
 # =========================================================
 
 @app.template_filter("pesos")
@@ -141,6 +188,26 @@ def filtro_pesos(valor):
 def filtro_hora_ar(fecha):
     # Las fechas se guardan en UTC; Argentina es UTC-3 todo el año
     return (fecha - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
+
+
+@app.context_processor
+def seo():
+    """Helpers de SEO disponibles en todas las plantillas."""
+    def url_abs(ruta):
+        return f"{URL_PUBLICA}{ruta}"
+    return {
+        "url_abs": url_abs,
+        # sin query string: /catalogo/padel?orden=... apunta a la URL limpia
+        "canonical_default": f"{URL_PUBLICA}{request.path}",
+    }
+
+
+@app.template_global()
+def url_producto(p):
+    """URL del producto: con slug si lo tiene, si no la vieja por id (que redirige)."""
+    if p.slug:
+        return url_for("producto_detalle", slug=p.slug)
+    return url_for("producto", producto_id=p.id)
 
 
 # =========================================================
@@ -156,6 +223,7 @@ NAV_DEPORTES = {
 # =========================================================
 # CONTEXTO BASE
 # =========================================================
+
 def productos_destacados(deporte=None, cantidad=3):
     """Últimos productos cargados, con stock y con foto."""
     query = Producto.query.filter(
@@ -165,6 +233,8 @@ def productos_destacados(deporte=None, cantidad=3):
     if deporte:
         query = query.filter_by(deporte=deporte)
     return query.order_by(Producto.id.desc()).limit(cantidad).all()
+
+
 def obtener_contexto_base(
     deporte_slug=None
 ):
@@ -391,7 +461,7 @@ def catalogo(deporte_slug):
         )
     )
 
- destacados = productos_destacados(NAV_DEPORTES[deporte_slug])
+    destacados = productos_destacados(NAV_DEPORTES[deporte_slug])
 
     contexto = obtener_contexto_base(
         deporte_slug
@@ -442,14 +512,10 @@ def catalogo_padel():
 # DETALLE DE PRODUCTO
 # =========================================================
 
-@app.route(
-    "/producto/<int:producto_id>"
-)
-def producto(producto_id):
+@app.route("/producto/<slug>")
+def producto_detalle(slug):
 
-    producto = Producto.query.get_or_404(
-        producto_id
-    )
+    producto = Producto.query.filter_by(slug=slug).first_or_404()
 
     contexto = obtener_contexto_base()
 
@@ -467,6 +533,19 @@ def producto(producto_id):
         "product.html",
         **contexto
     )
+
+
+# URL vieja (/producto/10): redirige a la nueva con 301
+@app.route("/producto/<int:producto_id>")
+def producto(producto_id):
+
+    p = Producto.query.get_or_404(producto_id)
+
+    if not p.slug:
+        p.slug = generar_slug(p.nombre)
+        db.session.commit()
+
+    return redirect(url_for("producto_detalle", slug=p.slug), code=301)
 
 
 # =========================================================
@@ -943,6 +1022,45 @@ def mp_webhook():
 
 
 # =========================================================
+# SEO: ROBOTS.TXT Y SITEMAP.XML
+# =========================================================
+
+@app.route("/robots.txt")
+def robots():
+    lineas = [
+        "User-agent: *",
+        "Disallow: /admin",
+        "Disallow: /carrito",
+        "Disallow: /pedido",
+        "Disallow: /pago",
+        "Disallow: /mp/",
+        "Disallow: /health",
+        "",
+        f"Sitemap: {URL_PUBLICA}/sitemap.xml",
+    ]
+    return Response("\n".join(lineas), mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    rutas = ["/", "/catalogo/tenis", "/catalogo/padel"]
+    rutas += [
+        url_for("producto_detalle", slug=slug)
+        for (slug,) in db.session.query(Producto.slug)
+        .filter(Producto.slug != None)   # noqa: E711
+        .order_by(Producto.id)
+    ]
+
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for ruta in rutas:
+        xml.append(f"  <url><loc>{URL_PUBLICA}{ruta}</loc></url>")
+    xml.append("</urlset>")
+
+    return Response("\n".join(xml), mimetype="application/xml")
+
+
+# =========================================================
 # ADMIN
 # =========================================================
 
@@ -1113,6 +1231,7 @@ def admin_precios():
                         continue
                     db.session.add(Producto(
                         nombre=nombre,
+                        slug=generar_slug(nombre),
                         marca=(fila.get("marca") or "").strip(),
                         deporte=deporte,
                         categoria=(fila.get("categoria") or "").strip(),
