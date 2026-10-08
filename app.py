@@ -879,40 +879,142 @@ def carrito_pagar():
 
     contexto = obtener_contexto_base()
 
+    # -----------------------------------------------------
+    # MOSTRAR PANTALLA DE PAGO
+    # -----------------------------------------------------
+
     if request.method == "GET":
+
         return render_template(
-            "pago.html", **contexto,
-            items=items, total=total, total_final=total,
+            "pago.html",
+            **contexto,
+            items=items,
+            total=total,
+            total_final=total,
+            descuento_efectivo=DESCUENTO_EFECTIVO * 100,
         )
 
-    medio_pago = request.form.get("medio_pago")
+    # -----------------------------------------------------
+    # DATOS DEL FORMULARIO
+    # -----------------------------------------------------
 
-    if medio_pago not in ("mercadopago", "transferencia", "efectivo"):
+    medio_pago = request.form.get("medio_pago")
+    modalidad_entrega = request.form.get("modalidad_entrega")
+
+    # -----------------------------------------------------
+    # VALIDAR MEDIO DE PAGO
+    # -----------------------------------------------------
+
+    if medio_pago not in (
+        "mercadopago",
+        "transferencia",
+        "efectivo"
+    ):
         return redirect(url_for("carrito_pagar"))
 
+    # -----------------------------------------------------
+    # VALIDAR MODALIDAD DE ENTREGA
+    # -----------------------------------------------------
+
+    if modalidad_entrega not in (
+        "retiro",
+        "envio"
+    ):
+        return redirect(url_for("carrito_pagar"))
+
+    # -----------------------------------------------------
+    # CONTROLAR STOCK
+    # -----------------------------------------------------
+
     for item in items:
+
         if item["cantidad"] > item["producto"].stock:
-            return f"No hay stock suficiente de {item['producto'].nombre}.", 400
+
+            return (
+                f"No hay stock suficiente de "
+                f"{item['producto'].nombre}.",
+                400
+            )
+
+    # -----------------------------------------------------
+    # GUARDAR MODALIDAD DE ENTREGA
+    # -----------------------------------------------------
+
+    session["modalidad_entrega"] = modalidad_entrega
+
+    # -----------------------------------------------------
+    # MERCADO PAGO
+    # -----------------------------------------------------
 
     if medio_pago == "mercadopago":
-        return pagar_con_mercadopago(items, total)
 
-    # Transferencia y efectivo: se registra el pedido y se muestran las instrucciones
+        return pagar_con_mercadopago(
+            items,
+            total
+        )
+
+    # -----------------------------------------------------
+    # TRANSFERENCIA / EFECTIVO
+    # -----------------------------------------------------
+
     if medio_pago == "efectivo":
-        total_final = round(total * (1 - DESCUENTO_EFECTIVO))
+
+        total_final = round(
+            total * (1 - DESCUENTO_EFECTIVO)
+        )
+
     else:
+
         total_final = total
 
-    pedido = crear_pedido(items, medio_pago, total_final)
+    # -----------------------------------------------------
+    # CREAR PEDIDO
+    # -----------------------------------------------------
+
+    pedido = crear_pedido(
+        items,
+        medio_pago,
+        total_final
+    )
+
+    # -----------------------------------------------------
+    # GUARDAR DATOS DE ENTREGA
+    # -----------------------------------------------------
+
+    pedidos_entrega = session.get(
+        "pedidos_entrega",
+        {}
+    )
+
+    pedidos_entrega[str(pedido.id)] = {
+        "modalidad": modalidad_entrega,
+        "costo_envio": 0,
+    }
+
+    session["pedidos_entrega"] = pedidos_entrega
+    session.modified = True
+
+    # -----------------------------------------------------
+    # VACIAR CARRITO
+    # -----------------------------------------------------
 
     session["carrito"] = {}
     session.modified = True
 
-    return redirect(url_for("pedido_detalle", pedido_id=pedido.id))
+    return redirect(
+        url_for(
+            "pedido_detalle",
+            pedido_id=pedido.id
+        )
+    )
 
 
 # =========================================================
 # DETALLE DE PEDIDO (transferencia / efectivo)
+# =========================================================
+
+# =========================================================
+# DETALLE DE PEDIDO
 # =========================================================
 
 @app.route("/pedido/<int:pedido_id>")
@@ -922,15 +1024,130 @@ def pedido_detalle(pedido_id):
         abort(404)
 
     pedido = db.session.get(Pedido, pedido_id)
+
     if not pedido:
         abort(404)
 
-    texto_whatsapp = f"Hola! Te escribo por el pedido #{pedido.id} (total ${pedido.total:,.0f})".replace(",", ".")
+    # -----------------------------------------------------
+    # OBTENER MODALIDAD DE ENTREGA
+    # -----------------------------------------------------
+
+    pedidos_entrega = session.get(
+        "pedidos_entrega",
+        {}
+    )
+
+    datos_entrega = pedidos_entrega.get(
+        str(pedido.id),
+        {}
+    )
+
+    modalidad_entrega = datos_entrega.get(
+        "modalidad",
+        "retiro"
+    )
+
+    costo_envio = datos_entrega.get(
+        "costo_envio",
+        0
+    )
+
+    # -----------------------------------------------------
+    # INFORMACIÓN DE ENTREGA
+    # -----------------------------------------------------
+
+    if modalidad_entrega == "retiro":
+
+        entrega_titulo = "Retiro en Quilmes"
+
+        entrega_descripcion = (
+            "Podés retirar tu pedido en Quilmes. "
+            "Te vamos a contactar para coordinar día y horario."
+        )
+
+    else:
+
+        entrega_titulo = "Envío a domicilio"
+
+        entrega_descripcion = (
+            "Realizamos envíos a domicilio por Andreani "
+            "o Correo Argentino. El costo del envío se "
+            "coordina según destino y tamaño del paquete."
+        )
+
+    # -----------------------------------------------------
+    # INFORMACIÓN DEL MEDIO DE PAGO
+    # -----------------------------------------------------
+
+    if pedido.medio_pago == "efectivo":
+
+        medio_pago_titulo = "Efectivo"
+
+        medio_pago_descripcion = (
+            "El pedido tiene aplicado el 5% de descuento "
+            "por pago en efectivo."
+        )
+
+    elif pedido.medio_pago == "transferencia":
+
+        medio_pago_titulo = "Transferencia bancaria"
+
+        medio_pago_descripcion = (
+            "Te enviaremos los datos para realizar "
+            "la transferencia."
+        )
+
+    elif pedido.medio_pago == "mercadopago":
+
+        medio_pago_titulo = "Mercado Pago"
+
+        medio_pago_descripcion = (
+            "El pago se realiza mediante Mercado Pago."
+        )
+
+    else:
+
+        medio_pago_titulo = pedido.medio_pago
+
+        medio_pago_descripcion = ""
+
+    # -----------------------------------------------------
+    # WHATSAPP
+    # -----------------------------------------------------
+
+    texto_whatsapp = (
+        f"Hola! Te escribo por el pedido "
+        f"#{pedido.id} "
+        f"(total ${pedido.total:,.0f})"
+    ).replace(",", ".")
+
+    # -----------------------------------------------------
+    # CONTEXTO
+    # -----------------------------------------------------
 
     contexto = obtener_contexto_base()
 
+    contexto.update({
+
+        "pedido": pedido,
+
+        "modalidad_entrega": modalidad_entrega,
+
+        "entrega_titulo": entrega_titulo,
+
+        "entrega_descripcion": entrega_descripcion,
+
+        "costo_envio": costo_envio,
+
+        "medio_pago_titulo": medio_pago_titulo,
+
+        "medio_pago_descripcion": medio_pago_descripcion,
+
+    })
+
     return render_template(
-        "pedido.html", **contexto,
+        "pedido.html",
+        **contexto,
         pedido=pedido,
         transferencia=DATOS_TRANSFERENCIA,
         whatsapp=WHATSAPP_VENDEDOR,
