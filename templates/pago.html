@@ -1,8 +1,6 @@
-Mariano@DESKTOP-2ENAHHK MINGW64 ~/Desktop/sopitenispadel (main)
-$ cat templates/pago.html
 {% extends "base.html" %}
 
-{% block title %}Medios de pago — SOPI Tenis•Pádel{% endblock %}
+{% block title %}Finalizar compra — SOPI Tenis•Pádel{% endblock %}
 
 {% block content %}
 
@@ -10,41 +8,122 @@ $ cat templates/pago.html
 
     <div class="pago-header">
         <span class="pago-eyebrow">SOPI SPORTS</span>
-        <h1>Elegí cómo pagar</h1>
-        <p>Seleccioná el medio de pago que preferís para completar tu compra.</p>
+        <h1>Finalizá tu compra</h1>
+        <p>Elegí cómo recibir tu pedido y el medio de pago.</p>
     </div>
 
     <div class="pago-layout">
 
         <section class="pago-metodos">
 
-            <form method="post" action="{{ url_for('carrito_pagar') }}">
+            <form
+                method="post"
+                action="{{ url_for('carrito_pagar') }}"
+                id="form-pago"
+            >
+
+                <div class="pago-subtitulo">
+                    ¿Cómo querés recibir tu pedido?
+                </div>
 
                 <label class="pago-opcion">
-                    <input type="radio" name="medio_pago" value="mercadopago" required>
+                    <input
+                        type="radio"
+                        name="modalidad_entrega"
+                        value="retiro"
+                        checked
+                        required
+                    >
+                    <div>
+                        <strong>📍 Retiro en Quilmes</strong>
+                        <span>
+                            Retirá tu pedido en Quilmes.
+                            Coordinamos día y horario.
+                        </span>
+                        <small>
+                            Sin costo de envío.
+                        </small>
+                    </div>
+                </label>
+
+                <label class="pago-opcion">
+                    <input
+                        type="radio"
+                        name="modalidad_entrega"
+                        value="envio"
+                    >
+                    <div>
+                        <strong>📦 Envío a domicilio</strong>
+                        <span>
+                            Enviamos por Andreani o Correo Argentino.
+                        </span>
+                        <small>
+                            El costo del envío se informa según destino
+                            y tamaño del paquete.
+                        </small>
+                    </div>
+                </label>
+
+                <div class="pago-subtitulo">
+                    ¿Cómo querés pagar?
+                </div>
+
+                <label class="pago-opcion">
+                    <input
+                        type="radio"
+                        name="medio_pago"
+                        value="mercadopago"
+                        required
+                    >
                     <div>
                         <strong>💳 Mercado Pago</strong>
-                        <span>Pagá de forma segura con Mercado Pago.</span>
+                        <span>
+                            Pagá de forma segura con Mercado Pago.
+                        </span>
                     </div>
                 </label>
 
                 <label class="pago-opcion">
-                    <input type="radio" name="medio_pago" value="transferencia">
+                    <input
+                        type="radio"
+                        name="medio_pago"
+                        value="transferencia"
+                    >
                     <div>
                         <strong>🏦 Transferencia bancaria</strong>
-                        <span>Recibí los datos bancarios para realizar la transferencia.</span>
+                        <span>
+                            Recibí los datos bancarios para realizar
+                            la transferencia.
+                        </span>
                     </div>
                 </label>
 
-                <label class="pago-opcion pago-efectivo">
-                    <input type="radio" name="medio_pago" value="efectivo">
+                <label
+                    class="pago-opcion pago-efectivo"
+                    id="opcion-efectivo"
+                >
+                    <input
+                        type="radio"
+                        name="medio_pago"
+                        value="efectivo"
+                    >
                     <div>
-                        <strong>💵 Efectivo — 5% de descuento</strong>
-                        <span>Pagando en efectivo obtenés un 5% de descuento.</span>
+                        <strong>
+                            💵 Efectivo — 5% de descuento
+                        </strong>
+                        <span>
+                            Pagando en efectivo obtenés un 5% de descuento.
+                        </span>
+                        <small id="aviso-efectivo">
+                            Válido para retiro en Quilmes.
+                        </small>
                     </div>
                 </label>
 
-                <button type="submit" class="btn-checkout">
+                <button
+                    type="submit"
+                    class="btn-checkout"
+                >
                     CONTINUAR
                 </button>
 
@@ -52,38 +131,73 @@ $ cat templates/pago.html
 
         </section>
 
-
         <aside class="pago-resumen">
 
             <h2>Resumen de compra</h2>
 
             <div class="resumen-linea">
                 <span>Productos</span>
-                <span>{{ total_items_carrito }}</span>
+                <span>
+                    {{ total_items_carrito }}
+                </span>
             </div>
 
-            <div class="resumen-linea resumen-total">
-                <span>Total</span>
+            <div class="resumen-linea">
+                <span>Subtotal</span>
                 <strong>
                     ${{ "{:,}".format(total).replace(",", ".") }}
                 </strong>
             </div>
 
-            <div class="pago-descuento">
+            <div class="resumen-linea">
+                <span>Entrega</span>
+                <span id="resumen-entrega">
+                    Retiro en Quilmes
+                </span>
+            </div>
+
+            <div class="resumen-linea resumen-total">
+                <span>Total</span>
+                <strong id="total-pagar">
+                    ${{ "{:,}".format(total).replace(",", ".") }}
+                </strong>
+            </div>
+
+            <div
+                class="pago-descuento"
+                id="bloque-descuento"
+                style="display:none;"
+            >
                 💵 Pagando en efectivo ahorrás
                 <strong>
                     ${{ "{:,.0f}".format(total * 0.05).replace(",", ".") }}
                 </strong>
             </div>
 
-            <div class="pago-efectivo-total">
+            <div
+                class="pago-efectivo-total"
+                id="bloque-efectivo"
+                style="display:none;"
+            >
                 Total en efectivo:
                 <strong>
-                   ${{ "{:,.0f}".format(total * 0.95).replace(",", ".") }}
+                    ${{ "{:,.0f}".format(total * 0.95).replace(",", ".") }}
                 </strong>
             </div>
 
-            <a href="{{ url_for('carrito_ver') }}" class="carrito-seguir-comprando">
+            <div
+                class="pago-descuento"
+                id="bloque-envio"
+                style="display:none;"
+            >
+                📦 El costo del envío se informará
+                según destino y tamaño del paquete.
+            </div>
+
+            <a
+                href="{{ url_for('carrito_ver') }}"
+                class="carrito-seguir-comprando"
+            >
                 ← Volver al carrito
             </a>
 
@@ -92,5 +206,189 @@ $ cat templates/pago.html
     </div>
 
 </div>
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const total =
+            {{ total|int }};
+
+        const radiosPago =
+            document.querySelectorAll(
+                'input[name="medio_pago"]'
+            );
+
+        const radiosEntrega =
+            document.querySelectorAll(
+                'input[name="modalidad_entrega"]'
+            );
+
+        const totalPagar =
+            document.getElementById(
+                "total-pagar"
+            );
+
+        const bloqueDescuento =
+            document.getElementById(
+                "bloque-descuento"
+            );
+
+        const bloqueEfectivo =
+            document.getElementById(
+                "bloque-efectivo"
+            );
+
+        const bloqueEnvio =
+            document.getElementById(
+                "bloque-envio"
+            );
+
+        const resumenEntrega =
+            document.getElementById(
+                "resumen-entrega"
+            );
+
+        const opcionEfectivo =
+            document.getElementById(
+                "opcion-efectivo"
+            );
+
+        function formatoPrecio(numero) {
+            return "$" +
+                numero.toLocaleString("es-AR");
+        }
+
+        function actualizarPantalla() {
+
+            const pagoSeleccionado =
+                document.querySelector(
+                    'input[name="medio_pago"]:checked'
+                );
+
+            const entregaSeleccionada =
+                document.querySelector(
+                    'input[name="modalidad_entrega"]:checked'
+                );
+
+            if (
+                entregaSeleccionada &&
+                entregaSeleccionada.value === "envio"
+            ) {
+
+                resumenEntrega.textContent =
+                    "Envío a domicilio";
+
+                bloqueEnvio.style.display =
+                    "block";
+
+            } else {
+
+                resumenEntrega.textContent =
+                    "Retiro en Quilmes";
+
+                bloqueEnvio.style.display =
+                    "none";
+            }
+
+            const radioEfectivo =
+                opcionEfectivo.querySelector(
+                    'input[name="medio_pago"]'
+                );
+
+            if (
+                entregaSeleccionada &&
+                entregaSeleccionada.value === "envio"
+            ) {
+
+                opcionEfectivo.style.opacity =
+                    "0.5";
+
+                if (radioEfectivo.checked) {
+                    radioEfectivo.checked =
+                        false;
+                }
+
+                radioEfectivo.disabled =
+                    true;
+
+            } else {
+
+                opcionEfectivo.style.opacity =
+                    "1";
+
+                radioEfectivo.disabled =
+                    false;
+            }
+
+            if (
+                pagoSeleccionado &&
+                pagoSeleccionado.value === "efectivo" &&
+                entregaSeleccionada &&
+                entregaSeleccionada.value === "retiro"
+            ) {
+
+                const descuento =
+                    Math.round(
+                        total * 0.05
+                    );
+
+                const totalEfectivo =
+                    total - descuento;
+
+                totalPagar.textContent =
+                    formatoPrecio(
+                        totalEfectivo
+                    );
+
+                bloqueDescuento.style.display =
+                    "block";
+
+                bloqueEfectivo.style.display =
+                    "block";
+
+            } else {
+
+                totalPagar.textContent =
+                    formatoPrecio(
+                        total
+                    );
+
+                bloqueDescuento.style.display =
+                    "none";
+
+                bloqueEfectivo.style.display =
+                    "none";
+            }
+
+        }
+
+        radiosPago.forEach(
+            function (radio) {
+                radio.addEventListener(
+                    "change",
+                    actualizarPantalla
+                );
+            }
+        );
+
+        radiosEntrega.forEach(
+            function (radio) {
+                radio.addEventListener(
+                    "change",
+                    actualizarPantalla
+                );
+            }
+        );
+
+        actualizarPantalla();
+
+    }
+
+);
+
+</script>
 
 {% endblock %}
