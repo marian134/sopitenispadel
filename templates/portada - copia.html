@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}SOPI SPORTS — Tenis & Pádel{% endblock %}
+
+{% block content %}
+
+<div class="home-sopi">
+
+
+<!-- HERO PRINCIPAL -->
+
+<section class="home-hero">
+
+    <div class="home-hero-content">
+
+        <div class="home-hero-copy">
+
+            <span class="home-eyebrow">
+                SOPI SPORTS · EQUIPAMIENTO DEPORTIVO
+            </span>
+
+            <h1>
+                TU JUEGO.
+                <br>
+                TU <span>DEPORTE.</span>
+            </h1>
+
+            <p>
+                Todo lo que necesitás para jugar,
+                entrenar y disfrutar el tenis y el pádel.
+            </p>
+
+            <div class="home-hero-buttons">
+
+                <a href="{{ url_for('catalogo_tenis') }}"
+                   class="home-btn home-btn-tenis">
+                    VER TENIS
+                    <span>→</span>
+                </a>
+
+                <a href="{{ url_for('catalogo_padel') }}"
+                   class="home-btn home-btn-padel">
+                    VER PÁDEL
+                    <span>→</span>
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="home-hero-side">
+
+            <span class="home-hero-side-number">
+                01
+            </span>
+
+            <div>
+                <strong>TENIS</strong>
+                <span>RAQUETAS · PELOTAS · ACCESORIOS</span>
+            </div>
+
+            <div>
+                <strong>PÁDEL</strong>
+                <span>PALAS · PELOTAS · ACCESORIOS</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- BENEFICIOS -->
+
+<section class="home-benefits">
+
+    <div class="home-benefit">
+
+        <div class="home-benefit-icon">
+            <i class="fas fa-credit-card"></i>
+        </div>
+
+        <div>
+            <strong>MERCADO PAGO</strong>
+            <span>Pagá de forma segura.</span>
+        </div>
+
+    </div>
+
+
+    <div class="home-benefit">
+
+        <div class="home-benefit-icon">
+            <i class="fas fa-university"></i>
+        </div>
+
+        <div>
+            <strong>TRANSFERENCIA</strong>
+            <span>Consultá el beneficio.</span>
+        </div>
+
+    </div>
+
+
+    <div class="home-benefit">
+
+        <div class="home-benefit-icon">
+            <i class="fas fa-truck"></i>
+        </div>
+
+        <div>
+            <strong>ENVÍOS</strong>
+            <span>Enviamos a todo el país.</span>
+        </div>
+
+    </div>
+
+
+    <div class="home-benefit">
+
+        <div class="home-benefit-icon">
+            <i class="fab fa-whatsapp"></i>
+        </div>
+
+        <div>
+            <strong>ATENCIÓN</strong>
+            <span>Consultanos por WhatsApp.</span>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ELEGÍ TU DEPORTE -->
+
+<section class="home-sports">
+
+    <div class="home-section-heading">
+
+        <span>
+            DESCUBRÍ SOPI
+        </span>
+
+        <h2>
+            Elegí tu deporte
+        </h2>
+
+        <p>
+            Equipamiento seleccionado para entrenar,
+            competir y disfrutar.
+        </p>
+
+    </div>
+
+
+    <div class="home-sports-grid">
+
+        <a href="{{ url_for('catalogo_tenis') }}"
+           class="home-sport-card home-sport-tenis">
+
+            <div class="home-sport-top">
+
+                <span class="home-sport-number">
+                    01
+                </span>
+
+                <span class="home-sport-arrow">
+                    ↗
+                </span>
+
+            </div>
+
+            <div class="home-sport-content">
+
+                <span class="home-sport-label">
+                    EQUIPAMIENTO
+                </span>
+
+                <h3>
+                    TENIS
+                </h3>
+
+                <p>
+                    Raquetas, pelotas, bolsos,
+                    grips y accesorios para tu juego.
+                </p>
+
+                <strong>
+                    EXPLORAR TENIS
+                    <span>→</span>
+                </strong>
+
+            </div>
+
+        </a>
+
+
+        <a href="{{ url_for('catalogo_padel') }}"
+           class="home-sport-card home-sport-padel">
+
+            <div class="home-sport-top">
+
+                <span class="home-sport-number">
+                    02
+                </span>
+
+                <span class="home-sport-arrow">
+                    ↗
+                </span>
+
+            </div>
+
+            <div class="home-sport-content">
+
+                <span class="home-sport-label">
+                    EQUIPAMIENTO
+                </span>
+
+                <h3>
+                    PÁDEL
+                </h3>
+
+                <p>
+                    Palas, pelotas, bolsos,
+                    grips y accesorios para todos los niveles.
+                </p>
+
+                <strong>
+                    EXPLORAR PÁDEL
+                    <span>→</span>
+                </strong>
+
+            </div>
+
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- PRODUCTOS DESTACADOS -->
+
+{% if destacados %}
+
+<section class="home-products">
+
+    <div class="home-section-heading">
+
+        <span>
+            SELECCIÓN SOPI SPORTS
+        </span>
+
+        <h2>
+            Productos destacados
+        </h2>
+
+        <p>
+            Una selección de productos disponibles
+            para acompañar tu próximo partido.
+        </p>
+
+    </div>
+
+
+    <div class="home-products-grid">
+
+        {% for p in destacados[:3] %}
+
+        <article class="home-product-card">
+
+            <a
+                href="{{ url_producto(p) }}"
+                class="home-product-image"
+            >
+
+                {% if p.imagen %}
+
+                <img
+                    src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
+                    alt="{{ p.nombre }}"
+                    width="700"
+                    height="700"
+                    loading="lazy"
+                >
+
+                {% else %}
+
+                <div class="home-product-placeholder">
+                    SIN IMAGEN
+                </div>
+
+                {% endif %}
+
+            </a>
+
+
+            <div class="home-product-info">
+
+                <div class="home-product-meta">
+
+                    <small>
+                        {{ p.deporte }}
+                    </small>
+
+                    {% if p.marca %}
+                    <span>
+                        {{ p.marca }}
+                    </span>
+                    {% endif %}
+
+                </div>
+
+
+                <h3>
+                    <a href="{{ url_producto(p) }}">
+                        {{ p.nombre }}
+                    </a>
+                </h3>
+
+
+                <div class="home-product-bottom">
+
+                    <strong>
+                        $ {{ "{:,.0f}".format(p.precio).replace(",", ".") }}
+                    </strong>
+
+
+                    {% if p.stock > 0 %}
+
+                    <form
+                        method="post"
+                        action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
+                    >
+
+                        <button
+                            type="submit"
+                            class="home-product-cart"
+                            title="Agregar al carrito"
+                            aria-label="Agregar {{ p.nombre }} al carrito"
+                        >
+                            <i class="fas fa-plus"></i>
+                        </button>
+
+                    </form>
+
+                    {% else %}
+
+                    <span class="home-product-out">
+                        SIN STOCK
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div class="home-products-link">
+
+        <a href="{{ url_for('catalogo_tenis') }}">
+            VER CATÁLOGO COMPLETO
+            <span>→</span>
+        </a>
+
+    </div>
+
+</section>
+
+{% endif %}
+
+
+<!-- SOBRE SOPI -->
+
+<section class="home-brand">
+
+    <div class="home-brand-inner">
+
+        <div class="home-brand-number">
+            SOPI
+        </div>
+
+        <div class="home-brand-content">
+
+            <span>
+                SOBRE SOPI SPORTS
+            </span>
+
+            <h2>
+                Equipamiento para quienes
+                <em>viven el deporte.</em>
+            </h2>
+
+            <p>
+                Seleccionamos productos de tenis y pádel
+                pensando en jugadores que entrenan,
+                compiten y disfrutan cada partido.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- CTA FINAL -->
+
+<section class="home-cta">
+
+    <div class="home-cta-content">
+
+        <span>
+            SOPI SPORTS
+        </span>
+
+        <h2>
+            Tu próximo partido
+            empieza acá.
+        </h2>
+
+        <p>
+            Encontrá el equipamiento que necesitás
+            para llevar tu juego al siguiente nivel.
+        </p>
+
+        <div class="home-cta-buttons">
+
+            <a href="{{ url_for('catalogo_tenis') }}"
+               class="home-cta-btn">
+                VER TENIS
+                <span>→</span>
+            </a>
+
+            <a href="{{ url_for('catalogo_padel') }}"
+               class="home-cta-btn">
+                VER PÁDEL
+                <span>→</span>
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+</div>
+
+{% endblock %}

@@ -31,7 +31,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
     return "ok", 200
-
+@app.route("/quienes-somos")
+def quienes_somos():
+    return render_template("quienes_somos.html")
 
 if not SECRET_KEY:
     if ES_PRODUCCION:
