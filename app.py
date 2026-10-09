@@ -9,7 +9,7 @@ import mercadopago
 from templates import legales
 from datetime import timedelta
 from functools import wraps
-
+from flask_mail import Mail, Message
 from sqlalchemy import inspect, text
 
 from models import (
@@ -53,6 +53,86 @@ app.config.update(
     SESSION_COOKIE_SECURE=ES_PRODUCCION,
 )
 
+# =========================================================
+# AVISOS DE VENTA POR GMAIL
+# =========================================================
+
+app.config.update(
+    MAIL_SERVER=os.environ.get("MAIL_SERVER", "smtp.gmail.com"),
+    MAIL_PORT=int(os.environ.get("MAIL_PORT", "587")),
+    MAIL_USE_TLS=os.environ.get("MAIL_USE_TLS", "true").lower() == "true",
+    MAIL_USERNAME=os.environ.get("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD"),
+    MAIL_DEFAULT_SENDER=os.environ.get("MAIL_DEFAULT_SENDER"),
+)
+
+mail = Mail(app)
+
+
+VENTAS_EMAIL = os.environ.get("VENTAS_EMAIL")
+
+
+def enviar_aviso_venta(asunto, cuerpo):
+    """Envía un aviso por correo sin interrumpir la compra si falla."""
+    if not VENTAS_EMAIL:
+        app.logger.warning("Falta configurar VENTAS_EMAIL")
+        return False
+
+    if not app.config.get("MAIL_USERNAME") or not app.config.get("MAIL_PASSWORD"):
+        app.logger.warning("Falta configurar las credenciales de Gmail")
+        return False
+
+    try:
+        mensaje = Message(
+            subject=asunto,
+            recipients=[VENTAS_EMAIL],
+            body=cuerpo,
+        )
+        mail.send(mensaje)
+        return True
+    except Exception:
+        app.logger.exception("Error enviando aviso de venta")
+        return False
+
+
+def avisar_pedido_nuevo(pedido):
+    """Avisa que se registró un pedido nuevo."""
+    detalle = [
+        f"- {linea.nombre_producto} x {linea.cantidad}: ${linea.precio_unitario * linea.cantidad:,.0f}"
+        for linea in pedido.lineas
+    ]
+
+    cuerpo = "\n".join([
+        f"Nuevo pedido #{pedido.id} en SOPI Tenis•Pádel",
+        "",
+        f"Estado: {pedido.estado}",
+        f"Medio de pago: {pedido.medio_pago}",
+        f"Total: ${pedido.total:,.0f}",
+        "",
+        "Productos:",
+        *detalle,
+        "",
+        f"Panel de administración: {URL_PUBLICA}/admin/pedidos",
+    ])
+
+    enviar_aviso_venta(f"SOPI: nuevo pedido #{pedido.id}", cuerpo)
+
+
+def avisar_pago_confirmado(pedido):
+    """Avisa que Mercado Pago confirmó el cobro."""
+    cuerpo = "\n".join([
+        f"Pago confirmado para el pedido #{pedido.id}",
+        "",
+        f"Total cobrado: ${pedido.total:,.0f}",
+        f"ID de pago de Mercado Pago: {pedido.mp_payment_id}",
+        "",
+        f"Panel de administración: {URL_PUBLICA}/admin/pedidos",
+    ])
+
+    enviar_aviso_venta(
+        f"SOPI: pago confirmado del pedido #{pedido.id}",
+        cuerpo,
+    )
 
 # =========================================================
 # BASE DE DATOS
@@ -806,6 +886,7 @@ def crear_pedido(items, medio_pago, total):
     pedidos.append(pedido.id)
     session["pedidos"] = pedidos
     session.modified = True
+    avisar_pedido_nuevo(pedido)
     return pedido
 
 
@@ -1233,9 +1314,14 @@ def mp_webhook():
 
     if estado_mp == "approved":
         if float(pago.get("transaction_amount", 0)) >= pedido.total:
-            confirmar_pago(pedido)
+            if pedido.estado != ESTADO_PAGADO:
+                confirmar_pago(pedido)
+                avisar_pago_confirmado(pedido)
         else:
-            app.logger.error("Monto pagado menor al del pedido %s", pedido.id)
+            app.logger.error(
+                "Monto pagado menor al del pedido %s",
+                pedido.id,
+            )
     elif estado_mp in ("rejected", "cancelled") and pedido.estado != ESTADO_PAGADO:
         pedido.estado = ESTADO_FALLIDO
 

@@ -4,3 +4,4 @@ gunicorn==26.2.0
 mercadopago==3.6.0
 psycopg2-binary>=2.9.10
 SQLAlchemy==2.0.52
+Flask-Mail==0.10.0
