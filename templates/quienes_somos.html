@@ -1,11 +1,90 @@
 {% extends "base.html" %}
+
+{% block title %}Quiénes somos | SOPI Tenis-Pádel{% endblock %}
+{% block meta_description %}SOPI Tenis-Pádel: tienda de tenis y pádel para clubes y jugadores. Descuentos por cantidad en paletas y envíos a todo el país.{% endblock %}
+
 {% block content %}
-<section class="container">
-  <h1>Quiénes somos</h1>
-  <p>SOPI Tenis-Pádel es una tienda pensada para los clubes y para toda la
-     gente que quiere jugar al tenis y al pádel.</p>
-  <p>Trabajamos con clubes: equipamiento de tenis y pádel, descuentos por
-     cantidad en paletas y envíos gratis.</p>
-  <a class="btn" href="https://wa.me/541128321531">Escribinos para tu club</a>
+
+<!-- PRESENTACIÓN -->
+<section class="home-brand">
+  <div class="home-brand-inner">
+
+    <div class="home-brand-number">01</div>
+
+    <div class="home-brand-content">
+      <span>QUIÉNES SOMOS</span>
+      <h2>Equipamiento para <em>clubes</em> y jugadores</h2>
+      <p>
+        SOPI Tenis-Pádel es una tienda pensada para los clubes y para toda
+        la gente que quiere jugar al tenis y al pádel.
+      </p>
+    </div>
+
+  </div>
 </section>
+
+<!-- BENEFICIOS -->
+<section class="home-benefits">
+
+  <div class="home-benefit">
+    <div class="home-benefit-icon"><i class="fas fa-users"></i></div>
+    <div>
+      <strong>Para clubes</strong>
+      <span>Trabajamos con clubes</span>
+    </div>
+  </div>
+
+  <div class="home-benefit">
+    <div class="home-benefit-icon"><i class="fas fa-table-tennis-paddle-ball"></i></div>
+    <div>
+      <strong>Para jugadores</strong>
+      <span>Tenis y pádel</span>
+    </div>
+  </div>
+
+  <div class="home-benefit">
+    <div class="home-benefit-icon"><i class="fas fa-percent"></i></div>
+    <div>
+      <strong>Por cantidad</strong>
+      <span>Descuentos en paletas</span>
+    </div>
+  </div>
+
+  <div class="home-benefit">
+    <div class="home-benefit-icon"><i class="fas fa-truck"></i></div>
+    <div>
+      <strong>Envíos</strong>
+      <span>A todo el país</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- CTA -->
+<section class="home-cta">
+  <div class="home-cta-content">
+
+    <span>CLUBES</span>
+    <h2>¿Tenés un club?</h2>
+    <p>
+      Escribinos y armamos una propuesta con descuento por cantidad
+      en paletas.
+    </p>
+
+    <div class="home-cta-buttons">
+      <a class="home-cta-btn"
+         href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20consultar%20por%20mi%20club"
+         target="_blank" rel="noopener">
+        Escribinos <span>→</span>
+      </a>
+
+      <a class="home-cta-btn"
+         href="{{ url_for('catalogo', deporte_slug='padel') }}">
+        Ver pádel <span>→</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
 {% endblock %}

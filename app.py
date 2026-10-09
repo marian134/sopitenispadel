@@ -33,7 +33,10 @@ def health():
     return "ok", 200
 @app.route("/quienes-somos")
 def quienes_somos():
-    return render_template("quienes_somos.html")
+    return render_template(
+        "quienes_somos.html",
+        **obtener_contexto_base()
+    )
 
 if not SECRET_KEY:
     if ES_PRODUCCION:
