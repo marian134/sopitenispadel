@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}SOPI SPORTS — Tenis & Pádel{% endblock %}
+{% block title %}Tenis y Pádel Online en Argentina | SOPI Sports{% endblock %}
+
+{% block meta_description %}Comprá equipamiento de tenis y pádel en SOPI Sports. Encontrá paletas, pelotas y accesorios, con envíos a todo el país y opciones de pago seguras.{% endblock %}
 
 {% block content %}
 
@@ -365,14 +367,19 @@
     </div>
 
 
-    <div class="home-products-link">
+ <div class="home-products-link">
 
-        <a href="{{ url_for('catalogo_tenis') }}">
-            VER CATÁLOGO COMPLETO
-            <span>→</span>
-        </a>
+    <a href="{{ url_for('catalogo_tenis') }}">
+        VER CATÁLOGO DE TENIS
+        <span>→</span>
+    </a>
 
-    </div>
+    <a href="{{ url_for('catalogo_padel') }}">
+        VER CATÁLOGO DE PÁDEL
+        <span>→</span>
+    </a>
+
+</div>
 
 </section>
 
