@@ -491,49 +491,72 @@ a {
 }
 
 .home-products-link {
-    margin-top: 40px;
+    margin-top: 50px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.home-products .home-products-link a {
+    padding: 34px 38px;
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.home-products-link a {
-    min-width: 280px;
-    padding: 18px 30px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    border: 2px solid #111;
-    background: #fff;
-    color: #111;
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: .12em;
+    flex-direction: column;
+    gap: 6px;
+    color: #fff;
     text-decoration: none;
-    transition: background .25s ease, color .25s ease, transform .25s ease;
+    border-bottom: 5px solid rgba(255, 255, 255, .35);
+    transition: transform .25s ease, box-shadow .25s ease;
 }
 
-.home-products-link a:last-child {
-    background: var(--sopi-red);
-    border-color: var(--sopi-red);
-    color: #fff;
+.home-products .home-products-link .link-tenis {
+    background: linear-gradient(115deg, var(--tenis) 0%, var(--tenis-dark) 100%);
 }
 
-.home-products-link a:hover {
-    background: #111;
-    border-color: #111;
-    color: #fff;
-    transform: translateY(-3px);
+.home-products .home-products-link .link-padel {
+    background: linear-gradient(115deg, var(--padel) 0%, var(--padel-dark) 100%);
 }
 
-.home-products-link a span {
+.home-products .home-products-link a:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, .25);
+}
+
+.home-products-link small {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .2em;
+    opacity: .75;
+}
+
+.home-products-link strong {
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -.03em;
+    text-transform: uppercase;
+}
+
+.home-products-link em {
+    font-style: normal;
+    font-size: 14px;
+    opacity: .85;
+}
+
+.home-products-link span {
+    margin-top: 16px;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .15em;
     transition: transform .25s ease;
 }
 
 .home-products-link a:hover span {
-    transform: translateX(6px);
+    transform: translateX(8px);
+}
+
+@media (max-width: 800px) {
+    .home-products-link {
+        grid-template-columns: 1fr;
+    }
 }
 
 .home-product-bottom strong {
