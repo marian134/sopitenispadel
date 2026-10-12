@@ -78,7 +78,23 @@
 
       <!-- DESCRIPCIÓN -->
       {% if producto.descripcion %}
-        <p class="descripcion">{{ producto.descripcion }}</p>
+        {% set lineas = producto.descripcion.replace('|', '\n').splitlines() %}
+        {% for linea in lineas if linea.strip() and ':' not in linea %}
+          <p class="descripcion">{{ linea.strip() }}</p>
+        {% endfor %}
+
+        {% if producto.descripcion.count(':') %}
+        <table class="ficha-tecnica">
+          <caption>Características</caption>
+          {% for linea in lineas if ':' in linea %}
+            {% set par = linea.split(':', 1) %}
+            <tr>
+              <th>{{ par[0].strip() }}</th>
+              <td>{{ par[1].strip() }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+        {% endif %}
       {% endif %}
 
       <!-- FORMULARIO -->

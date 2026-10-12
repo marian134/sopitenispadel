@@ -1520,6 +1520,9 @@ def admin_precios():
                         p.stock = stock
                     if imagen:
                         p.imagen = imagen
+                    descripcion = (fila.get("descripcion") or "").strip()
+                    if descripcion:
+                        p.descripcion = descripcion
                     categoria = (fila.get("categoria") or "").strip()
                     marca = (fila.get("marca") or "").strip()
                     deporte = (fila.get("deporte") or "").strip()

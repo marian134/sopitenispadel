@@ -1099,16 +1099,57 @@ a {
 }
 
 .foto-grande {
-    flex: 1;
+    flex: none;
+    width: 46%;
+    max-width: 520px;
     min-width: 300px;
 }
 
 .foto-grande img {
+    display: block;
     width: 100%;
-    height: auto;
+    max-height: 460px;
+    padding: 16px;
     border-radius: 8px;
-    background: #f5f5f5;
-    object-fit: cover;
+    background: #f3f3f1;
+    object-fit: contain;
+}
+
+.producto-detalle > div:last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+/* FICHA TÉCNICA */
+
+.ficha-tecnica {
+    width: 100%;
+    margin: 0 0 28px 0;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.ficha-tecnica caption {
+    padding: 0 0 10px 0;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+}
+
+.ficha-tecnica th,
+.ficha-tecnica td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e0;
+}
+
+.ficha-tecnica th {
+    width: 38%;
+    color: #666;
+    font-weight: 700;
+    background: #f7f7f5;
 }
 
 .placeholder {
