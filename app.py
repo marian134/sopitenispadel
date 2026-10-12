@@ -309,7 +309,7 @@ NAV_DEPORTES = {
 # CONTEXTO BASE
 # =========================================================
 
-def productos_destacados(deporte=None, cantidad=3):
+def productos_destacados(deporte=None, cantidad=4):
     """Últimos productos cargados, con stock y con foto."""
     query = Producto.query.filter(
         Producto.stock > 0,

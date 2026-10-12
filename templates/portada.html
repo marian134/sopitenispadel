@@ -251,17 +251,17 @@
 
     <div class="home-section-heading">
 
-        <span>
-            SELECCIÓN SOPI SPORTS
+        <span class="home-new-tag">
+            ★ RECIÉN LLEGADAS
         </span>
 
         <h2>
-            Productos destacados
+            Nuevos ingresos
         </h2>
 
         <p>
-            Una selección de productos disponibles
-            para acompañar tu próximo partido.
+            Paletas 2026 recién llegadas, en stock y listas
+            para enviar. ¡Últimas unidades!
         </p>
 
     </div>
@@ -269,7 +269,7 @@
 
     <div class="home-products-grid">
 
-        {% for p in destacados[:3] %}
+        {% for p in destacados[:4] %}
 
         <article class="home-product-card">
 
@@ -277,6 +277,8 @@
                 href="{{ url_producto(p) }}"
                 class="home-product-image"
             >
+
+                <span class="home-product-badge">NUEVA</span>
 
                 {% if p.imagen %}
 
