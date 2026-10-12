@@ -1507,9 +1507,18 @@ def admin_precios():
                 if precio is None and costo is not None:
                     precio = precio_desde_costo(costo)
 
-                p = Producto.query.filter(
-                    db.func.lower(Producto.nombre) == nombre.lower()
-                ).first()
+                # Se busca por slug (columna opcional), luego por nombre y,
+                # por último, por el slug que sale del nombre.
+                slug_csv = (fila.get("slug") or "").strip()
+                p = None
+                if slug_csv:
+                    p = Producto.query.filter_by(slug=slug_csv).first()
+                if not p:
+                    p = Producto.query.filter(
+                        db.func.lower(db.func.trim(Producto.nombre)) == nombre.lower()
+                    ).first()
+                if not p:
+                    p = Producto.query.filter_by(slug=generar_slug(nombre)).first()
 
                 if p:
                     if costo is not None:
