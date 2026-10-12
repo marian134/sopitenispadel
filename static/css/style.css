@@ -473,6 +473,69 @@ a {
     letter-spacing: .15em;
 }
 
+.home-new-perks {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.home-new-perks span {
+    padding: 9px 16px;
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    border-left: 4px solid var(--sopi-red);
+}
+
+.home-products-link {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.home-products-link a {
+    min-width: 280px;
+    padding: 18px 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border: 2px solid #111;
+    background: #fff;
+    color: #111;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-decoration: none;
+    transition: background .25s ease, color .25s ease, transform .25s ease;
+}
+
+.home-products-link a:last-child {
+    background: var(--sopi-red);
+    border-color: var(--sopi-red);
+    color: #fff;
+}
+
+.home-products-link a:hover {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+.home-products-link a span {
+    transition: transform .25s ease;
+}
+
+.home-products-link a:hover span {
+    transform: translateX(6px);
+}
+
 .home-product-bottom strong {
     color: var(--sopi-red);
     font-size: 18px;
