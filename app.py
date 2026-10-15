@@ -1611,52 +1611,6 @@ def admin_producto_borrar(producto_id):
     db.session.delete(producto)
     db.session.commit()
     return redirect(url_for("admin_productos"))
-
-# =========================================================
-# TEMPORAL: asignar fotos a las pelotas de tenis (borrar después de usar)
-# =========================================================
-
-@app.route("/admin/asignar-fotos-pelotas")
-@admin_requerido
-def admin_asignar_fotos_pelotas():
-
-    # Copia el formato de ruta de un producto que ya tiene foto
-    # (guarda "img/archivo.jpg" o solo "archivo.jpg", según lo que ya uses)
-    ref = Producto.query.filter(
-        Producto.imagen.like("%raqueta-head.jpg")
-    ).first()
-
-    if ref:
-        prefijo = ref.imagen[: -len("raqueta-head.jpg")]
-    else:
-        otro = Producto.query.filter(
-            db.func.coalesce(Producto.imagen, "") != ""
-        ).first()
-        if not otro:
-            return "No encontré ningún producto con foto para copiar el formato", 404
-        prefijo = otro.imagen.rsplit("/", 1)[0] + "/" if "/" in otro.imagen else ""
-
-    fotos = {
-        75: "pelotas-head-pro-x1.png",
-        76: "pelotas-head-championship-x1.png",
-        77: "pelotas-penn-premiere-x1.png",
-        79: "pelotas-head-pro-x3.jpg",
-        80: "pelotas-penn-premiere-x3.jpg",
-        81: "pelotas-head-championship-x3.jpg",
-        # 78 (Wilson): todavía no hay foto de pelotas de tenis Wilson
-    }
-
-    hechos = []
-    for pid, archivo in fotos.items():
-        p = db.session.get(Producto, pid)
-        if p:
-            p.imagen = prefijo + archivo
-            hechos.append(f"{pid} {p.nombre} -> {p.imagen}")
-        else:
-            hechos.append(f"{pid} NO EXISTE")
-
-    db.session.commit()
-    return "<br>".join(hechos)
 # =========================================================
 # COMPATIBILIDAD
 # =========================================================
