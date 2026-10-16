@@ -99,3 +99,23 @@ class LineaPedido(db.Model):
             "cantidad": self.cantidad,
             "subtotal": self.subtotal,
         }
+class Cupon(db.Model):
+    __tablename__ = "cupones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(30), unique=True, nullable=False)
+    porcentaje = db.Column(db.Integer, nullable=False)
+    vence = db.Column(db.Date)                    # último día válido
+    activo = db.Column(db.Boolean, default=True, nullable=False)
+    deporte = db.Column(db.String(20))            # "Tenis", "Pádel" o vacío = todos
+    excluir_nombre = db.Column(db.String(50))     # ej: "Pack" no aplica a esos productos
+    usos_maximos = db.Column(db.Integer)          # tope total, vacío = sin tope
+
+
+class CuponUso(db.Model):
+    __tablename__ = "cupon_usos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cupon_id = db.Column(db.Integer, db.ForeignKey("cupones.id"), nullable=False)
+    pedido_id = db.Column(db.Integer, db.ForeignKey("pedidos.id"), nullable=False)
+    descuento = db.Column(db.Integer, default=0)

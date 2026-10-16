@@ -7,13 +7,13 @@ import hmac
 import unicodedata
 import mercadopago
 from templates import legales
-from datetime import timedelta
+from datetime import timedelta, datetime, date
 from functools import wraps
 from flask_mail import Mail, Message
 from sqlalchemy import inspect, text
 
 from models import (
-    db, Producto, Pedido, LineaPedido,
+    db, Producto, Pedido, LineaPedido, Cupon, CuponUso,
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
 )
 
@@ -31,12 +31,15 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
     return "ok", 200
+
+
 @app.route("/quienes-somos")
 def quienes_somos():
     return render_template(
         "quienes_somos.html",
         **obtener_contexto_base()
     )
+
 
 if not SECRET_KEY:
     if ES_PRODUCCION:
@@ -102,12 +105,19 @@ def avisar_pedido_nuevo(pedido):
         for linea in pedido.lineas
     ]
 
+    uso = CuponUso.query.filter_by(pedido_id=pedido.id).first()
+    linea_cupon = []
+    if uso:
+        c = db.session.get(Cupon, uso.cupon_id)
+        linea_cupon = [f"Cupón: {c.codigo} (-${uso.descuento:,.0f})"]
+
     cuerpo = "\n".join([
         f"Nuevo pedido #{pedido.id} en SOPI Tenis•Pádel",
         "",
         f"Estado: {pedido.estado}",
         f"Medio de pago: {pedido.medio_pago}",
         f"Total: ${pedido.total:,.0f}",
+        *linea_cupon,
         "",
         "Productos:",
         *detalle,
@@ -225,6 +235,18 @@ with app.app_context():
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_productos_slug ON productos (slug)"
     ))
     db.session.commit()
+
+    # Cupón de los jugadores del Varela Open (se crea una sola vez)
+    if not Cupon.query.filter_by(codigo="VARELA5").first():
+        db.session.add(Cupon(
+            codigo="VARELA5",
+            porcentaje=5,
+            vence=date(2026, 11, 30),
+            deporte="Tenis",
+            excluir_nombre="Pack",
+            usos_maximos=100,
+        ))
+        db.session.commit()
 
     # Los productos se cargan desde /admin/precios (CSV).
 
@@ -846,6 +868,78 @@ def carrito_vaciar():
 
 
 # =========================================================
+# CUPONES
+# =========================================================
+
+def hoy_argentina():
+    return (datetime.utcnow() - timedelta(hours=3)).date()
+
+
+def validar_cupon(codigo):
+    """Devuelve (cupon, None) si sirve, o (None, mensaje_de_error)."""
+    codigo = re.sub(r"\s+", "", codigo or "").upper()
+    if not codigo:
+        return None, "Ingresá un código."
+
+    cupon = Cupon.query.filter_by(codigo=codigo).first()
+    if not cupon or not cupon.activo:
+        return None, "El código no es válido."
+    if cupon.vence and hoy_argentina() > cupon.vence:
+        return None, "El código venció."
+
+    # Los usos en pedidos fallidos/cancelados no cuentan
+    usos = (
+        CuponUso.query
+        .join(Pedido, Pedido.id == CuponUso.pedido_id)
+        .filter(CuponUso.cupon_id == cupon.id, Pedido.estado != ESTADO_FALLIDO)
+    )
+    if cupon.usos_maximos and usos.count() >= cupon.usos_maximos:
+        return None, "El código ya alcanzó su límite de usos."
+
+    mis_pedidos = session.get("pedidos", [])
+    if mis_pedidos and usos.filter(CuponUso.pedido_id.in_(mis_pedidos)).count() > 0:
+        return None, "Ya usaste este código en una compra."
+
+    return cupon, None
+
+
+def cupon_de_sesion():
+    codigo = session.get("cupon")
+    if not codigo:
+        return None, None
+    cupon, error = validar_cupon(codigo)
+    if not cupon:
+        session.pop("cupon", None)
+    return cupon, error
+
+
+def precio_con_cupon(cupon, producto):
+    if cupon.deporte and producto.deporte != cupon.deporte:
+        return producto.precio
+    if cupon.excluir_nombre and cupon.excluir_nombre.lower() in (producto.nombre or "").lower():
+        return producto.precio
+    return int(round(producto.precio * (100 - cupon.porcentaje) / 100))
+
+
+@app.route("/carrito/cupon", methods=["POST"])
+def cupon_aplicar():
+    cupon, error = validar_cupon(request.form.get("codigo"))
+    if cupon:
+        session["cupon"] = cupon.codigo
+        session.pop("error_cupon", None)
+    else:
+        session.pop("cupon", None)
+        session["error_cupon"] = error
+    return redirect(url_for("carrito_pagar"))
+
+
+@app.route("/carrito/cupon/quitar", methods=["POST"])
+def cupon_quitar():
+    session.pop("cupon", None)
+    return redirect(url_for("carrito_pagar"))
+
+
+# =========================================================
 # PEDIDOS: HELPERS
 # =========================================================
 
@@ -867,7 +961,7 @@ def armar_items_carrito():
     return items, total, total_items
 
 
-def crear_pedido(items, medio_pago, total):
+def crear_pedido(items, medio_pago, total, cupon=None, descuento=0):
     """Registra el pedido (estado pendiente) con un snapshot de cada línea."""
     pedido = Pedido(estado=ESTADO_PENDIENTE, medio_pago=medio_pago, total=int(total))
     for item in items:
@@ -875,10 +969,15 @@ def crear_pedido(items, medio_pago, total):
         pedido.lineas.append(LineaPedido(
             producto_id=p.id,
             nombre_producto=p.nombre,
-            precio_unitario=p.precio,
+            precio_unitario=item.get("precio_unitario", p.precio),
             cantidad=int(item["cantidad"]),
         ))
     db.session.add(pedido)
+    if cupon and descuento > 0:
+        db.session.flush()
+        db.session.add(CuponUso(
+            cupon_id=cupon.id, pedido_id=pedido.id, descuento=int(descuento)
+        ))
     db.session.commit()
 
     # El cliente solo puede ver los pedidos que creó en su sesión
@@ -902,18 +1001,18 @@ def confirmar_pago(pedido):
     db.session.commit()
 
 
-def pagar_con_mercadopago(items, total):
+def pagar_con_mercadopago(items, total, cupon=None, descuento=0):
     if mp is None:
         return "Mercado Pago no está configurado. Falta MP_ACCESS_TOKEN.", 500
 
-    pedido = crear_pedido(items, "mercadopago", total)
+    pedido = crear_pedido(items, "mercadopago", total, cupon, descuento)
 
     preference_data = {
         "items": [
             {
                 "title": i["producto"].nombre,
                 "quantity": int(i["cantidad"]),
-                "unit_price": float(i["producto"].precio),
+                "unit_price": float(i.get("precio_unitario", i["producto"].precio)),
                 "currency_id": "ARS",
             }
             for i in items
@@ -966,6 +1065,24 @@ def carrito_pagar():
     contexto = obtener_contexto_base()
 
     # -----------------------------------------------------
+    # CUPÓN
+    # -----------------------------------------------------
+
+    cupon, error_cupon = cupon_de_sesion()
+    error_cupon = session.pop("error_cupon", None) or error_cupon
+
+    total_cupon = total
+    if cupon:
+        for item in items:
+            item["precio_unitario"] = precio_con_cupon(cupon, item["producto"])
+        total_cupon = sum(i["precio_unitario"] * i["cantidad"] for i in items)
+        if total_cupon >= total:
+            cupon = None
+            total_cupon = total
+            error_cupon = "El código no aplica a los productos de tu carrito."
+    descuento_cupon = total - total_cupon
+
+    # -----------------------------------------------------
     # MOSTRAR PANTALLA DE PAGO
     # -----------------------------------------------------
 
@@ -976,7 +1093,10 @@ def carrito_pagar():
             **contexto,
             items=items,
             total=total,
-            total_final=total,
+            total_final=total_cupon,
+            cupon=cupon,
+            descuento_cupon=descuento_cupon,
+            error_cupon=error_cupon,
             descuento_efectivo=DESCUENTO_EFECTIVO * 100,
         )
 
@@ -987,25 +1107,10 @@ def carrito_pagar():
     medio_pago = request.form.get("medio_pago")
     modalidad_entrega = request.form.get("modalidad_entrega")
 
-    # -----------------------------------------------------
-    # VALIDAR MEDIO DE PAGO
-    # -----------------------------------------------------
-
-    if medio_pago not in (
-        "mercadopago",
-        "transferencia",
-        "efectivo"
-    ):
+    if medio_pago not in ("mercadopago", "transferencia", "efectivo"):
         return redirect(url_for("carrito_pagar"))
 
-    # -----------------------------------------------------
-    # VALIDAR MODALIDAD DE ENTREGA
-    # -----------------------------------------------------
-
-    if modalidad_entrega not in (
-        "retiro",
-        "envio"
-    ):
+    if modalidad_entrega not in ("retiro", "envio"):
         return redirect(url_for("carrito_pagar"))
 
     # -----------------------------------------------------
@@ -1013,18 +1118,11 @@ def carrito_pagar():
     # -----------------------------------------------------
 
     for item in items:
-
         if item["cantidad"] > item["producto"].stock:
-
             return (
-                f"No hay stock suficiente de "
-                f"{item['producto'].nombre}.",
+                f"No hay stock suficiente de {item['producto'].nombre}.",
                 400
             )
-
-    # -----------------------------------------------------
-    # GUARDAR MODALIDAD DE ENTREGA
-    # -----------------------------------------------------
 
     session["modalidad_entrega"] = modalidad_entrega
 
@@ -1033,52 +1131,44 @@ def carrito_pagar():
     # -----------------------------------------------------
 
     if medio_pago == "mercadopago":
-
-        return pagar_con_mercadopago(
-            items,
-            total
-        )
+        respuesta = pagar_con_mercadopago(items, total_cupon, cupon, descuento_cupon)
+        session.pop("cupon", None)
+        return respuesta
 
     # -----------------------------------------------------
     # TRANSFERENCIA / EFECTIVO
     # -----------------------------------------------------
 
     if medio_pago == "efectivo":
-
-        total_final = round(
-            total * (1 - DESCUENTO_EFECTIVO)
-        )
-
+        total_efectivo = round(total * (1 - DESCUENTO_EFECTIVO))
+        # No acumulable: se aplica el descuento que deja el precio más bajo
+        if cupon and total_cupon < total_efectivo:
+            total_final = total_cupon
+        else:
+            total_final = total_efectivo
+            cupon, descuento_cupon = None, 0
+            for item in items:
+                item["precio_unitario"] = item["producto"].precio
     else:
-
-        total_final = total
+        total_final = total_cupon
 
     # -----------------------------------------------------
     # CREAR PEDIDO
     # -----------------------------------------------------
 
-    pedido = crear_pedido(
-        items,
-        medio_pago,
-        total_final
-    )
+    pedido = crear_pedido(items, medio_pago, total_final, cupon, descuento_cupon)
+    session.pop("cupon", None)
 
     # -----------------------------------------------------
     # GUARDAR DATOS DE ENTREGA
     # -----------------------------------------------------
 
-    pedidos_entrega = session.get(
-        "pedidos_entrega",
-        {}
-    )
-
+    pedidos_entrega = session.get("pedidos_entrega", {})
     pedidos_entrega[str(pedido.id)] = {
         "modalidad": modalidad_entrega,
         "costo_envio": 0,
     }
-
     session["pedidos_entrega"] = pedidos_entrega
-    session.modified = True
 
     # -----------------------------------------------------
     # VACIAR CARRITO
@@ -1087,17 +1177,8 @@ def carrito_pagar():
     session["carrito"] = {}
     session.modified = True
 
-    return redirect(
-        url_for(
-            "pedido_detalle",
-            pedido_id=pedido.id
-        )
-    )
+    return redirect(url_for("pedido_detalle", pedido_id=pedido.id))
 
-
-# =========================================================
-# DETALLE DE PEDIDO (transferencia / efectivo)
-# =========================================================
 
 # =========================================================
 # DETALLE DE PEDIDO
@@ -1118,25 +1199,10 @@ def pedido_detalle(pedido_id):
     # OBTENER MODALIDAD DE ENTREGA
     # -----------------------------------------------------
 
-    pedidos_entrega = session.get(
-        "pedidos_entrega",
-        {}
-    )
-
-    datos_entrega = pedidos_entrega.get(
-        str(pedido.id),
-        {}
-    )
-
-    modalidad_entrega = datos_entrega.get(
-        "modalidad",
-        "retiro"
-    )
-
-    costo_envio = datos_entrega.get(
-        "costo_envio",
-        0
-    )
+    pedidos_entrega = session.get("pedidos_entrega", {})
+    datos_entrega = pedidos_entrega.get(str(pedido.id), {})
+    modalidad_entrega = datos_entrega.get("modalidad", "retiro")
+    costo_envio = datos_entrega.get("costo_envio", 0)
 
     # -----------------------------------------------------
     # INFORMACIÓN DE ENTREGA
@@ -1611,6 +1677,8 @@ def admin_producto_borrar(producto_id):
     db.session.delete(producto)
     db.session.commit()
     return redirect(url_for("admin_productos"))
+
+
 # =========================================================
 # COMPATIBILIDAD
 # =========================================================
@@ -1635,7 +1703,5 @@ legales.init_app(app, obtener_contexto_base)
 # =========================================================
 
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-

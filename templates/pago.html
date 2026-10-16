@@ -128,7 +128,20 @@
                 </button>
 
             </form>
-
+<div class="cupon">
+  {% if cupon %}
+    <p>Cupón <strong>{{ cupon.codigo }}</strong> aplicado: -{{ descuento_cupon|pesos }}</p>
+    <form method="post" action="{{ url_for('cupon_quitar') }}">
+      <button type="submit">Quitar</button>
+    </form>
+  {% else %}
+    <form method="post" action="{{ url_for('cupon_aplicar') }}">
+      <input type="text" name="codigo" placeholder="Código de descuento" maxlength="30" autocomplete="off">
+      <button type="submit">Aplicar</button>
+    </form>
+    {% if error_cupon %}<p class="error">{{ error_cupon }}</p>{% endif %}
+  {% endif %}
+</div>
         </section>
 
         <aside class="pago-resumen">
