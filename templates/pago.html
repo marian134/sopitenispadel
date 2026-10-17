@@ -131,6 +131,15 @@
 <div class="cupon">
   {% if cupon %}
     <p>Cupón <strong>{{ cupon.codigo }}</strong> aplicado: -{{ descuento_cupon|pesos }}</p>
+    <ul class="cupon-detalle">
+      {% for d in detalle_cupon %}
+        <li>
+          {{ d.nombre }} × {{ d.cantidad }} —
+          {% if d.ahorro %}-{{ d.ahorro|pesos }} ({{ cupon.porcentaje }}% off){% else %}{{ d.motivo }}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <small>El cupón no se acumula con el 5% de efectivo: se aplica el que te deje el mejor precio.</small>
     <form method="post" action="{{ url_for('cupon_quitar') }}">
       <button type="submit">Quitar</button>
     </form>
@@ -155,12 +164,12 @@
                 </span>
             </div>
 
+           {% if cupon %}
             <div class="resumen-linea">
-                <span>Subtotal</span>
-                <strong>
-                    ${{ "{:,}".format(total).replace(",", ".") }}
-                </strong>
-            </div>
+            <span>Cupón {{ cupon.codigo }}</span>
+            <strong>-{{ descuento_cupon|pesos }}</strong>
+        </div>
+            {% endif %}
 
             <div class="resumen-linea">
                 <span>Entrega</span>
@@ -170,32 +179,23 @@
             </div>
 
             <div class="resumen-linea resumen-total">
-                <span>Total</span>
-                <strong id="total-pagar">
-                    ${{ "{:,}".format(total).replace(",", ".") }}
-                </strong>
+            <span>Total</span>
+            <strong id="total-pagar">{{ total_final|pesos }}</strong>
             </div>
 
             <div
-                class="pago-descuento"
-                id="bloque-descuento"
-                style="display:none;"
-            >
-                💵 Pagando en efectivo ahorrás
-                <strong>
-                    ${{ "{:,.0f}".format(total * 0.05).replace(",", ".") }}
-                </strong>
+           <div class="pago-descuento" id="bloque-descuento" style="display:none;">
+            {% if efectivo_con_cupon %}
+             💵 En efectivo se mantiene tu cupón {{ cupon.codigo }} (no se suma el 5%).
+              {% else %}
+              💵 Pagando en efectivo ahorrás
+           <strong>{{ (total - total_efectivo_final)|pesos }}</strong>
+            {% if cupon %}<br><small>Se aplica en lugar de {{ cupon.codigo }}: no se acumulan.</small>{% endif %}
+            {% endif %}
             </div>
 
-            <div
-                class="pago-efectivo-total"
-                id="bloque-efectivo"
-                style="display:none;"
-            >
-                Total en efectivo:
-                <strong>
-                    ${{ "{:,.0f}".format(total * 0.95).replace(",", ".") }}
-                </strong>
+            <div class="pago-efectivo-total" id="bloque-efectivo" style="display:none;">
+            Total en efectivo: <strong>{{ total_efectivo_final|pesos }}</strong>
             </div>
 
             <div
@@ -227,7 +227,7 @@ document.addEventListener(
     function () {
 
         const total =
-            {{ total|int }};
+            {{ total_final|int}};
 
         const radiosPago =
             document.querySelectorAll(
@@ -343,19 +343,6 @@ document.addEventListener(
                 entregaSeleccionada.value === "retiro"
             ) {
 
-                const descuento =
-                    Math.round(
-                        total * 0.05
-                    );
-
-                const totalEfectivo =
-                    total - descuento;
-
-                totalPagar.textContent =
-                    formatoPrecio(
-                        totalEfectivo
-                    );
-
                 bloqueDescuento.style.display =
                     "block";
 
@@ -365,15 +352,13 @@ document.addEventListener(
             } else {
 
                 totalPagar.textContent =
-                    formatoPrecio(
-                        total
-                    );
+                    = formatoPrecio(totalEfectivo);
 
                 bloqueDescuento.style.display =
-                    "none";
+                    "block";
 
                 bloqueEfectivo.style.display =
-                    "none";
+                    "block";
             }
 
         }

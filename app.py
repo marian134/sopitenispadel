@@ -936,21 +936,16 @@ def cumple_condiciones_varela(items):
         if deporte != "tenis":
             continue
 
-        # Cuenta tubos individuales, no packs de varios tubos.
-        if (
-            "pelota" in categoria
-            and "tubo" in nombre
-            and "pack" not in nombre
-        ):
-            tubos += cantidad
+        # Cuenta tubos: un tubo suelto suma 1 y un pack x3 suma 3.
+        if "pelota" in categoria and "tubo" in nombre:
+            tubos += cantidad * (3 if "pack" in nombre else 1)
 
         # Cuenta overgrips Wilson vendidos por unidad.
         if marca == "wilson" and "overgrip" in nombre:
             overgrips_wilson += cantidad
 
-    return tubos >= 3 or (
-        tubos >= 2 and overgrips_wilson >= 2
-    )
+    return tubos >= 3 or (tubos >= 2 and overgrips_wilson >= 2)
+
 @app.route("/carrito/cupon", methods=["POST"])
 def cupon_aplicar():
     cupon, error = validar_cupon(request.form.get("codigo"))
@@ -1107,30 +1102,56 @@ def carrito_pagar():
             cupon = None
             session.pop("cupon", None)
             error_cupon = (
-                "VARELA5 requiere 3 tubos individuales de pelotas "
-                "o 2 tubos individuales y 2 overgrips Wilson."
+                "VARELA5 requiere 3 tubos de pelotas (sueltos o en pack) "
+                "o 2 tubos y 2 overgrips Wilson."
             )
 
     if cupon:
         for item in items:
-            item["precio_unitario"] = precio_con_cupon(
-                cupon,
-                item["producto"]
-            )
+            item["precio_unitario"] = precio_con_cupon(cupon, item["producto"])
 
         total_cupon = sum(
-            item["precio_unitario"] * item["cantidad"]
-            for item in items
+            item["precio_unitario"] * item["cantidad"] for item in items
         )
 
         if total_cupon >= total:
             cupon = None
             total_cupon = total
+            hay_pack = any(
+                "pack" in (i["producto"].nombre or "").lower() for i in items
+            )
             error_cupon = (
+                "Los packs ya incluyen 5% de descuento y no se acumulan con VARELA5."
+                if hay_pack else
                 "El código no aplica a los productos de tu carrito."
             )
 
     descuento_cupon = total - total_cupon
+
+    # Detalle para mostrarle al cliente cómo se aplicó el descuento
+    detalle_cupon = []
+    if cupon:
+        for item in items:
+            p = item["producto"]
+            ahorro = (p.precio - item["precio_unitario"]) * item["cantidad"]
+            if ahorro > 0:
+                motivo = ""
+            elif cupon.excluir_nombre and cupon.excluir_nombre.lower() in (p.nombre or "").lower():
+                motivo = "ya incluye su descuento de pack"
+            else:
+                motivo = "no incluido en este cupón"
+            detalle_cupon.append({
+                "nombre": p.nombre,
+                "cantidad": item["cantidad"],
+                "ahorro": ahorro,
+                "motivo": motivo,
+            })
+
+    # Lo que paga en efectivo (no se acumula con el cupón: gana el precio más bajo)
+    total_efectivo = round(total * (1 - DESCUENTO_EFECTIVO))
+    efectivo_con_cupon = bool(cupon) and total_cupon < total_efectivo
+    total_efectivo_final = total_cupon if efectivo_con_cupon else total_efectivo
+
     # -----------------------------------------------------
     # MOSTRAR PANTALLA DE PAGO
     # -----------------------------------------------------
@@ -1145,10 +1166,12 @@ def carrito_pagar():
             total_final=total_cupon,
             cupon=cupon,
             descuento_cupon=descuento_cupon,
+            detalle_cupon=detalle_cupon,
+            total_efectivo_final=total_efectivo_final,
+            efectivo_con_cupon=efectivo_con_cupon,
             error_cupon=error_cupon,
             descuento_efectivo=DESCUENTO_EFECTIVO * 100,
         )
-
     # -----------------------------------------------------
     # DATOS DEL FORMULARIO
     # -----------------------------------------------------
