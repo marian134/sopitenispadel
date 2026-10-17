@@ -920,7 +920,37 @@ def precio_con_cupon(cupon, producto):
         return producto.precio
     return int(round(producto.precio * (100 - cupon.porcentaje) / 100))
 
+def cumple_condiciones_varela(items):
+    tubos = 0
+    overgrips_wilson = 0
 
+    for item in items:
+        producto = item["producto"]
+        cantidad = item["cantidad"]
+
+        nombre = (producto.nombre or "").lower()
+        marca = (producto.marca or "").lower()
+        categoria = (producto.categoria or "").lower()
+        deporte = (producto.deporte or "").lower()
+
+        if deporte != "tenis":
+            continue
+
+        # Cuenta tubos individuales, no packs de varios tubos.
+        if (
+            "pelota" in categoria
+            and "tubo" in nombre
+            and "pack" not in nombre
+        ):
+            tubos += cantidad
+
+        # Cuenta overgrips Wilson vendidos por unidad.
+        if marca == "wilson" and "overgrip" in nombre:
+            overgrips_wilson += cantidad
+
+    return tubos >= 3 or (
+        tubos >= 2 and overgrips_wilson >= 2
+    )
 @app.route("/carrito/cupon", methods=["POST"])
 def cupon_aplicar():
     cupon, error = validar_cupon(request.form.get("codigo"))
@@ -1070,18 +1100,37 @@ def carrito_pagar():
 
     cupon, error_cupon = cupon_de_sesion()
     error_cupon = session.pop("error_cupon", None) or error_cupon
-
     total_cupon = total
+
+    if cupon and cupon.codigo.upper() == "VARELA5":
+        if not cumple_condiciones_varela(items):
+            cupon = None
+            session.pop("cupon", None)
+            error_cupon = (
+                "VARELA5 requiere 3 tubos individuales de pelotas "
+                "o 2 tubos individuales y 2 overgrips Wilson."
+            )
+
     if cupon:
         for item in items:
-            item["precio_unitario"] = precio_con_cupon(cupon, item["producto"])
-        total_cupon = sum(i["precio_unitario"] * i["cantidad"] for i in items)
+            item["precio_unitario"] = precio_con_cupon(
+                cupon,
+                item["producto"]
+            )
+
+        total_cupon = sum(
+            item["precio_unitario"] * item["cantidad"]
+            for item in items
+        )
+
         if total_cupon >= total:
             cupon = None
             total_cupon = total
-            error_cupon = "El código no aplica a los productos de tu carrito."
-    descuento_cupon = total - total_cupon
+            error_cupon = (
+                "El código no aplica a los productos de tu carrito."
+            )
 
+    descuento_cupon = total - total_cupon
     # -----------------------------------------------------
     # MOSTRAR PANTALLA DE PAGO
     # -----------------------------------------------------
