@@ -214,16 +214,6 @@
                             <em class="co-etiqueta" style="font-style:normal">5% OFF</em>
                         </div>
                     </label>
-
-                    <label class="co-opcion" id="opcion-efectivo">
-                        <input type="radio" name="medio_pago" value="efectivo">
-                        <div class="co-opcion-box">
-                            <div class="co-opcion-texto">
-                                <strong>💵 Efectivo al retirar</strong>
-                                <span id="aviso-efectivo">Pagás cuando retirás tu pedido en Quilmes.</span>
-                            </div>
-                        </div>
-                    </label>
                 </section>
 
             </form>
@@ -338,10 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var form = document.getElementById("form-pago");
     var radiosPago = form.querySelectorAll('input[name="medio_pago"]');
     var radiosEntrega = form.querySelectorAll('input[name="modalidad_entrega"]');
-    var radioEfectivo = form.querySelector('input[name="medio_pago"][value="efectivo"]');
     var radioMP = form.querySelector('input[name="medio_pago"][value="mercadopago"]');
-    var opcionEfectivo = document.getElementById("opcion-efectivo");
-    var avisoEfectivo = document.getElementById("aviso-efectivo");
     var datosDomicilio = document.getElementById("datos-domicilio");
     var camposDomicilio = datosDomicilio.querySelectorAll("input");
 
@@ -361,7 +348,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var TEXTOS = {
         mercadopago:   ["Ir a pagar con Mercado Pago", "Te llevamos a Mercado Pago para completar el pago."],
         transferencia: ["Confirmar pedido", "Al confirmar te mostramos los datos bancarios para transferir."],
-        efectivo:      ["Confirmar pedido", "Pagás en efectivo cuando retirás en Quilmes. Coordinamos día y horario."]
     };
 
     function actualizar() {
@@ -372,16 +358,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Campos de domicilio solo si es envío
         datosDomicilio.hidden = !esEnvio;
         camposDomicilio.forEach(function (c) { c.required = esEnvio; });
-
-        // Efectivo solo con retiro
-        radioEfectivo.disabled = esEnvio;
-        avisoEfectivo.textContent = esEnvio
-            ? "Solo disponible con retiro en Quilmes."
-            : "Pagás cuando retirás tu pedido en Quilmes.";
-        if (esEnvio && radioEfectivo.checked) {
-            radioMP.checked = true;
-            pago = radioMP;
-        }
 
         var medio = pago ? pago.value : "mercadopago";
         var esTransf = medio === "transferencia";

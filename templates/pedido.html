@@ -49,8 +49,6 @@
         <li>Alias: <strong>{{ transferencia.alias }}</strong></li>
       </ul>
       <p>Una vez realizada la transferencia, mandanos el comprobante por WhatsApp para confirmar tu pedido.</p>
-    {% elif pedido.medio_pago == "efectivo" %}
-      <p>El pago en efectivo se realiza al retirar el pedido en Quilmes.</p>
     {% elif pedido.medio_pago == "mercadopago" %}
       <p>El pago se gestiona en Mercado Pago. El estado del pedido se actualizará cuando se confirme el pago.</p>
     {% endif %}

@@ -1290,23 +1290,14 @@ def carrito_pagar():
     # -----------------------------------------------------
     # DATOS DEL FORMULARIO
     # -----------------------------------------------------
-
     medio_pago = request.form.get("medio_pago")
     modalidad_entrega = request.form.get("modalidad_entrega")
 
-    if medio_pago not in ("mercadopago", "transferencia", "efectivo"):
+    if medio_pago not in ("mercadopago", "transferencia"):
         return redirect(url_for("carrito_pagar"))
 
     if modalidad_entrega not in ("retiro", "envio"):
         return redirect(url_for("carrito_pagar"))
-
-    # Validar que el efectivo sea únicamente para retiro.
-    if medio_pago == "efectivo" and modalidad_entrega == "envio":
-        return (
-            "El pago en efectivo está disponible únicamente "
-            "para retiro en Quilmes.",
-            400,
-        )
 
     # Leer los datos del comprador.
     datos_cliente = {
@@ -1374,22 +1365,20 @@ def carrito_pagar():
         session.pop("cupon", None)
         return respuesta
 
-    # -----------------------------------------------------
-    # TRANSFERENCIA (5% off) / EFECTIVO (sin descuento)
+   # -----------------------------------------------------
+    # TRANSFERENCIA (5% OFF, NO ACUMULABLE CON CUPÓN)
     # -----------------------------------------------------
 
-    if medio_pago == "transferencia":
-        total_transferencia = total_con_transferencia(items)
-        # No acumulable: se aplica el descuento que deja el precio más bajo
-        if cupon and total_cupon < total_transferencia:
-            total_final = total_cupon
-        else:
-            total_final = total_transferencia
-            cupon, descuento_cupon = None, 0
-            for item in items:
-                item["precio_unitario"] = item["producto"].precio
-    else:
+    total_transferencia = total_con_transferencia(items)
+
+    # Se conserva el descuento que deja el precio más bajo.
+    if cupon and total_cupon < total_transferencia:
         total_final = total_cupon
+    else:
+        total_final = total_transferencia
+        cupon, descuento_cupon = None, 0
+        for item in items:
+            item["precio_unitario"] = item["producto"].precio
 
     # -----------------------------------------------------
     # CREAR PEDIDO
@@ -1477,35 +1466,25 @@ def pedido_detalle(pedido_id):
     # INFORMACIÓN DEL MEDIO DE PAGO
     # -----------------------------------------------------
 
-    if pedido.medio_pago == "efectivo":
+        # -----------------------------------------------------
+    # INFORMACIÓN DEL MEDIO DE PAGO
+    # -----------------------------------------------------
 
-        medio_pago_titulo = "Efectivo"
-
-        medio_pago_descripcion = (
-            "Pagás en efectivo cuando retirás tu pedido en Quilmes."
-        )
-
-    elif pedido.medio_pago == "transferencia":
-
+    if pedido.medio_pago == "transferencia":
         medio_pago_titulo = "Transferencia bancaria"
-
         medio_pago_descripcion = (
             "Al pagar por transferencia aplicamos el 5% de descuento "
             "(no incluye packs) o tu cupón, si te conviene más."
         )
 
     elif pedido.medio_pago == "mercadopago":
-
         medio_pago_titulo = "Mercado Pago"
-
         medio_pago_descripcion = (
             "El pago se realiza mediante Mercado Pago."
         )
 
     else:
-
         medio_pago_titulo = pedido.medio_pago
-
         medio_pago_descripcion = ""
 
     # -----------------------------------------------------
