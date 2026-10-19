@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+ {% extends "base.html" %}
 {% block title %}Tu pedido #{{ pedido.id }} — SOPI Tenis•Pádel{% endblock %}
 {% block content %}
 <div class="container">
@@ -6,29 +6,53 @@
     <div class="resultado-icono">✓</div>
     <h1>¡Recibimos tu pedido #{{ pedido.id }}!</h1>
 
-    <p>Total a pagar:
+    <p>Total del pedido:
       <strong>${{ "{:,.0f}".format(pedido.total).replace(",", ".") }}</strong>
     </p>
 
+    <h2>Datos del comprador</h2>
+    <ul>
+      <li>Nombre: <strong>{{ pedido.nombre_cliente or "No informado" }}</strong></li>
+      <li>Email: <strong>{{ pedido.email_cliente or "No informado" }}</strong></li>
+      <li>Teléfono: <strong>{{ pedido.telefono_cliente or "No informado" }}</strong></li>
+    </ul>
+
+    <h2>Entrega</h2>
+    <p><strong>{{ entrega_titulo }}</strong></p>
+    <p>{{ entrega_descripcion }}</p>
+
+    {% if modalidad_entrega == "envio" %}
+      <ul>
+        <li>Dirección: {{ pedido.direccion or "No informada" }}</li>
+        <li>Localidad: {{ pedido.localidad or "No informada" }}</li>
+        <li>Provincia: {{ pedido.provincia or "No informada" }}</li>
+        <li>Código postal: {{ pedido.codigo_postal or "No informado" }}</li>
+      </ul>
+      <p>El costo del envío se coordinará según el destino y el paquete.</p>
+    {% endif %}
+
+    <h2>Productos</h2>
     <ul>
       {% for linea in pedido.lineas %}
         <li>{{ linea.cantidad }} × {{ linea.nombre_producto }}</li>
       {% endfor %}
     </ul>
 
+    <h2>Medio de pago: {{ medio_pago_titulo }}</h2>
+    <p>{{ medio_pago_descripcion }}</p>
+
     {% if pedido.medio_pago == "transferencia" %}
-      <h2>Datos para la transferencia</h2>
+      <h3>Datos para la transferencia</h3>
       <ul>
         <li>Titular: <strong>{{ transferencia.titular }}</strong></li>
         <li>CBU/CVU: <strong>{{ transferencia.cbu }}</strong></li>
         <li>Alias: <strong>{{ transferencia.alias }}</strong></li>
       </ul>
-      <p>Una vez hecha la transferencia, mandanos el comprobante por WhatsApp
-         para confirmar tu pedido.</p>
-    {% else %}
-      <h2>Pago en efectivo</h2>
-      <p>Pagás al retirar o al recibir tu pedido (ya incluye el 5% de descuento).
-         Coordinamos la entrega por WhatsApp.</p>
+      <p>Una vez realizada la transferencia, mandanos el comprobante por WhatsApp para confirmar tu pedido.</p>
+    {% elif pedido.medio_pago == "efectivo" %}
+      <p>El pago en efectivo se realiza al retirar el pedido en Quilmes. El total ya contempla el descuento correspondiente.</p>
+    {% elif pedido.medio_pago == "mercadopago" %}
+      <p>El pago se gestiona en Mercado Pago. El estado del pedido se actualizará cuando se confirme el pago.</p>
     {% endif %}
 
     {% if whatsapp %}
@@ -37,6 +61,7 @@
         Escribir por WhatsApp
       </a>
     {% endif %}
+
     <a href="{{ url_for('portada') }}" class="btn">Volver a la tienda</a>
   </div>
 </div>

@@ -64,6 +64,82 @@
                     </div>
                 </label>
 
+<div class="pago-subtitulo">
+    Datos del comprador
+</div>
+
+<div class="datos-comprador">
+    <label for="nombre_cliente">Nombre y apellido *</label>
+    <input
+        type="text"
+        id="nombre_cliente"
+        name="nombre_cliente"
+        maxlength="120"
+        autocomplete="name"
+        required
+    >
+
+    <label for="email_cliente">Email *</label>
+    <input
+        type="email"
+        id="email_cliente"
+        name="email_cliente"
+        maxlength="120"
+        autocomplete="email"
+        required
+    >
+
+    <label for="telefono_cliente">Teléfono / WhatsApp *</label>
+    <input
+        type="tel"
+        id="telefono_cliente"
+        name="telefono_cliente"
+        maxlength="40"
+        autocomplete="tel"
+        required
+    >
+</div>
+
+<div id="datos-domicilio" class="datos-comprador" hidden>
+    <div class="pago-subtitulo">Datos para el envío</div>
+
+    <label for="direccion">Calle y número *</label>
+    <input
+        type="text"
+        id="direccion"
+        name="direccion"
+        maxlength="200"
+        autocomplete="street-address"
+    >
+
+    <label for="localidad">Localidad *</label>
+    <input
+        type="text"
+        id="localidad"
+        name="localidad"
+        maxlength="100"
+        autocomplete="address-level2"
+    >
+
+    <label for="provincia">Provincia *</label>
+    <input
+        type="text"
+        id="provincia"
+        name="provincia"
+        maxlength="100"
+        autocomplete="address-level1"
+    >
+
+    <label for="codigo_postal">Código postal *</label>
+    <input
+        type="text"
+        id="codigo_postal"
+        name="codigo_postal"
+        maxlength="20"
+        autocomplete="postal-code"
+    >
+</div>
+
                 <div class="pago-subtitulo">
                     ¿Cómo querés pagar?
                 </div>
@@ -231,171 +307,95 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const totalNormal = {{ total_final|int }};
+    const totalEfectivo = {{ total_efectivo_final|int }};
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+    const radiosPago = document.querySelectorAll('input[name="medio_pago"]');
+    const radiosEntrega = document.querySelectorAll('input[name="modalidad_entrega"]');
 
-        const total =
-            {{ total_final|int}};
+    const totalPagar = document.getElementById("total-pagar");
+    const bloqueDescuento = document.getElementById("bloque-descuento");
+    const bloqueEfectivo = document.getElementById("bloque-efectivo");
+    const bloqueEnvio = document.getElementById("bloque-envio");
+    const resumenEntrega = document.getElementById("resumen-entrega");
+    const opcionEfectivo = document.getElementById("opcion-efectivo");
 
-        const radiosPago =
-            document.querySelectorAll(
-                'input[name="medio_pago"]'
-            );
+    const datosDomicilio = document.getElementById("datos-domicilio");
+    const camposDomicilio = datosDomicilio
+        ? datosDomicilio.querySelectorAll("input")
+        : [];
 
-        const radiosEntrega =
-            document.querySelectorAll(
-                'input[name="modalidad_entrega"]'
-            );
-
-        const totalPagar =
-            document.getElementById(
-                "total-pagar"
-            );
-
-        const bloqueDescuento =
-            document.getElementById(
-                "bloque-descuento"
-            );
-
-        const bloqueEfectivo =
-            document.getElementById(
-                "bloque-efectivo"
-            );
-
-        const bloqueEnvio =
-            document.getElementById(
-                "bloque-envio"
-            );
-
-        const resumenEntrega =
-            document.getElementById(
-                "resumen-entrega"
-            );
-
-        const opcionEfectivo =
-            document.getElementById(
-                "opcion-efectivo"
-            );
-
-        function formatoPrecio(numero) {
-            return "$" +
-                numero.toLocaleString("es-AR");
-        }
-
-        function actualizarPantalla() {
-
-            const pagoSeleccionado =
-                document.querySelector(
-                    'input[name="medio_pago"]:checked'
-                );
-
-            const entregaSeleccionada =
-                document.querySelector(
-                    'input[name="modalidad_entrega"]:checked'
-                );
-
-            if (
-                entregaSeleccionada &&
-                entregaSeleccionada.value === "envio"
-            ) {
-
-                resumenEntrega.textContent =
-                    "Envío a domicilio";
-
-                bloqueEnvio.style.display =
-                    "block";
-
-            } else {
-
-                resumenEntrega.textContent =
-                    "Retiro en Quilmes";
-
-                bloqueEnvio.style.display =
-                    "none";
-            }
-
-            const radioEfectivo =
-                opcionEfectivo.querySelector(
-                    'input[name="medio_pago"]'
-                );
-
-            if (
-                entregaSeleccionada &&
-                entregaSeleccionada.value === "envio"
-            ) {
-
-                opcionEfectivo.style.opacity =
-                    "0.5";
-
-                if (radioEfectivo.checked) {
-                    radioEfectivo.checked =
-                        false;
-                }
-
-                radioEfectivo.disabled =
-                    true;
-
-            } else {
-
-                opcionEfectivo.style.opacity =
-                    "1";
-
-                radioEfectivo.disabled =
-                    false;
-            }
-
-            if (
-                pagoSeleccionado &&
-                pagoSeleccionado.value === "efectivo" &&
-                entregaSeleccionada &&
-                entregaSeleccionada.value === "retiro"
-            ) {
-
-                bloqueDescuento.style.display =
-                    "block";
-
-                bloqueEfectivo.style.display =
-                    "block";
-
-            } else {
-
-                totalPagar.textContent =
-                    = formatoPrecio(totalEfectivo);
-
-                bloqueDescuento.style.display =
-                    "block";
-
-                bloqueEfectivo.style.display =
-                    "block";
-            }
-
-        }
-
-        radiosPago.forEach(
-            function (radio) {
-                radio.addEventListener(
-                    "change",
-                    actualizarPantalla
-                );
-            }
-        );
-
-        radiosEntrega.forEach(
-            function (radio) {
-                radio.addEventListener(
-                    "change",
-                    actualizarPantalla
-                );
-            }
-        );
-
-        actualizarPantalla();
-
+    function formatoPrecio(numero) {
+        return "$" + numero.toLocaleString("es-AR");
     }
 
-);
+    function actualizarPantalla() {
+        const pagoSeleccionado = document.querySelector(
+            'input[name="medio_pago"]:checked'
+        );
+
+        const entregaSeleccionada = document.querySelector(
+            'input[name="modalidad_entrega"]:checked'
+        );
+
+        const esEnvio = entregaSeleccionada &&
+            entregaSeleccionada.value === "envio";
+
+        const esEfectivo = pagoSeleccionado &&
+            pagoSeleccionado.value === "efectivo" &&
+            !esEnvio;
+
+        // Mostrar los campos de domicilio solamente para envío.
+        if (datosDomicilio) {
+            datosDomicilio.hidden = !esEnvio;
+
+            camposDomicilio.forEach(function (campo) {
+                campo.required = Boolean(esEnvio);
+            });
+        }
+
+        // Actualizar el resumen de entrega.
+        resumenEntrega.textContent = esEnvio
+            ? "Envío a domicilio"
+            : "Retiro en Quilmes";
+
+        bloqueEnvio.style.display = esEnvio ? "block" : "none";
+
+        // Efectivo solo disponible para retiro en Quilmes.
+        const radioEfectivo = opcionEfectivo.querySelector(
+            'input[name="medio_pago"]'
+        );
+
+        radioEfectivo.disabled = Boolean(esEnvio);
+        opcionEfectivo.style.opacity = esEnvio ? "0.5" : "1";
+
+        if (esEnvio && radioEfectivo.checked) {
+            radioEfectivo.checked = false;
+        }
+
+        // Mostrar el total correspondiente al medio de pago.
+        if (esEfectivo) {
+            totalPagar.textContent = formatoPrecio(totalEfectivo);
+            bloqueDescuento.style.display = "block";
+            bloqueEfectivo.style.display = "block";
+        } else {
+            totalPagar.textContent = formatoPrecio(totalNormal);
+            bloqueDescuento.style.display = "none";
+            bloqueEfectivo.style.display = "none";
+        }
+    }
+
+    radiosPago.forEach(function (radio) {
+        radio.addEventListener("change", actualizarPantalla);
+    });
+
+    radiosEntrega.forEach(function (radio) {
+        radio.addEventListener("change", actualizarPantalla);
+    });
+
+    actualizarPantalla();
+});
 
 </script>
 

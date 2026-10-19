@@ -98,23 +98,46 @@ def enviar_aviso_venta(asunto, cuerpo):
         return False
 
 
+
 def avisar_pedido_nuevo(pedido):
-    """Avisa que se registró un pedido nuevo."""
+    """Avisa que se registró un pedido nuevo, con los datos del comprador."""
     detalle = [
-        f"- {linea.nombre_producto} x {linea.cantidad}: ${linea.precio_unitario * linea.cantidad:,.0f}"
+        (
+            f"- {linea.nombre_producto} x {linea.cantidad}: "
+            f"${linea.precio_unitario * linea.cantidad:,.0f}"
+        )
         for linea in pedido.lineas
     ]
 
     uso = CuponUso.query.filter_by(pedido_id=pedido.id).first()
     linea_cupon = []
+
     if uso:
         c = db.session.get(Cupon, uso.cupon_id)
-        linea_cupon = [f"Cupón: {c.codigo} (-${uso.descuento:,.0f})"]
+        if c:
+            linea_cupon = [
+                f"Cupón: {c.codigo} (-${uso.descuento:,.0f})"
+            ]
+
+    if pedido.modalidad_entrega == "envio":
+        datos_entrega = [
+            f"Dirección: {pedido.direccion or 'No informada'}",
+            f"Localidad: {pedido.localidad or 'No informada'}",
+            f"Provincia: {pedido.provincia or 'No informada'}",
+            f"Código postal: {pedido.codigo_postal or 'No informado'}",
+        ]
+    else:
+        datos_entrega = ["Entrega: Retiro en Quilmes"]
 
     cuerpo = "\n".join([
         f"Nuevo pedido #{pedido.id} en SOPI Tenis•Pádel",
         "",
         f"Estado: {pedido.estado}",
+        f"Cliente: {pedido.nombre_cliente or 'No informado'}",
+        f"Email: {pedido.email_cliente or 'No informado'}",
+        f"Teléfono: {pedido.telefono_cliente or 'No informado'}",
+        f"Entrega: {pedido.modalidad_entrega or 'No informada'}",
+        *datos_entrega,
         f"Medio de pago: {pedido.medio_pago}",
         f"Total: ${pedido.total:,.0f}",
         *linea_cupon,
@@ -126,6 +149,7 @@ def avisar_pedido_nuevo(pedido):
     ])
 
     enviar_aviso_venta(f"SOPI: nuevo pedido #{pedido.id}", cuerpo)
+
 
 
 def avisar_pago_confirmado(pedido):
@@ -212,6 +236,34 @@ with app.app_context():
     if "medio_pago" not in columnas_pedidos:
         db.session.execute(text("ALTER TABLE pedidos ADD COLUMN medio_pago VARCHAR(20)"))
         db.session.commit()
+
+    # Migración: datos del cliente y modalidad de entrega
+    columnas_pedidos = [
+        c["name"] for c in inspect(db.engine).get_columns("pedidos")
+    ]
+
+    nuevas_columnas_pedidos = {
+        "nombre_cliente": "VARCHAR(120)",
+        "email_cliente": "VARCHAR(120)",
+        "telefono_cliente": "VARCHAR(40)",
+        "modalidad_entrega": "VARCHAR(20)",
+        "direccion": "VARCHAR(200)",
+        "localidad": "VARCHAR(100)",
+        "provincia": "VARCHAR(100)",
+        "codigo_postal": "VARCHAR(20)",
+    }
+
+    for nombre_columna, tipo_columna in nuevas_columnas_pedidos.items():
+        if nombre_columna not in columnas_pedidos:
+            db.session.execute(
+                text(
+                    f"ALTER TABLE pedidos ADD COLUMN "
+                    f"{nombre_columna} {tipo_columna}"
+                )
+            )
+            db.session.commit()
+
+
 
     # Migración liviana: agrega costo si la tabla productos ya existía sin esa columna
     columnas_productos = [c["name"] for c in inspect(db.engine).get_columns("productos")]
@@ -986,32 +1038,66 @@ def armar_items_carrito():
     return items, total, total_items
 
 
-def crear_pedido(items, medio_pago, total, cupon=None, descuento=0):
-    """Registra el pedido (estado pendiente) con un snapshot de cada línea."""
-    pedido = Pedido(estado=ESTADO_PENDIENTE, medio_pago=medio_pago, total=int(total))
+
+def crear_pedido(
+    items,
+    medio_pago,
+    total,
+    cupon=None,
+    descuento=0,
+    datos_cliente=None,
+):
+    """Registra el pedido con los datos del comprador y sus productos."""
+    datos_cliente = datos_cliente or {}
+
+    pedido = Pedido(
+        estado=ESTADO_PENDIENTE,
+        medio_pago=medio_pago,
+        total=int(total),
+        nombre_cliente=datos_cliente.get("nombre_cliente"),
+        email_cliente=datos_cliente.get("email_cliente"),
+        telefono_cliente=datos_cliente.get("telefono_cliente"),
+        modalidad_entrega=datos_cliente.get("modalidad_entrega"),
+        direccion=datos_cliente.get("direccion"),
+        localidad=datos_cliente.get("localidad"),
+        provincia=datos_cliente.get("provincia"),
+        codigo_postal=datos_cliente.get("codigo_postal"),
+    )
+
     for item in items:
         p = item["producto"]
-        pedido.lineas.append(LineaPedido(
-            producto_id=p.id,
-            nombre_producto=p.nombre,
-            precio_unitario=item.get("precio_unitario", p.precio),
-            cantidad=int(item["cantidad"]),
-        ))
+        pedido.lineas.append(
+            LineaPedido(
+                producto_id=p.id,
+                nombre_producto=p.nombre,
+                precio_unitario=item.get("precio_unitario", p.precio),
+                cantidad=int(item["cantidad"]),
+            )
+        )
+
     db.session.add(pedido)
+
     if cupon and descuento > 0:
         db.session.flush()
-        db.session.add(CuponUso(
-            cupon_id=cupon.id, pedido_id=pedido.id, descuento=int(descuento)
-        ))
+        db.session.add(
+            CuponUso(
+                cupon_id=cupon.id,
+                pedido_id=pedido.id,
+                descuento=int(descuento),
+            )
+        )
+
     db.session.commit()
 
-    # El cliente solo puede ver los pedidos que creó en su sesión
+    # El cliente solo puede ver los pedidos creados en su sesión.
     pedidos = session.get("pedidos", [])
     pedidos.append(pedido.id)
     session["pedidos"] = pedidos
     session.modified = True
+
     avisar_pedido_nuevo(pedido)
     return pedido
+
 
 
 def confirmar_pago(pedido):
@@ -1026,11 +1112,24 @@ def confirmar_pago(pedido):
     db.session.commit()
 
 
-def pagar_con_mercadopago(items, total, cupon=None, descuento=0):
+def pagar_con_mercadopago(
+    items,
+    total,
+    cupon=None,
+    descuento=0,
+    datos_cliente=None,
+):
     if mp is None:
         return "Mercado Pago no está configurado. Falta MP_ACCESS_TOKEN.", 500
 
-    pedido = crear_pedido(items, "mercadopago", total, cupon, descuento)
+    pedido = crear_pedido(
+    items,
+    "mercadopago",
+    total,
+    cupon,
+    descuento,
+    datos_cliente=datos_cliente,
+    )
 
     preference_data = {
         "items": [
@@ -1185,6 +1284,52 @@ def carrito_pagar():
     if modalidad_entrega not in ("retiro", "envio"):
         return redirect(url_for("carrito_pagar"))
 
+    # Validar que el efectivo sea únicamente para retiro.
+    if medio_pago == "efectivo" and modalidad_entrega == "envio":
+        return (
+            "El pago en efectivo está disponible únicamente "
+            "para retiro en Quilmes.",
+            400,
+        )
+
+    # Leer los datos del comprador.
+    datos_cliente = {
+        "nombre_cliente": request.form.get("nombre_cliente", "").strip(),
+        "email_cliente": request.form.get("email_cliente", "").strip(),
+        "telefono_cliente": request.form.get("telefono_cliente", "").strip(),
+        "modalidad_entrega": modalidad_entrega,
+        "direccion": request.form.get("direccion", "").strip(),
+        "localidad": request.form.get("localidad", "").strip(),
+        "provincia": request.form.get("provincia", "").strip(),
+        "codigo_postal": request.form.get("codigo_postal", "").strip(),
+    }
+
+    # Validar los datos obligatorios.
+    if not all((
+        datos_cliente["nombre_cliente"],
+        datos_cliente["email_cliente"],
+        datos_cliente["telefono_cliente"],
+    )):
+        return "Completá tu nombre, email y teléfono para continuar.", 400
+
+    email = datos_cliente["email_cliente"]
+    if "@" not in email or "." not in email.rsplit("@", 1)[-1]:
+        return "Ingresá un email válido para continuar.", 400
+
+    if modalidad_entrega == "envio":
+        if not all((
+            datos_cliente["direccion"],
+            datos_cliente["localidad"],
+            datos_cliente["provincia"],
+            datos_cliente["codigo_postal"],
+        )):
+            return (
+                "Para el envío, completá dirección, localidad, "
+                "provincia y código postal.",
+                400,
+            )
+
+
     # -----------------------------------------------------
     # CONTROLAR STOCK
     # -----------------------------------------------------
@@ -1203,7 +1348,13 @@ def carrito_pagar():
     # -----------------------------------------------------
 
     if medio_pago == "mercadopago":
-        respuesta = pagar_con_mercadopago(items, total_cupon, cupon, descuento_cupon)
+        respuesta = pagar_con_mercadopago(
+            items,
+            total_cupon,
+            cupon,
+            descuento_cupon,
+            datos_cliente=datos_cliente,
+        )
         session.pop("cupon", None)
         return respuesta
 
@@ -1228,7 +1379,14 @@ def carrito_pagar():
     # CREAR PEDIDO
     # -----------------------------------------------------
 
-    pedido = crear_pedido(items, medio_pago, total_final, cupon, descuento_cupon)
+    pedido = crear_pedido(
+        items,
+        medio_pago,
+        total_final,
+        cupon,
+        descuento_cupon,
+        datos_cliente=datos_cliente,
+    )
     session.pop("cupon", None)
 
     # -----------------------------------------------------
@@ -1273,7 +1431,7 @@ def pedido_detalle(pedido_id):
 
     pedidos_entrega = session.get("pedidos_entrega", {})
     datos_entrega = pedidos_entrega.get(str(pedido.id), {})
-    modalidad_entrega = datos_entrega.get("modalidad", "retiro")
+    modalidad_entrega = pedido.modalidad_entrega or datos_entrega.get("modalidad", "retiro")
     costo_envio = datos_entrega.get("costo_envio", 0)
 
     # -----------------------------------------------------

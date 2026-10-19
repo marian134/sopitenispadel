@@ -22,15 +22,42 @@
   <table style="width:100%;border-collapse:collapse">
     <thead>
       <tr style="text-align:left;border-bottom:2px solid #111">
-        <th>#</th><th>Fecha</th><th>Medio</th><th>Detalle</th><th>Total</th><th>Estado</th><th></th>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Cliente y contacto</th>
+        <th>Entrega</th>
+        <th>Medio</th>
+        <th>Detalle</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
     {% for p in pedidos %}
       <tr style="border-bottom:1px solid #ddd;vertical-align:top">
-        <td>{{ p.id }}</td>
-        <td>{{ p.creado_en | hora_ar }}</td>
-        <td>{{ p.medio_pago or "—" }}</td>
+
+<td>{{ p.id }}</td>
+<td>{{ p.creado_en | hora_ar }}</td>
+<td>
+  <strong>{{ p.nombre_cliente or "Sin nombre" }}</strong><br>
+  {{ p.email_cliente or "Sin email" }}<br>
+  {{ p.telefono_cliente or "Sin teléfono" }}
+</td>
+<td>
+  {% if p.modalidad_entrega == "envio" %}
+    <strong>Envío a domicilio</strong><br>
+    {{ p.direccion or "Sin dirección" }}<br>
+    {{ p.localidad or "" }}{% if p.provincia %}, {{ p.provincia }}{% endif %}<br>
+    CP: {{ p.codigo_postal or "—" }}
+  {% elif p.modalidad_entrega == "retiro" %}
+    Retiro en Quilmes
+  {% else %}
+    Sin especificar
+  {% endif %}
+</td>
+<td>{{ p.medio_pago or "—" }}</td>
+
         <td>
           {% for l in p.lineas %}{{ l.cantidad }} × {{ l.nombre_producto }}<br>{% endfor %}
         </td>
@@ -56,7 +83,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="7" style="padding:24px 0">No hay pedidos.</td></tr>
+      <tr><td colspan="9" style="padding:24px 0">No hay pedidos.</td></tr>
     {% endfor %}
     </tbody>
   </table>
