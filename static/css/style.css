@@ -3171,3 +3171,69 @@ form {
     font-size: 13px;
     line-height: 1.4;
 }
+
+
+/* =========================================================
+   CHECKOUT SOPI — DATOS DEL COMPRADOR Y ENVÍO
+   ========================================================= */
+
+.pago-metodos .datos-comprador {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 16px 0 24px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+}
+
+.pago-metodos .datos-comprador[hidden] {
+    display: none !important;
+}
+
+.pago-metodos .datos-comprador > label {
+    margin-top: 8px;
+    color: #222;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pago-metodos .datos-comprador > input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+    color: #222;
+    font: inherit;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pago-metodos .datos-comprador > input:focus {
+    border-color: #a84d2d;
+    box-shadow: 0 0 0 3px rgba(168, 77, 45, 0.12);
+}
+
+.pago-metodos .datos-comprador > input::placeholder {
+    color: #999;
+}
+
+.pago-metodos .datos-comprador > .pago-subtitulo {
+    margin: 0 0 8px;
+}
+
+@media (max-width: 600px) {
+    .pago-metodos .datos-comprador {
+        padding: 16px;
+    }
+
+    .pago-metodos .datos-comprador > input {
+        min-height: 44px;
+    }
+}
