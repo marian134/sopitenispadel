@@ -324,7 +324,22 @@ else:
 # En Render definir URL_BASE=https://sopitenispadel.com.ar (sin barra final)
 URL_PUBLICA = os.environ.get("URL_BASE", "http://127.0.0.1:5000").rstrip("/")
 
-DESCUENTO_EFECTIVO = 0.05
+# Único descuento de la tienda: 5% pagando por transferencia bancaria
+DESCUENTO_TRANSFERENCIA = 0.05
+
+
+def es_pack(producto):
+    """Los packs ya traen su propio descuento en el precio."""
+    return "pack" in (producto.nombre or "").lower()
+
+
+def total_con_transferencia(items):
+    """5% off por transferencia en todo menos en los packs."""
+    return sum(
+        item["subtotal"] if es_pack(item["producto"])
+        else round(item["subtotal"] * (1 - DESCUENTO_TRANSFERENCIA))
+        for item in items
+    )
 
 # Datos que se muestran al cliente que paga por transferencia
 DATOS_TRANSFERENCIA = {
@@ -1246,10 +1261,10 @@ def carrito_pagar():
                 "motivo": motivo,
             })
 
-    # Lo que paga en efectivo (no se acumula con el cupón: gana el precio más bajo)
-    total_efectivo = round(total * (1 - DESCUENTO_EFECTIVO))
-    efectivo_con_cupon = bool(cupon) and total_cupon < total_efectivo
-    total_efectivo_final = total_cupon if efectivo_con_cupon else total_efectivo
+    # Lo que paga por transferencia (no se acumula con el cupón: gana el precio más bajo)
+    total_transferencia = total_con_transferencia(items)
+    transferencia_con_cupon = bool(cupon) and total_cupon < total_transferencia
+    total_transferencia_final = total_cupon if transferencia_con_cupon else total_transferencia
 
     # -----------------------------------------------------
     # MOSTRAR PANTALLA DE PAGO
@@ -1266,10 +1281,11 @@ def carrito_pagar():
             cupon=cupon,
             descuento_cupon=descuento_cupon,
             detalle_cupon=detalle_cupon,
-            total_efectivo_final=total_efectivo_final,
-            efectivo_con_cupon=efectivo_con_cupon,
+            total_transferencia_final=total_transferencia_final,
+            transferencia_con_cupon=transferencia_con_cupon,
+            hay_pack=any(es_pack(i["producto"]) for i in items),
             error_cupon=error_cupon,
-            descuento_efectivo=DESCUENTO_EFECTIVO * 100,
+            descuento_transferencia=DESCUENTO_TRANSFERENCIA * 100,
         )
     # -----------------------------------------------------
     # DATOS DEL FORMULARIO
@@ -1359,16 +1375,16 @@ def carrito_pagar():
         return respuesta
 
     # -----------------------------------------------------
-    # TRANSFERENCIA / EFECTIVO
+    # TRANSFERENCIA (5% off) / EFECTIVO (sin descuento)
     # -----------------------------------------------------
 
-    if medio_pago == "efectivo":
-        total_efectivo = round(total * (1 - DESCUENTO_EFECTIVO))
+    if medio_pago == "transferencia":
+        total_transferencia = total_con_transferencia(items)
         # No acumulable: se aplica el descuento que deja el precio más bajo
-        if cupon and total_cupon < total_efectivo:
+        if cupon and total_cupon < total_transferencia:
             total_final = total_cupon
         else:
-            total_final = total_efectivo
+            total_final = total_transferencia
             cupon, descuento_cupon = None, 0
             for item in items:
                 item["precio_unitario"] = item["producto"].precio
@@ -1466,8 +1482,7 @@ def pedido_detalle(pedido_id):
         medio_pago_titulo = "Efectivo"
 
         medio_pago_descripcion = (
-            "El pedido tiene aplicado el 5% de descuento "
-            "por pago en efectivo."
+            "Pagás en efectivo cuando retirás tu pedido en Quilmes."
         )
 
     elif pedido.medio_pago == "transferencia":
@@ -1475,8 +1490,8 @@ def pedido_detalle(pedido_id):
         medio_pago_titulo = "Transferencia bancaria"
 
         medio_pago_descripcion = (
-            "Te enviaremos los datos para realizar "
-            "la transferencia."
+            "Al pagar por transferencia aplicamos el 5% de descuento "
+            "(no incluye packs) o tu cupón, si te conviene más."
         )
 
     elif pedido.medio_pago == "mercadopago":
@@ -1529,8 +1544,7 @@ def pedido_detalle(pedido_id):
 
     return render_template(
         "pedido.html",
-        **contexto,
-        pedido=pedido,
+        **contexto,  # ya incluye "pedido"
         transferencia=DATOS_TRANSFERENCIA,
         whatsapp=WHATSAPP_VENDEDOR,
         texto_whatsapp=texto_whatsapp,

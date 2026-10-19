@@ -2,6 +2,18 @@
 
 {% block title %}Tu carrito{% endblock %}
 
+{% block head_extra %}
+<style>
+/* El "form {display:flex; flex-direction:column}" global apilaba los botones − 1 + */
+.carrito-cantidad .cantidad-control { flex-direction: row; gap: 0; margin: 0; }
+.carrito-cantidad .cantidad-control input { width: 44px; min-width: 0; padding: 0; font-size: 15px; -moz-appearance: textfield; }
+.carrito-cantidad .cantidad-control input::-webkit-outer-spin-button,
+.carrito-cantidad .cantidad-control input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.carrito-eliminar-form { display: block; }
+.carrito-paso-siguiente { margin: 0 0 14px; font-size: 14px; color: #64748b; line-height: 1.4; }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="carrito-page">
@@ -175,19 +187,14 @@
 
         <div class="resumen-separador"></div>
 
-        <form
-            method="post"
-            action="{{ url_for('carrito_pagar') }}"
-        >
+        <p class="carrito-paso-siguiente">
+            En el próximo paso elegís cómo recibirlo y cómo pagar.
+            Si tenés un código de descuento, lo cargás ahí.
+        </p>
 
-            <button
-                type="submit"
-                class="btn-checkout"
-            >
-                FINALIZAR COMPRA
-            </button>
-
-        </form>
+        <a href="{{ url_for('carrito_pagar') }}" class="btn-checkout">
+            IR A PAGAR
+        </a>
 
         {% if whatsapp_numero %}
 

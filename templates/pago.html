@@ -2,401 +2,465 @@
 
 {% block title %}Finalizar compra — SOPI Tenis•Pádel{% endblock %}
 
+{% block head_extra %}
+<style>
+/* =========================================================
+   CHECKOUT — todo con prefijo co- para no chocar con style.css
+   ========================================================= */
+.co-page { max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; color: #102a43; }
+.co-head { margin-bottom: 24px; }
+.co-head h1 { margin: 0 0 6px; font-size: 32px; line-height: 1.15; }
+.co-head p { margin: 0; color: #64748b; font-size: 16px; }
+
+.co-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+.co-main { display: flex; flex-direction: column; gap: 18px; }
+.co-main form { display: block; }               /* pisa el "form {display:flex}" global */
+.co-main form > .co-card + .co-card { margin-top: 18px; }
+
+.co-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 6px 24px rgba(16,42,67,.05); }
+.co-card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: 18px; line-height: 1.25; }
+.co-num { flex: none; width: 30px; height: 30px; border-radius: 50%; background: #102a43; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; }
+
+/* opciones (radio como tarjetas) */
+.co-opcion { position: relative; display: block; margin: 0 0 10px; cursor: pointer; }
+.co-opcion:last-child { margin-bottom: 0; }
+.co-opcion input { position: absolute; opacity: 0; pointer-events: none; }
+.co-opcion-box { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fff; transition: border-color .15s, background .15s; }
+.co-opcion:hover .co-opcion-box { border-color: #94a3b8; }
+.co-opcion-box::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: 2px; border: 2px solid #94a3b8; border-radius: 50%; background: #fff; box-sizing: border-box; }
+.co-opcion input:checked + .co-opcion-box { border-color: #102a43; background: #f1f5f9; }
+.co-opcion input:checked + .co-opcion-box::before { border-color: #102a43; background: radial-gradient(circle, #102a43 0 45%, #fff 50%); }
+.co-opcion input:focus-visible + .co-opcion-box { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.co-opcion input:disabled + .co-opcion-box { opacity: .5; cursor: not-allowed; background: #f8fafc; }
+.co-opcion-texto { flex: 1; min-width: 0; }
+.co-opcion-texto strong { display: block; font-size: 16px; color: #102a43; }
+.co-opcion-texto span { display: block; margin-top: 2px; font-size: 14px; color: #64748b; line-height: 1.4; }
+.co-etiqueta { flex: none; align-self: center; padding: 4px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.co-opcion input:disabled + .co-opcion-box .co-etiqueta { background: #e2e8f0; color: #64748b; }
+
+/* campos */
+.co-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.co-campo { display: flex; flex-direction: column; gap: 6px; }
+.co-campo.co-full { grid-column: 1 / -1; }
+.co-campo label { font-size: 14px; font-weight: 700; color: #334155; }
+.co-campo input { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; font-size: 16px; color: #102a43; }
+.co-campo input:focus { outline: none; border-color: #102a43; box-shadow: 0 0 0 3px rgba(16,42,67,.12); }
+.co-domicilio { margin-top: 18px; padding-top: 18px; border-top: 1px dashed #cbd5e1; }
+.co-domicilio[hidden] { display: none; }
+.co-domicilio h3 { margin: 0 0 12px; font-size: 15px; }
+
+/* cupón */
+.co-cupon summary { cursor: pointer; font-weight: 800; font-size: 15px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.co-cupon summary::-webkit-details-marker { display: none; }
+.co-cupon summary::before { content: "＋"; font-weight: 800; }
+.co-cupon[open] summary::before { content: "−"; }
+.co-cupon-form { display: flex; flex-direction: row; gap: 10px; margin-top: 14px; }
+.co-cupon-form input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; text-transform: uppercase; }
+.co-cupon-form input::placeholder { text-transform: none; }
+.co-cupon-form button { flex: none; padding: 12px 22px; border: 0; border-radius: 10px; background: #102a43; color: #fff; font-weight: 800; cursor: pointer; }
+.co-cupon-form button:hover { background: #163d66; }
+.co-cupon-error { margin: 10px 0 0; color: #b3261e; font-size: 14px; line-height: 1.4; }
+.co-cupon-ok { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.co-cupon-ok strong { display: block; color: #166534; }
+.co-cupon-ok span { font-size: 14px; color: #475569; }
+.co-cupon-ok form { margin: 0; display: block; }
+.co-cupon-quitar { border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; color: #475569; }
+.co-cupon-detalle { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid #e2e8f0; font-size: 14px; color: #475569; }
+.co-cupon-detalle li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.co-cupon-nota { display: block; margin-top: 10px; font-size: 13px; color: #64748b; }
+.co-card.co-cupon--ok { border-color: #bbf7d0; background: #f7fdf9; }
+
+/* botón final */
+.co-confirmar-wrap { display: flex; flex-direction: column; gap: 8px; }
+.co-confirmar { width: 100%; min-height: 56px; border: 0; border-radius: 12px; background: #102a43; color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; }
+.co-confirmar:hover { background: #163d66; }
+.co-confirmar-ayuda { margin: 0; text-align: center; font-size: 14px; color: #64748b; }
+
+/* resumen */
+.co-resumen { position: sticky; top: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 6px 24px rgba(16,42,67,.05); }
+.co-resumen h2 { margin: 0 0 14px; font-size: 20px; }
+.co-items { list-style: none; margin: 0 0 14px; padding: 0 0 14px; border-bottom: 1px solid #e2e8f0; }
+.co-items li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 14px; }
+.co-items li span:first-child { color: #334155; }
+.co-linea { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 15px; color: #475569; }
+.co-linea strong { color: #102a43; }
+.co-linea[hidden] { display: none; }
+.co-linea.co-ahorro, .co-linea.co-ahorro strong { color: #166534; }
+.co-total { margin-top: 8px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 18px; font-weight: 800; color: #102a43; align-items: baseline; }
+.co-total strong { font-size: 28px; }
+.co-nota { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #f1f5f9; font-size: 13px; line-height: 1.45; color: #475569; }
+.co-nota[hidden] { display: none; }
+.co-volver { display: inline-block; margin-top: 16px; font-size: 14px; font-weight: 700; color: #475569; text-decoration: none; }
+.co-volver:hover { color: #102a43; text-decoration: underline; }
+
+@media (max-width: 860px) {
+    .co-layout { grid-template-columns: 1fr; }
+    .co-resumen { position: static; order: -1; }   /* en celular el resumen va arriba */
+    .co-head h1 { font-size: 26px; }
+}
+@media (max-width: 560px) {
+    .co-campos { grid-template-columns: 1fr; }
+    .co-card, .co-resumen { padding: 18px; }
+    .co-etiqueta { display: none; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="pago-page">
+<div class="co-page">
 
-    <div class="pago-header">
-        <span class="pago-eyebrow">SOPI SPORTS</span>
+    <div class="co-head">
         <h1>Finalizá tu compra</h1>
-        <p>Elegí cómo recibir tu pedido y el medio de pago.</p>
+        <p>Son 3 pasos: cómo recibirlo, tus datos y cómo pagar.</p>
     </div>
 
-    <div class="pago-layout">
+    <div class="co-layout">
 
-        <section class="pago-metodos">
+        <div class="co-main">
 
-            <form
-                method="post"
-                action="{{ url_for('carrito_pagar') }}"
-                id="form-pago"
-            >
+            <form method="post" action="{{ url_for('carrito_pagar') }}" id="form-pago">
 
-                <div class="pago-subtitulo">
-                    ¿Cómo querés recibir tu pedido?
-                </div>
+                <!-- PASO 1: ENTREGA -->
+                <section class="co-card">
+                    <h2><span class="co-num">1</span> ¿Cómo querés recibir tu pedido?</h2>
 
-                <label class="pago-opcion">
-                    <input
-                        type="radio"
-                        name="modalidad_entrega"
-                        value="retiro"
-                        checked
-                        required
-                    >
-                    <div>
-                        <strong>📍 Retiro en Quilmes</strong>
-                        <span>
-                            Retirá tu pedido en Quilmes.
-                            Coordinamos día y horario.
-                        </span>
-                        <small>
-                            Sin costo de envío.
-                        </small>
+                    <label class="co-opcion">
+                        <input type="radio" name="modalidad_entrega" value="retiro" checked required>
+                        <div class="co-opcion-box">
+                            <div class="co-opcion-texto">
+                                <strong>📍 Retiro en Quilmes</strong>
+                                <span>Coordinamos día y horario con vos.</span>
+                            </div>
+                            <em class="co-etiqueta" style="font-style:normal">Sin costo</em>
+                        </div>
+                    </label>
+
+                    <label class="co-opcion">
+                        <input type="radio" name="modalidad_entrega" value="envio">
+                        <div class="co-opcion-box">
+                            <div class="co-opcion-texto">
+                                <strong>📦 Envío a domicilio</strong>
+                                <span>Andreani o Correo Argentino. El costo se informa según destino y tamaño del paquete.</span>
+                            </div>
+                        </div>
+                    </label>
+                </section>
+
+                <!-- PASO 2: DATOS -->
+                <section class="co-card">
+                    <h2><span class="co-num">2</span> Tus datos</h2>
+
+                    <div class="co-campos">
+                        <div class="co-campo co-full">
+                            <label for="nombre_cliente">Nombre y apellido *</label>
+                            <input type="text" id="nombre_cliente" name="nombre_cliente" maxlength="120" autocomplete="name" required>
+                        </div>
+                        <div class="co-campo">
+                            <label for="email_cliente">Email *</label>
+                            <input type="email" id="email_cliente" name="email_cliente" maxlength="120" autocomplete="email" required>
+                        </div>
+                        <div class="co-campo">
+                            <label for="telefono_cliente">Teléfono / WhatsApp *</label>
+                            <input type="tel" id="telefono_cliente" name="telefono_cliente" maxlength="40" autocomplete="tel" required>
+                        </div>
                     </div>
-                </label>
 
-                <label class="pago-opcion">
-                    <input
-                        type="radio"
-                        name="modalidad_entrega"
-                        value="envio"
-                    >
-                    <div>
-                        <strong>📦 Envío a domicilio</strong>
-                        <span>
-                            Enviamos por Andreani o Correo Argentino.
-                        </span>
-                        <small>
-                            El costo del envío se informa según destino
-                            y tamaño del paquete.
-                        </small>
+                    <div id="datos-domicilio" class="co-domicilio" hidden>
+                        <h3>📦 ¿A dónde te lo enviamos?</h3>
+                        <div class="co-campos">
+                            <div class="co-campo co-full">
+                                <label for="direccion">Calle y número *</label>
+                                <input type="text" id="direccion" name="direccion" maxlength="200" autocomplete="street-address">
+                            </div>
+                            <div class="co-campo">
+                                <label for="localidad">Localidad *</label>
+                                <input type="text" id="localidad" name="localidad" maxlength="100" autocomplete="address-level2">
+                            </div>
+                            <div class="co-campo">
+                                <label for="provincia">Provincia *</label>
+                                <input type="text" id="provincia" name="provincia" maxlength="100" autocomplete="address-level1">
+                            </div>
+                            <div class="co-campo">
+                                <label for="codigo_postal">Código postal *</label>
+                                <input type="text" id="codigo_postal" name="codigo_postal" maxlength="20" autocomplete="postal-code">
+                            </div>
+                        </div>
                     </div>
-                </label>
+                </section>
 
-<div class="pago-subtitulo">
-    Datos del comprador
-</div>
+                <!-- PASO 3: PAGO -->
+                <section class="co-card">
+                    <h2><span class="co-num">3</span> ¿Cómo querés pagar?</h2>
 
-<div class="datos-comprador">
-    <label for="nombre_cliente">Nombre y apellido *</label>
-    <input
-        type="text"
-        id="nombre_cliente"
-        name="nombre_cliente"
-        maxlength="120"
-        autocomplete="name"
-        required
-    >
+                    <label class="co-opcion">
+                        <input type="radio" name="medio_pago" value="mercadopago" checked required>
+                        <div class="co-opcion-box">
+                            <div class="co-opcion-texto">
+                                <strong>💳 Mercado Pago</strong>
+                                <span>Tarjeta, dinero en cuenta u otros medios. Pagás de forma segura.</span>
+                            </div>
+                        </div>
+                    </label>
 
-    <label for="email_cliente">Email *</label>
-    <input
-        type="email"
-        id="email_cliente"
-        name="email_cliente"
-        maxlength="120"
-        autocomplete="email"
-        required
-    >
+                    <label class="co-opcion">
+                        <input type="radio" name="medio_pago" value="transferencia">
+                        <div class="co-opcion-box">
+                            <div class="co-opcion-texto">
+                                <strong>🏦 Transferencia bancaria</strong>
+                                <span>Al confirmar te mostramos los datos para transferir.</span>
+                                {% if hay_pack %}<span>El 5% no incluye los packs, que ya tienen su descuento.</span>{% endif %}
+                            </div>
+                            <em class="co-etiqueta" style="font-style:normal">5% OFF</em>
+                        </div>
+                    </label>
 
-    <label for="telefono_cliente">Teléfono / WhatsApp *</label>
-    <input
-        type="tel"
-        id="telefono_cliente"
-        name="telefono_cliente"
-        maxlength="40"
-        autocomplete="tel"
-        required
-    >
-</div>
+                    <label class="co-opcion" id="opcion-efectivo">
+                        <input type="radio" name="medio_pago" value="efectivo">
+                        <div class="co-opcion-box">
+                            <div class="co-opcion-texto">
+                                <strong>💵 Efectivo al retirar</strong>
+                                <span id="aviso-efectivo">Pagás cuando retirás tu pedido en Quilmes.</span>
+                            </div>
+                        </div>
+                    </label>
+                </section>
 
-<div id="datos-domicilio" class="datos-comprador" hidden>
-    <div class="pago-subtitulo">Datos para el envío</div>
+            </form>
 
-    <label for="direccion">Calle y número *</label>
-    <input
-        type="text"
-        id="direccion"
-        name="direccion"
-        maxlength="200"
-        autocomplete="street-address"
-    >
-
-    <label for="localidad">Localidad *</label>
-    <input
-        type="text"
-        id="localidad"
-        name="localidad"
-        maxlength="100"
-        autocomplete="address-level2"
-    >
-
-    <label for="provincia">Provincia *</label>
-    <input
-        type="text"
-        id="provincia"
-        name="provincia"
-        maxlength="100"
-        autocomplete="address-level1"
-    >
-
-    <label for="codigo_postal">Código postal *</label>
-    <input
-        type="text"
-        id="codigo_postal"
-        name="codigo_postal"
-        maxlength="20"
-        autocomplete="postal-code"
-    >
-</div>
-
-                <div class="pago-subtitulo">
-                    ¿Cómo querés pagar?
-                </div>
-
-                <label class="pago-opcion">
-                    <input
-                        type="radio"
-                        name="medio_pago"
-                        value="mercadopago"
-                        required
-                    >
-                    <div>
-                        <strong>💳 Mercado Pago</strong>
-                        <span>
-                            Pagá de forma segura con Mercado Pago.
-                        </span>
+            <!-- CUPÓN (fuera del form de pago: tiene sus propios formularios) -->
+            <section class="co-card co-cupon{% if cupon %} co-cupon--ok{% endif %}">
+                {% if cupon %}
+                    <div class="co-cupon-ok">
+                        <div>
+                            <strong>✔ Cupón {{ cupon.codigo }} aplicado</strong>
+                            <span>Ahorrás {{ descuento_cupon|pesos }}</span>
+                        </div>
+                        <form method="post" action="{{ url_for('cupon_quitar') }}" data-guardar-datos>
+                            <button type="submit" class="co-cupon-quitar">Quitar</button>
+                        </form>
                     </div>
-                </label>
 
-                <label class="pago-opcion">
-                    <input
-                        type="radio"
-                        name="medio_pago"
-                        value="transferencia"
-                    >
-                    <div>
-                        <strong>🏦 Transferencia bancaria</strong>
-                        <span>
-                            Recibí los datos bancarios para realizar
-                            la transferencia.
-                        </span>
-                    </div>
-                </label>
+                    <ul class="co-cupon-detalle">
+                        {% for d in detalle_cupon %}
+                        <li>
+                            <span>{{ d.nombre }} × {{ d.cantidad }}</span>
+                            <span>{% if d.ahorro %}-{{ d.ahorro|pesos }}{% else %}{{ d.motivo }}{% endif %}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <details {% if error_cupon %}open{% endif %}>
+                        <summary>¿Tenés un código de descuento?</summary>
+                        <form method="post" action="{{ url_for('cupon_aplicar') }}" class="co-cupon-form" data-guardar-datos>
+                            <input type="text" name="codigo" placeholder="Ingresá tu código" maxlength="30" autocomplete="off">
+                            <button type="submit">Aplicar</button>
+                        </form>
+                        {% if error_cupon %}<p class="co-cupon-error">{{ error_cupon }}</p>{% endif %}
+                    </details>
+                {% endif %}
+            </section>
 
-                <label
-                    class="pago-opcion pago-efectivo"
-                    id="opcion-efectivo"
-                >
-                    <input
-                        type="radio"
-                        name="medio_pago"
-                        value="efectivo"
-                    >
-                    <div>
-                        <strong>
-                            💵 Efectivo — 5% de descuento
-                        </strong>
-                        <span>
-                            Pagando en efectivo obtenés un 5% de descuento.
-                        </span>
-                        <small id="aviso-efectivo">
-                            Válido para retiro en Quilmes.
-                        </small>
-                    </div>
-                </label>
-
-                <button
-                    type="submit"
-                    class="btn-checkout"
-                >
-                    CONTINUAR
+            <!-- BOTÓN FINAL (está fuera del form pero lo envía) -->
+            <div class="co-confirmar-wrap">
+                <button type="submit" form="form-pago" class="co-confirmar" id="btn-confirmar">
+                    Ir a pagar con Mercado Pago
                 </button>
-
-            </form>
-<div class="cupon{% if cupon %} cupon--aplicado{% endif %}">
-    {% if cupon %}
-        <div class="cupon-ok">
-            <div>
-                <strong>Cupón {{ cupon.codigo }} aplicado</strong>
-                <span>Ahorrás {{ descuento_cupon|pesos }}</span>
-            </div>
-            <form method="post" action="{{ url_for('cupon_quitar') }}">
-                <button type="submit" class="cupon-quitar">Quitar</button>
-            </form>
-        </div>
-
-        <ul class="cupon-detalle">
-            {% for d in detalle_cupon %}
-            <li>
-                <span>{{ d.nombre }} × {{ d.cantidad }}</span>
-                <span>{% if d.ahorro %}-{{ d.ahorro|pesos }}{% else %}{{ d.motivo }}{% endif %}</span>
-            </li>
-            {% endfor %}
-        </ul>
-
-        <small class="cupon-nota">
-            El cupón no se acumula con el 5% de efectivo: se aplica el que te deje el mejor precio.
-        </small>
-    {% else %}
-        <p class="cupon-titulo">¿Tenés un código de descuento?</p>
-        <form method="post" action="{{ url_for('cupon_aplicar') }}" class="cupon-form">
-            <input type="text" name="codigo" placeholder="Ingresá tu código" maxlength="30" autocomplete="off">
-            <button type="submit">Aplicar</button>
-        </form>
-        {% if error_cupon %}<p class="cupon-error">{{ error_cupon }}</p>{% endif %}
-    {% endif %}
-</div>
-        </section>
-
-        <aside class="pago-resumen">
-
-            <h2>Resumen de compra</h2>
-
-            <div class="resumen-linea">
-                <span>Productos</span>
-                <span>
-                    {{ total_items_carrito }}
-                </span>
+                <p class="co-confirmar-ayuda" id="ayuda-confirmar">
+                    Te llevamos a Mercado Pago para completar el pago.
+                </p>
             </div>
 
-           {% if cupon %}
-            <div class="resumen-linea">
-            <span>Cupón {{ cupon.codigo }}</span>
-            <strong>-{{ descuento_cupon|pesos }}</strong>
         </div>
+
+        <!-- RESUMEN -->
+        <aside class="co-resumen">
+            <h2>Tu pedido</h2>
+
+            <ul class="co-items">
+                {% for item in items %}
+                <li>
+                    <span>{{ item.producto.nombre }} × {{ item.cantidad }}</span>
+                    <span>{{ item.subtotal|pesos }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+
+            {% if cupon %}
+            <div class="co-linea" id="linea-subtotal">
+                <span>Subtotal</span>
+                <strong>{{ total|pesos }}</strong>
+            </div>
+            <div class="co-linea co-ahorro" id="linea-cupon">
+                <span>Cupón {{ cupon.codigo }}</span>
+                <strong>-{{ descuento_cupon|pesos }}</strong>
+            </div>
             {% endif %}
 
-            <div class="resumen-linea">
+            <div class="co-linea co-ahorro" id="linea-transferencia" hidden>
+                <span>Descuento transferencia (5%)</span>
+                <strong id="monto-transferencia"></strong>
+            </div>
+
+            <div class="co-linea">
                 <span>Entrega</span>
-                <span id="resumen-entrega">
-                    Retiro en Quilmes
-                </span>
+                <strong id="resumen-entrega">Retiro en Quilmes · Gratis</strong>
             </div>
 
-            <div class="resumen-linea resumen-total">
-            <span>Total</span>
-            <strong id="total-pagar">{{ total_final|pesos }}</strong>
+            <div class="co-linea co-total">
+                <span>Total</span>
+                <strong id="total-pagar">{{ total_final|pesos }}</strong>
             </div>
 
-            <div
-           <div class="pago-descuento" id="bloque-descuento" style="display:none;">
-            {% if efectivo_con_cupon %}
-             💵 En efectivo se mantiene tu cupón {{ cupon.codigo }} (no se suma el 5%).
-              {% else %}
-              💵 Pagando en efectivo ahorrás
-           <strong>{{ (total - total_efectivo_final)|pesos }}</strong>
-            {% if cupon %}<br><small>Se aplica en lugar de {{ cupon.codigo }}: no se acumulan.</small>{% endif %}
+            <p class="co-nota" id="nota-envio" hidden>
+                📦 El costo del envío se informa según destino y tamaño del paquete.
+            </p>
+            {% if cupon %}
+            <p class="co-nota" id="nota-cupon-transferencia" hidden>
+                El cupón {{ cupon.codigo }} y el 5% de transferencia no se suman: aplicamos el que te deja el mejor precio.
+            </p>
             {% endif %}
-            </div>
 
-            <div class="pago-efectivo-total" id="bloque-efectivo" style="display:none;">
-            Total en efectivo: <strong>{{ total_efectivo_final|pesos }}</strong>
-            </div>
-
-            <div
-                class="pago-descuento"
-                id="bloque-envio"
-                style="display:none;"
-            >
-                📦 El costo del envío se informará
-                según destino y tamaño del paquete.
-            </div>
-
-            <a
-                href="{{ url_for('carrito_ver') }}"
-                class="carrito-seguir-comprando"
-            >
-                ← Volver al carrito
-            </a>
-
+            <a href="{{ url_for('carrito_ver') }}" class="co-volver">← Volver al carrito</a>
         </aside>
 
     </div>
-
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const totalNormal = {{ total_final|int }};
-    const totalEfectivo = {{ total_efectivo_final|int }};
+    var SUBTOTAL = {{ total|int }};
+    var TOTAL_NORMAL = {{ total_final|int }};
+    var TOTAL_TRANSFERENCIA = {{ total_transferencia_final|int }};
+    var HAY_CUPON = {{ 'true' if cupon else 'false' }};
+    var TRANSFERENCIA_CON_CUPON = {{ 'true' if transferencia_con_cupon else 'false' }};
 
-    const radiosPago = document.querySelectorAll('input[name="medio_pago"]');
-    const radiosEntrega = document.querySelectorAll('input[name="modalidad_entrega"]');
+    var form = document.getElementById("form-pago");
+    var radiosPago = form.querySelectorAll('input[name="medio_pago"]');
+    var radiosEntrega = form.querySelectorAll('input[name="modalidad_entrega"]');
+    var radioEfectivo = form.querySelector('input[name="medio_pago"][value="efectivo"]');
+    var radioMP = form.querySelector('input[name="medio_pago"][value="mercadopago"]');
+    var opcionEfectivo = document.getElementById("opcion-efectivo");
+    var avisoEfectivo = document.getElementById("aviso-efectivo");
+    var datosDomicilio = document.getElementById("datos-domicilio");
+    var camposDomicilio = datosDomicilio.querySelectorAll("input");
 
-    const totalPagar = document.getElementById("total-pagar");
-    const bloqueDescuento = document.getElementById("bloque-descuento");
-    const bloqueEfectivo = document.getElementById("bloque-efectivo");
-    const bloqueEnvio = document.getElementById("bloque-envio");
-    const resumenEntrega = document.getElementById("resumen-entrega");
-    const opcionEfectivo = document.getElementById("opcion-efectivo");
+    var elTotal = document.getElementById("total-pagar");
+    var elEntrega = document.getElementById("resumen-entrega");
+    var lineaTransf = document.getElementById("linea-transferencia");
+    var montoTransf = document.getElementById("monto-transferencia");
+    var lineaCupon = document.getElementById("linea-cupon");
+    var lineaSubtotal = document.getElementById("linea-subtotal");
+    var notaEnvio = document.getElementById("nota-envio");
+    var notaCuponTransf = document.getElementById("nota-cupon-transferencia");
+    var btn = document.getElementById("btn-confirmar");
+    var ayuda = document.getElementById("ayuda-confirmar");
 
-    const datosDomicilio = document.getElementById("datos-domicilio");
-    const camposDomicilio = datosDomicilio
-        ? datosDomicilio.querySelectorAll("input")
-        : [];
+    function pesos(n) { return "$" + Math.round(n).toLocaleString("es-AR"); }
 
-    function formatoPrecio(numero) {
-        return "$" + numero.toLocaleString("es-AR");
-    }
+    var TEXTOS = {
+        mercadopago:   ["Ir a pagar con Mercado Pago", "Te llevamos a Mercado Pago para completar el pago."],
+        transferencia: ["Confirmar pedido", "Al confirmar te mostramos los datos bancarios para transferir."],
+        efectivo:      ["Confirmar pedido", "Pagás en efectivo cuando retirás en Quilmes. Coordinamos día y horario."]
+    };
 
-    function actualizarPantalla() {
-        const pagoSeleccionado = document.querySelector(
-            'input[name="medio_pago"]:checked'
-        );
+    function actualizar() {
+        var entrega = form.querySelector('input[name="modalidad_entrega"]:checked');
+        var pago = form.querySelector('input[name="medio_pago"]:checked');
+        var esEnvio = !!entrega && entrega.value === "envio";
 
-        const entregaSeleccionada = document.querySelector(
-            'input[name="modalidad_entrega"]:checked'
-        );
+        // Campos de domicilio solo si es envío
+        datosDomicilio.hidden = !esEnvio;
+        camposDomicilio.forEach(function (c) { c.required = esEnvio; });
 
-        const esEnvio = entregaSeleccionada &&
-            entregaSeleccionada.value === "envio";
-
-        const esEfectivo = pagoSeleccionado &&
-            pagoSeleccionado.value === "efectivo" &&
-            !esEnvio;
-
-        // Mostrar los campos de domicilio solamente para envío.
-        if (datosDomicilio) {
-            datosDomicilio.hidden = !esEnvio;
-
-            camposDomicilio.forEach(function (campo) {
-                campo.required = Boolean(esEnvio);
-            });
-        }
-
-        // Actualizar el resumen de entrega.
-        resumenEntrega.textContent = esEnvio
-            ? "Envío a domicilio"
-            : "Retiro en Quilmes";
-
-        bloqueEnvio.style.display = esEnvio ? "block" : "none";
-
-        // Efectivo solo disponible para retiro en Quilmes.
-        const radioEfectivo = opcionEfectivo.querySelector(
-            'input[name="medio_pago"]'
-        );
-
-        radioEfectivo.disabled = Boolean(esEnvio);
-        opcionEfectivo.style.opacity = esEnvio ? "0.5" : "1";
-
+        // Efectivo solo con retiro
+        radioEfectivo.disabled = esEnvio;
+        avisoEfectivo.textContent = esEnvio
+            ? "Solo disponible con retiro en Quilmes."
+            : "Pagás cuando retirás tu pedido en Quilmes.";
         if (esEnvio && radioEfectivo.checked) {
-            radioEfectivo.checked = false;
+            radioMP.checked = true;
+            pago = radioMP;
         }
 
-        // Mostrar el total correspondiente al medio de pago.
-        if (esEfectivo) {
-            totalPagar.textContent = formatoPrecio(totalEfectivo);
-            bloqueDescuento.style.display = "block";
-            bloqueEfectivo.style.display = "block";
+        var medio = pago ? pago.value : "mercadopago";
+        var esTransf = medio === "transferencia";
+
+        // Entrega
+        elEntrega.textContent = esEnvio ? "Envío a domicilio · A informar" : "Retiro en Quilmes · Gratis";
+        notaEnvio.hidden = !esEnvio;
+
+        // Totales y descuentos: el único descuento propio es 5% por transferencia
+        if (esTransf) {
+            elTotal.textContent = pesos(TOTAL_TRANSFERENCIA);
+            if (HAY_CUPON && TRANSFERENCIA_CON_CUPON) {
+                // gana el cupón: se mantiene su línea
+                lineaTransf.hidden = true;
+                if (lineaCupon) lineaCupon.hidden = false;
+                if (notaCuponTransf) notaCuponTransf.hidden = false;
+            } else {
+                // gana el 5% de transferencia: el cupón (si hay) no se suma
+                montoTransf.textContent = "-" + pesos(SUBTOTAL - TOTAL_TRANSFERENCIA);
+                lineaTransf.hidden = (SUBTOTAL - TOTAL_TRANSFERENCIA) <= 0;
+                if (lineaCupon) lineaCupon.hidden = true;
+                if (notaCuponTransf) notaCuponTransf.hidden = !HAY_CUPON;
+            }
         } else {
-            totalPagar.textContent = formatoPrecio(totalNormal);
-            bloqueDescuento.style.display = "none";
-            bloqueEfectivo.style.display = "none";
+            elTotal.textContent = pesos(TOTAL_NORMAL);
+            lineaTransf.hidden = true;
+            if (lineaCupon) lineaCupon.hidden = false;
+            if (notaCuponTransf) notaCuponTransf.hidden = true;
         }
+
+        // Texto del botón según lo elegido
+        var t = TEXTOS[medio] || TEXTOS.mercadopago;
+        btn.textContent = t[0];
+        ayuda.textContent = t[1];
     }
 
-    radiosPago.forEach(function (radio) {
-        radio.addEventListener("change", actualizarPantalla);
+    radiosPago.forEach(function (r) { r.addEventListener("change", actualizar); });
+    radiosEntrega.forEach(function (r) { r.addEventListener("change", actualizar); });
+
+    // --- Conservar lo que escribió al aplicar / quitar un cupón (la página se recarga) ---
+    var KEY = "sopi_checkout_datos";
+    var campos = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
+
+    try {
+        var guardado = JSON.parse(sessionStorage.getItem(KEY) || "null");
+        if (guardado) {
+            campos.forEach(function (c) { if (guardado.campos[c.name]) c.value = guardado.campos[c.name]; });
+            ["modalidad_entrega", "medio_pago"].forEach(function (nombre) {
+                var r = form.querySelector('input[name="' + nombre + '"][value="' + guardado[nombre] + '"]');
+                if (r && !r.disabled) r.checked = true;
+            });
+            sessionStorage.removeItem(KEY);
+        }
+    } catch (e) {}
+
+    document.querySelectorAll("form[data-guardar-datos]").forEach(function (f) {
+        f.addEventListener("submit", function () {
+            try {
+                var datos = { campos: {} };
+                campos.forEach(function (c) { datos.campos[c.name] = c.value; });
+                var e = form.querySelector('input[name="modalidad_entrega"]:checked');
+                var p = form.querySelector('input[name="medio_pago"]:checked');
+                datos.modalidad_entrega = e ? e.value : "retiro";
+                datos.medio_pago = p ? p.value : "mercadopago";
+                sessionStorage.setItem(KEY, JSON.stringify(datos));
+            } catch (err) {}
+        });
     });
 
-    radiosEntrega.forEach(function (radio) {
-        radio.addEventListener("change", actualizarPantalla);
+    // Evita doble clic en el botón final
+    form.addEventListener("submit", function () {
+        btn.disabled = true;
+        btn.textContent = "Procesando…";
     });
 
-    actualizarPantalla();
+    window.addEventListener("pageshow", function () { btn.disabled = false; actualizar(); });
+
+    actualizar();
 });
-
 </script>
 
 {% endblock %}
