@@ -3026,4 +3026,148 @@ form {
         font-size: 42px;
     }
 }
+/* =========================================================
+   CUPÓN DE DESCUENTO (pantalla de pago)
+   ========================================================= */
 
+.pago-metodos .cupon {
+    margin-bottom: 22px;
+    padding: 18px 20px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.pago-metodos .cupon--aplicado {
+    border-color: #d8e8dc;
+    background: #f7fbf8;
+}
+
+.cupon-titulo {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+}
+
+/* .pago-metodos form los apila en columna: acá se pisa para que
+   el campo y el botón queden en una misma fila */
+.pago-metodos .cupon-form {
+    flex-direction: row;
+    gap: 10px;
+}
+
+.cupon-form input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #d6d6d6;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 15px;
+    text-transform: uppercase;
+}
+
+.cupon-form input[type="text"]::placeholder {
+    text-transform: none;
+}
+
+.cupon-form input[type="text"]:focus {
+    outline: none;
+    border-color: #111;
+}
+
+.cupon-form button {
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 9px;
+    background: #111;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.cupon-form button:hover {
+    background: #333;
+}
+
+.cupon-error {
+    margin: 10px 0 0;
+    color: #b3261e;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.cupon-ok {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cupon-ok > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.cupon-ok strong {
+    font-size: 16px;
+    color: #245c38;
+}
+
+.cupon-ok span {
+    font-size: 14px;
+    color: #555;
+}
+
+.pago-metodos .cupon-ok form {
+    display: block;
+}
+
+.cupon-quitar {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #777;
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.cupon-quitar:hover {
+    color: #111;
+}
+
+.cupon-detalle {
+    margin: 14px 0 0;
+    padding: 12px 0 0;
+    list-style: none;
+    border-top: 1px solid #dde9e0;
+    font-size: 14px;
+    color: #555;
+}
+
+.cupon-detalle li {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 4px 0;
+}
+
+.cupon-detalle li span:last-child {
+    flex-shrink: 0;
+    text-align: right;
+    font-weight: 700;
+    color: #245c38;
+}
+
+.cupon-nota {
+    display: block;
+    margin-top: 12px;
+    color: #777;
+    font-size: 13px;
+    line-height: 1.4;
+}

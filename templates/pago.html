@@ -128,28 +128,38 @@
                 </button>
 
             </form>
-<div class="cupon">
-  {% if cupon %}
-    <p>Cupón <strong>{{ cupon.codigo }}</strong> aplicado: -{{ descuento_cupon|pesos }}</p>
-    <ul class="cupon-detalle">
-      {% for d in detalle_cupon %}
-        <li>
-          {{ d.nombre }} × {{ d.cantidad }} —
-          {% if d.ahorro %}-{{ d.ahorro|pesos }} ({{ cupon.porcentaje }}% off){% else %}{{ d.motivo }}{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-    <small>El cupón no se acumula con el 5% de efectivo: se aplica el que te deje el mejor precio.</small>
-    <form method="post" action="{{ url_for('cupon_quitar') }}">
-      <button type="submit">Quitar</button>
-    </form>
-  {% else %}
-    <form method="post" action="{{ url_for('cupon_aplicar') }}">
-      <input type="text" name="codigo" placeholder="Código de descuento" maxlength="30" autocomplete="off">
-      <button type="submit">Aplicar</button>
-    </form>
-    {% if error_cupon %}<p class="error">{{ error_cupon }}</p>{% endif %}
-  {% endif %}
+<div class="cupon{% if cupon %} cupon--aplicado{% endif %}">
+    {% if cupon %}
+        <div class="cupon-ok">
+            <div>
+                <strong>Cupón {{ cupon.codigo }} aplicado</strong>
+                <span>Ahorrás {{ descuento_cupon|pesos }}</span>
+            </div>
+            <form method="post" action="{{ url_for('cupon_quitar') }}">
+                <button type="submit" class="cupon-quitar">Quitar</button>
+            </form>
+        </div>
+
+        <ul class="cupon-detalle">
+            {% for d in detalle_cupon %}
+            <li>
+                <span>{{ d.nombre }} × {{ d.cantidad }}</span>
+                <span>{% if d.ahorro %}-{{ d.ahorro|pesos }}{% else %}{{ d.motivo }}{% endif %}</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <small class="cupon-nota">
+            El cupón no se acumula con el 5% de efectivo: se aplica el que te deje el mejor precio.
+        </small>
+    {% else %}
+        <p class="cupon-titulo">¿Tenés un código de descuento?</p>
+        <form method="post" action="{{ url_for('cupon_aplicar') }}" class="cupon-form">
+            <input type="text" name="codigo" placeholder="Ingresá tu código" maxlength="30" autocomplete="off">
+            <button type="submit">Aplicar</button>
+        </form>
+        {% if error_cupon %}<p class="cupon-error">{{ error_cupon }}</p>{% endif %}
+    {% endif %}
 </div>
         </section>
 
