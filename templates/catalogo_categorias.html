@@ -14,7 +14,7 @@
   <nav class="cat-nav" aria-label="Categorías">
     <p class="cat-nav-title">Categorías</p>
     <ul>
-      {% for nombre, prods in grupos %}
+      {% for nombre, prods in secciones %}
       <li>
         <button type="button"
                 class="cat-btn{% if loop.first %} is-active{% endif %}"
@@ -30,7 +30,7 @@
   </nav>
 
   <div class="cat-content">
-    {% for nombre, prods in grupos %}
+    {% for nombre, prods in secciones %}
     <section id="cat-{{ nombre|lower|replace(' ', '-') }}"
              class="cat-panel"
              {% if not loop.first %}hidden{% endif %}>
