@@ -1,0 +1,69 @@
+{# Tarjeta de producto. Recibe la variable `p` (el producto). #}
+<article
+    class="shop-product-card"
+    data-price="{{ p.precio }}"
+    data-name="{{ p.nombre|lower }}"
+>
+
+    <!-- FOTO -->
+    <div class="shop-product-image">
+
+        <a href="{{ url_producto(p) }}">
+            {% if p.imagen %}
+            <img
+                src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
+                alt="{{ p.nombre }}"
+                width="700"
+                height="700"
+                loading="lazy"
+            >
+            {% else %}
+            <div class="shop-placeholder">{{ p.marca }}</div>
+            {% endif %}
+        </a>
+
+        <!-- FAVORITO VISUAL -->
+        <button
+            type="button"
+            class="shop-favorite"
+            aria-label="Agregar a favoritos"
+            title="Favoritos"
+        >
+            ♡
+        </button>
+
+        <!-- ETIQUETA -->
+        {% if p.stock <= 3 and p.stock > 0 %}
+        <span class="shop-badge shop-badge-low">ÚLTIMAS {{ p.stock }}</span>
+        {% elif p.stock <= 0 %}
+        <span class="shop-badge shop-badge-out">SIN STOCK</span>
+        {% endif %}
+
+    </div>
+
+    <!-- INFORMACIÓN -->
+    <div class="shop-product-info">
+
+        <span class="shop-product-brand">{{ p.marca }}</span>
+
+        <a href="{{ url_producto(p) }}" class="shop-product-name">{{ p.nombre }}</a>
+
+        <div class="shop-product-bottom">
+
+            <strong class="shop-product-price">
+                ${{ "{:,.0f}".format(p.precio) }}
+            </strong>
+
+            {% if p.stock > 0 %}
+            <form
+                method="post"
+                action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
+            >
+                <button type="submit" class="shop-add" title="Agregar al carrito">+</button>
+            </form>
+            {% endif %}
+
+        </div>
+    </div>
+
+</article>

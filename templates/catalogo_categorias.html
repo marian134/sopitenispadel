@@ -1,0 +1,160 @@
+{# ------------------------------------------------------------------
+   Catálogo con menú lateral por categorías (SOPI)
+   Uso: reemplazá en catalogo.html el bloque que hoy recorre las
+   categorías apiladas por este bloque completo.
+
+   Supuestos (ajustá los nombres si son distintos en tu app.py):
+   - `grupos`: lista de tuplas (nombre_categoria, [productos])
+       en app.py:  grupos = [(cat, prods) for cat, prods in agrupado.items()]
+   - La tarjeta de producto está en templates/_tarjeta.html y recibe `p`
+------------------------------------------------------------------ #}
+
+<div class="cat-layout" id="cat-layout">
+
+  <nav class="cat-nav" aria-label="Categorías">
+    <p class="cat-nav-title">Categorías</p>
+    <ul>
+      {% for nombre, prods in grupos %}
+      <li>
+        <button type="button"
+                class="cat-btn{% if loop.first %} is-active{% endif %}"
+                data-target="cat-{{ nombre|lower|replace(' ', '-') }}"
+                aria-expanded="{{ 'true' if loop.first else 'false' }}"
+                aria-controls="cat-{{ nombre|lower|replace(' ', '-') }}">
+          <span>{{ nombre }}</span>
+          <span class="cat-count">{{ prods|length }}</span>
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="cat-content">
+    {% for nombre, prods in grupos %}
+    <section id="cat-{{ nombre|lower|replace(' ', '-') }}"
+             class="cat-panel"
+             {% if not loop.first %}hidden{% endif %}>
+      <h2 class="cat-panel-title">{{ nombre }} <small>{{ prods|length }} productos</small></h2>
+      <div class="cat-grid">
+        {% for p in prods %}
+          {% include '_tarjeta.html' %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+
+</div>
+
+<style>
+  .cat-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Menú lateral */
+  .cat-nav {
+    position: sticky;
+    top: 5.5rem;              /* ajustá a la altura de tu header */
+  }
+  .cat-nav-title {
+    margin: 0 0 .75rem;
+    font-weight: 600;
+    font-size: .95rem;
+  }
+  .cat-nav ul { list-style: none; margin: 0; padding: 0; }
+  .cat-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    margin-bottom: .4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    border: 1px solid rgba(128,128,128,.35);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .cat-btn:hover { border-color: currentColor; }
+  .cat-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .cat-btn.is-active {
+    background: var(--accent, #0f766e);
+    border-color: var(--accent, #0f766e);
+    color: #fff;
+  }
+  .cat-count {
+    font-size: .8rem;
+    min-width: 1.6rem;
+    text-align: center;
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    background: rgba(128,128,128,.2);
+  }
+  .cat-btn.is-active .cat-count { background: rgba(255,255,255,.25); }
+
+  /* Contenido */
+  .cat-panel-title { margin: 0 0 1rem; font-size: 1.4rem; }
+  .cat-panel-title small { font-size: .85rem; font-weight: 400; opacity: .7; margin-left: .5rem; }
+  .cat-panel:not([hidden]) { animation: cat-in .2s ease-out; }
+  @keyframes cat-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* Celular: el menú pasa a una fila horizontal arriba */
+  @media (max-width: 800px) {
+    .cat-layout { grid-template-columns: 1fr; gap: 1rem; }
+    .cat-nav { position: static; }
+    .cat-nav ul { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+    .cat-btn { width: auto; white-space: nowrap; margin-bottom: 0; }
+    .cat-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cat-panel:not([hidden]) { animation: none; }
+  }
+</style>
+
+<script>
+  (function () {
+    var layout = document.getElementById('cat-layout');
+    if (!layout) return;
+    var botones = layout.querySelectorAll('.cat-btn');
+    var paneles = layout.querySelectorAll('.cat-panel');
+
+    function abrir(id, actualizarHash) {
+      var existe = false;
+      paneles.forEach(function (p) { if (p.id === id) existe = true; });
+      if (!existe) return;
+
+      paneles.forEach(function (p) { p.hidden = (p.id !== id); });
+      botones.forEach(function (b) {
+        var activo = b.dataset.target === id;
+        b.classList.toggle('is-active', activo);
+        b.setAttribute('aria-expanded', activo ? 'true' : 'false');
+      });
+      if (actualizarHash) history.replaceState(null, '', '#' + id);
+    }
+
+    botones.forEach(function (b) {
+      b.addEventListener('click', function () {
+        abrir(b.dataset.target, true);
+        if (window.matchMedia('(max-width: 800px)').matches) {
+          layout.querySelector('.cat-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Link directo, ej: /catalogo/padel#cat-paletas
+    if (location.hash) abrir(location.hash.slice(1), false);
+  })();
+</script>

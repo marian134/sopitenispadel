@@ -136,156 +136,19 @@
         </div>
 
 
-        <!-- PRODUCTOS POR CATEGORÍA -->
-        {% for categoria, lista in secciones %}
-
-        <div class="shop-heading" id="{{ categoria|lower }}">
-
-            <div>
-                <span class="shop-kicker">{{ deporte|upper }}</span>
-                <h2>{{ categoria }}</h2>
-            </div>
-
-            <span class="shop-count">
-                {{ lista|length }} productos
-            </span>
-
-        </div>
-
-        <div class="shop-grid">
-
-            {% for p in lista %}
-                <article
-                    class="shop-product-card"
-                    data-price="{{ p.precio }}"
-                    data-name="{{ p.nombre|lower }}"
-                >
-
-                    <!-- FOTO -->
-                    <div class="shop-product-image">
-
-                        <a href="{{ url_producto(p) }}">
-
-                            {% if p.imagen %}
-
-                            <img
-                                src="{{ url_for('static', filename='img/' ~ p.imagen) }}"
-                                alt="{{ p.nombre }}"
-                                width="700"
-                                height="700"
-                                loading="lazy"
-                            >
-
-                            {% else %}
-
-                            <div class="shop-placeholder">
-                                {{ p.marca }}
-                            </div>
-
-                            {% endif %}
-
-                        </a>
-
-
-                        <!-- FAVORITO VISUAL -->
-                        <button
-                            type="button"
-                            class="shop-favorite"
-                            aria-label="Agregar a favoritos"
-                            title="Favoritos"
-                        >
-                            ♡
-                        </button>
-
-
-                        <!-- ETIQUETA -->
-                        {% if p.stock <= 3 and p.stock > 0 %}
-
-                        <span class="shop-badge shop-badge-low">
-                            ÚLTIMAS {{ p.stock }}
-                        </span>
-
-                        {% elif p.stock <= 0 %}
-
-                        <span class="shop-badge shop-badge-out">
-                            SIN STOCK
-                        </span>
-
-                        {% endif %}
-
-                    </div>
-
-
-                    <!-- INFORMACIÓN -->
-                    <div class="shop-product-info">
-
-                        <span class="shop-product-brand">
-                            {{ p.marca }}
-                        </span>
-
-                        <a
-                            href="{{ url_producto(p) }}"
-                            class="shop-product-name"
-                        >
-                            {{ p.nombre }}
-                        </a>
-
-
-                        <div class="shop-product-bottom">
-
-                            <strong class="shop-product-price">
-                                ${{ "{:,.0f}".format(p.precio) }}
-                            </strong>
-
-
-                            {% if p.stock > 0 %}
-
-                            <form
-                                method="post"
-                                action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="shop-add"
-                                    title="Agregar al carrito"
-                                >
-                                    +
-                                </button>
-
-                            </form>
-
-                            {% endif %}
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            
-
-            {% endfor %}
-
-        </div>
-
+        <!-- PRODUCTOS POR CATEGORÍA (menú lateral) -->
+        {% if secciones %}
+            {% include 'catalogo_categorias.html' %}
         {% else %}
-
         <div class="shop-grid">
-
             <div class="shop-empty">
-
                 <h3>No encontramos productos</h3>
-
                 <p>
                     Estamos preparando esta colección.
                 </p>
-
             </div>
-
         </div>
-
-        {% endfor %}
+        {% endif %}
 
     </section>
 
