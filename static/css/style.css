@@ -2413,22 +2413,35 @@ form {
         margin-top: 35px;
     }
 
+    /* --- Filtros en celular --- */
+
     .shop-toolbar {
         display: block;
         height: auto;
+        margin-bottom: 20px;
     }
+
     .shop-filters {
-        overflow: visible;
         position: relative;
+        height: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow: visible;
     }
 
     .shop-filter {
         position: static;
+        height: 56px;
     }
 
     .shop-filter summary {
+        justify-content: space-between;
+        gap: 8px;
         padding: 0 16px;
-        gap: 10px;
+    }
+
+    .shop-filter:last-child summary {
+        border-right: 0;
     }
 
     .shop-filter-menu {
@@ -2440,10 +2453,19 @@ form {
     }
 
     .shop-sort {
-        min-height: 58px;
-        padding: 0 15px;
+        justify-content: space-between;
+        min-height: 56px;
+        padding: 0 16px;
         border-top: 1px solid #ddd;
     }
+
+    .shop-sort select {
+        flex: 1;
+        min-width: 0;
+        max-width: 60%;
+    }
+
+    /* --- Fin filtros en celular --- */
 
     .shop-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
