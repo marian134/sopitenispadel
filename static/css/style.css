@@ -2417,9 +2417,26 @@ form {
         display: block;
         height: auto;
     }
-
     .shop-filters {
-        overflow-x: auto;
+        overflow: visible;
+        position: relative;
+    }
+
+    .shop-filter {
+        position: static;
+    }
+
+    .shop-filter summary {
+        padding: 0 16px;
+        gap: 10px;
+    }
+
+    .shop-filter-menu {
+        left: 0;
+        right: 0;
+        min-width: 0;
+        max-height: 60vh;
+        overflow-y: auto;
     }
 
     .shop-sort {

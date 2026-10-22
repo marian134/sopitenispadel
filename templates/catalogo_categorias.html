@@ -111,12 +111,13 @@
   }
 
   /* Celular: el menú pasa a una fila horizontal arriba */
-  @media (max-width: 800px) {
-    .cat-layout { grid-template-columns: 1fr; gap: 1rem; }
-    .cat-nav { position: static; }
-    .cat-nav ul { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
-    .cat-btn { width: auto; white-space: nowrap; margin-bottom: 0; }
-    .cat-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+ @media (max-width: 800px) {
+  .cat-layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .cat-nav, .cat-content { min-width: 0; }
+  .cat-nav { position: static; }
+  .cat-nav ul { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; -webkit-overflow-scrolling: touch; }
+  .cat-btn { width: auto; white-space: nowrap; margin-bottom: 0; flex: 0 0 auto; }
+  .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
