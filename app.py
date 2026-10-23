@@ -31,7 +31,33 @@ POPUP = {
     "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
 }
 ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
+BANNERS = [
+    {
+        "etiqueta": "Para profes y clubes",
+        "titulo": "Cajas de pelotas x24",
+        "subtitulo": "Head Pro, Head Championship y Penn Premier con envío gratis.",
+        "cta": "Consultar",
+        "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
+        "imagen": "banner-cajas.jpg",          # opcional
+        "imagen_movil": "banner-cajas-m.jpg",  # opcional
+        "fondo": "#1b2a3a",                    # color si no hay imagen
+    },
+    {
+        "etiqueta": "Pádel",
+        "titulo": "Paletas 2026",
+        "subtitulo": "Bullpadel, Nox, Adidas y Siux.",
+        "cta": "Comprar",
+        "url": "/catalogo/padel",
+        "imagen": "banner-padel.jpg",
+        "fondo": "#1f4d3a",
+    },
+]
 
+TILES = [
+    {"titulo": "Pelotas de tenis", "subtitulo": "Head y Penn", "url": "/catalogo/tenis?categoria=Pelotas", "imagen": "tile-pelotas.jpg"},
+    {"titulo": "Paletas de pádel", "subtitulo": "Nuevos ingresos", "url": "/catalogo/padel?categoria=Palas", "imagen": "tile-paletas.jpg"},
+    {"titulo": "Overgrips", "subtitulo": "Tourna, Solinco y más", "url": "/catalogo/tenis?categoria=Accesorios", "imagen": "tile-grips.jpg"},
+]
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
@@ -574,16 +600,13 @@ def obtener_categorias_y_marcas(
 # PORTADA
 # =========================================================
 
-@app.route("/")
-def portada():
-
-    contexto = obtener_contexto_base()
-
-    return render_template(
-        "portada.html",
-        popup=POPUP,
-        **contexto
-    )
+return render_template(
+    "portada.html",
+    popup=POPUP,
+    banners=BANNERS,
+    tiles=TILES,
+    **contexto
+)
 
 # =========================================================
 # CATÁLOGO

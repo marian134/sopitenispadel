@@ -1,0 +1,159 @@
+{# templates/_banner.html — pegar en portada.html con: {% include "_banner.html" %}
+   Recibe: banners (lista de slides) y tiles (lista de tarjetas). Ambas opcionales. #}
+
+{% if banners %}
+<section class="bn-hero" aria-roledescription="carrusel" aria-label="Novedades y promociones">
+  <div class="bn-track">
+    {% for b in banners %}
+    <a class="bn-slide" href="{{ b.url }}"
+       style="background-color: {{ b.fondo or '#1b2a3a' }}"
+       {% if b.url.startswith('http') %}target="_blank" rel="noopener"{% endif %}
+       aria-label="{{ b.titulo }}: {{ b.cta or 'Ver' }}">
+      {% if b.imagen %}
+      <picture>
+        {% if b.imagen_movil %}
+        <source media="(max-width: 640px)"
+                srcset="{{ url_for('static', filename='img/banners/' ~ b.imagen_movil) }}">
+        {% endif %}
+        <img src="{{ url_for('static', filename='img/banners/' ~ b.imagen) }}"
+             alt="" {% if not loop.first %}loading="lazy"{% endif %}>
+      </picture>
+      {% endif %}
+      <span class="bn-copy">
+        {% if b.etiqueta %}<span class="bn-label">{{ b.etiqueta }}</span>{% endif %}
+        <span class="bn-title">{{ b.titulo }}</span>
+        {% if b.subtitulo %}<span class="bn-sub">{{ b.subtitulo }}</span>{% endif %}
+        <span class="bn-btn">{{ b.cta or 'Comprar' }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% if banners|length > 1 %}
+  <button type="button" class="bn-nav bn-prev" aria-label="Anterior">&#8249;</button>
+  <button type="button" class="bn-nav bn-next" aria-label="Siguiente">&#8250;</button>
+  <div class="bn-dots" role="tablist"></div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if tiles %}
+<section class="bn-tiles" aria-label="Destacados">
+  {% for t in tiles %}
+  <a class="bn-tile" href="{{ t.url }}" style="background-color: {{ t.fondo or '#243447' }}">
+    {% if t.imagen %}
+    <img src="{{ url_for('static', filename='img/banners/' ~ t.imagen) }}" alt="" loading="lazy">
+    {% endif %}
+    <span class="bn-tile-copy">
+      <span class="bn-tile-title">{{ t.titulo }}</span>
+      {% if t.subtitulo %}<span class="bn-tile-sub">{{ t.subtitulo }}</span>{% endif %}
+      <span class="bn-btn">{{ t.cta or 'Comprar' }}</span>
+    </span>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}
+
+<style>
+  /* ---------- Carrusel principal ---------- */
+  .bn-hero{position:relative;overflow:hidden;width:100%}
+  .bn-track{display:flex;transition:transform .6s ease}
+  .bn-slide{position:relative;flex:0 0 100%;display:flex;align-items:flex-end;
+    min-height:clamp(360px,42vw,580px);color:#fff;text-decoration:none;overflow:hidden}
+  .bn-slide picture,.bn-slide img{position:absolute;inset:0;width:100%;height:100%}
+  .bn-slide img{object-fit:cover}
+  .bn-slide::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 60%)}
+  .bn-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;
+    gap:10px;padding:0 clamp(20px,5vw,72px) clamp(36px,5vw,64px);max-width:720px}
+  .bn-label{font-size:.9rem;font-weight:600}
+  .bn-title{font-size:clamp(2rem,5.5vw,4.2rem);font-weight:900;line-height:.98;
+    text-transform:uppercase;letter-spacing:-.01em}
+  .bn-sub{font-size:clamp(1rem,1.6vw,1.2rem);max-width:42ch}
+  .bn-btn{display:inline-block;margin-top:6px;background:#fff;color:#111;font-weight:700;
+    padding:12px 26px;border-radius:999px;transition:background .2s}
+  .bn-slide:hover .bn-btn,.bn-tile:hover .bn-btn{background:#e6e6e6}
+  .bn-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;
+    border-radius:50%;border:0;background:rgba(255,255,255,.9);color:#111;font-size:1.6rem;
+    line-height:1;cursor:pointer}
+  .bn-prev{left:16px}.bn-next{right:16px}
+  .bn-dots{position:absolute;z-index:2;left:0;right:0;bottom:14px;display:flex;
+    justify-content:center;gap:8px}
+  .bn-dots button{width:28px;height:4px;border:0;padding:0;border-radius:2px;
+    background:rgba(255,255,255,.45);cursor:pointer}
+  .bn-dots button.on{background:#fff}
+
+  /* ---------- Tarjetas con imagen ---------- */
+  .bn-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;
+    padding:12px clamp(12px,2vw,24px) 0;max-width:1400px;margin:0 auto}
+  .bn-tile{position:relative;display:flex;align-items:flex-end;aspect-ratio:4/5;color:#fff;
+    text-decoration:none;overflow:hidden;border-radius:6px}
+  .bn-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    transition:transform .5s ease}
+  .bn-tile:hover img{transform:scale(1.04)}
+  .bn-tile::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.6) 0%,rgba(0,0,0,0) 55%)}
+  .bn-tile-copy{position:relative;z-index:1;display:flex;flex-direction:column;
+    align-items:flex-start;gap:4px;padding:20px}
+  .bn-tile-title{font-size:1.3rem;font-weight:800}
+  .bn-tile-sub{font-size:.95rem;opacity:.92}
+
+  .bn-slide:focus-visible,.bn-tile:focus-visible,.bn-nav:focus-visible,.bn-dots button:focus-visible{
+    outline:3px solid #f2c200;outline-offset:-3px}
+  @media (max-width:640px){
+    .bn-nav{display:none}
+    .bn-slide{min-height:clamp(420px,120vw,560px)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .bn-track,.bn-tile img{transition:none}
+  }
+</style>
+
+{% if banners and banners|length > 1 %}
+<script>
+(function () {
+  var root = document.querySelector('.bn-hero');
+  if (!root) return;
+  var track = root.querySelector('.bn-track');
+  var n = track.children.length, dots = root.querySelector('.bn-dots');
+  var i = 0, timer = null, x0 = null;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (var k = 0; k < n; k++) {
+    (function (k) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Ir a la promo ' + (k + 1));
+      b.onclick = function () { go(k); };
+      dots.appendChild(b);
+    })(k);
+  }
+
+  function go(k) {
+    i = (k + n) % n;
+    track.style.transform = 'translateX(-' + (i * 100) + '%)';
+    for (var j = 0; j < dots.children.length; j++)
+      dots.children[j].classList.toggle('on', j === i);
+  }
+  function play() { if (!reduce) timer = setInterval(function () { go(i + 1); }, 6000); }
+  function stop() { clearInterval(timer); }
+
+  root.querySelector('.bn-prev').onclick = function () { go(i - 1); };
+  root.querySelector('.bn-next').onclick = function () { go(i + 1); };
+  root.addEventListener('mouseenter', stop);
+  root.addEventListener('mouseleave', play);
+  root.addEventListener('focusin', stop);
+  root.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; stop(); }, { passive: true });
+  root.addEventListener('touchend', function (e) {
+    if (x0 !== null) {
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+      x0 = null;
+    }
+    play();
+  });
+
+  go(0);
+  play();
+})();
+</script>
+{% endif %}
