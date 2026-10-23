@@ -1,0 +1,134 @@
+{# templates/_popup.html — incluir SOLO en la portada: {% include "_popup.html" %} #}
+{% if popup %}
+<div class="sp-overlay" id="sp-popup" hidden role="dialog" aria-modal="true" aria-labelledby="sp-title">
+  <div class="sp-card">
+    <button type="button" class="sp-close" aria-label="Cerrar">&times;</button>
+
+    <h2 id="sp-title">{{ popup.titulo }}</h2>
+    <p class="sp-text">{{ popup.texto }}</p>
+
+    {% if popup.fin %}
+    <div class="sp-count" id="sp-count" data-fin="{{ popup.fin }}" aria-live="off">
+      <div><b data-u="d">00</b><span>días</span></div>
+      <div><b data-u="h">00</b><span>horas</span></div>
+      <div><b data-u="m">00</b><span>min</span></div>
+      <div><b data-u="s">00</b><span>seg</span></div>
+    </div>
+    {% endif %}
+
+    <a class="sp-cta" href="{{ popup.url }}">{{ popup.cta }}</a>
+    <button type="button" class="sp-skip">No, gracias</button>
+  </div>
+</div>
+
+<style>
+  .sp-overlay{--sp-ink:#12263f;--sp-accent:#1f6f4a;--sp-tint:#eef4f0;
+    position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+    padding:16px;background:rgba(10,20,35,.6);opacity:0;transition:opacity .3s ease}
+  .sp-overlay[hidden]{display:none}
+  .sp-overlay.on{opacity:1}
+  .sp-card{position:relative;width:100%;max-width:440px;background:#fff;color:var(--sp-ink);
+    border-radius:16px;padding:32px 28px 22px;text-align:center;
+    transform:translateY(12px);transition:transform .3s ease}
+  .sp-overlay.on .sp-card{transform:none}
+  .sp-close{position:absolute;top:8px;right:12px;background:none;border:0;font-size:1.8rem;
+    line-height:1;color:var(--sp-ink);cursor:pointer;padding:6px}
+  .sp-card h2{margin:0 0 10px;font-size:1.6rem;line-height:1.2}
+  .sp-text{margin:0 0 18px;line-height:1.5}
+  .sp-count{display:flex;justify-content:center;gap:10px;margin:0 0 20px}
+  .sp-count div{min-width:58px;background:var(--sp-tint);border-radius:10px;padding:8px 6px}
+  .sp-count b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}
+  .sp-count span{font-size:.75rem;opacity:.75}
+  .sp-cta{display:block;background:var(--sp-accent);color:#fff;text-decoration:none;
+    font-weight:700;padding:14px 18px;border-radius:10px}
+  .sp-cta:hover{filter:brightness(1.08)}
+  .sp-skip{margin-top:12px;background:none;border:0;color:var(--sp-ink);opacity:.65;
+    cursor:pointer;font-size:.9rem;text-decoration:underline}
+  .sp-close:focus-visible,.sp-cta:focus-visible,.sp-skip:focus-visible{outline:3px solid #f2c200;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){
+    .sp-overlay,.sp-card{transition:none}
+  }
+</style>
+
+<script>
+(function () {
+  var popup = {{ popup | tojson }};
+  var root = document.getElementById('sp-popup');
+  if (!root) return;
+
+  var KEY = 'sopi_popup_' + popup.id;
+  var DAYS = popup.dias_sin_repetir || 7;
+  var finMs = popup.fin ? Date.parse(popup.fin) : null;
+
+  // Si la oferta ya venció, no se muestra
+  if (finMs && finMs <= Date.now()) return;
+
+  // Si ya lo cerró hace poco, no se muestra
+  try {
+    var until = parseInt(localStorage.getItem(KEY) || '0', 10);
+    if (until > Date.now()) return;
+  } catch (e) {}
+
+  var shown = false, lastFocus = null, tick = null;
+
+  function remember() {
+    try { localStorage.setItem(KEY, String(Date.now() + DAYS * 864e5)); } catch (e) {}
+  }
+
+  function close() {
+    root.classList.remove('on');
+    setTimeout(function () { root.hidden = true; }, 300);
+    clearInterval(tick);
+    document.removeEventListener('keydown', onKey);
+    remember();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') close();
+    if (e.key === 'Tab') {  // mantener el foco dentro del popup
+      var f = root.querySelectorAll('a[href],button');
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function renderCount() {
+    var left = Math.max(0, finMs - Date.now());
+    var s = Math.floor(left / 1000);
+    var vals = { d: Math.floor(s / 86400), h: Math.floor(s % 86400 / 3600),
+                 m: Math.floor(s % 3600 / 60), s: s % 60 };
+    for (var k in vals) {
+      var el = root.querySelector('[data-u="' + k + '"]');
+      if (el) el.textContent = pad(vals[k]);
+    }
+    if (left === 0) close();
+  }
+
+  function open() {
+    if (shown) return;
+    shown = true;
+    lastFocus = document.activeElement;
+    root.hidden = false;
+    requestAnimationFrame(function () { root.classList.add('on'); });
+    root.querySelector('.sp-close').focus();
+    document.addEventListener('keydown', onKey);
+    if (finMs) { renderCount(); tick = setInterval(renderCount, 1000); }
+  }
+
+  root.querySelector('.sp-close').onclick = close;
+  root.querySelector('.sp-skip').onclick = close;
+  root.addEventListener('click', function (e) { if (e.target === root) close(); });
+  root.querySelector('.sp-cta').addEventListener('click', remember);
+
+  // Disparadores: a los 8 segundos, o al intentar salir (solo escritorio)
+  setTimeout(open, (popup.demora_seg || 8) * 1000);
+  document.addEventListener('mouseout', function (e) {
+    if (!e.relatedTarget && e.clientY <= 0) open();
+  });
+})();
+</script>
+{% endif %}

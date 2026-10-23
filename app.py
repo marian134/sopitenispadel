@@ -23,6 +23,13 @@ from models import (
 
 app = Flask(__name__)
 
+POPUP = {
+    "id": "cajas-profes-oct26",
+    "titulo": "Cajas x24 para profes y clubes",
+    "texto": "Head Pro, Head Championship y Penn Premier con envío gratis.",
+    "cta": "Consultar por WhatsApp",
+    "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
+}
 ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -574,9 +581,9 @@ def portada():
 
     return render_template(
         "portada.html",
+        popup=POPUP,
         **contexto
     )
-
 
 # =========================================================
 # CATÁLOGO
