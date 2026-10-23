@@ -31,21 +31,7 @@
 {% endif %}
 
 {% if tiles %}
-<section class="bn-tiles" aria-label="Destacados">
-  {% for t in tiles %}
-  <a class="bn-tile" href="{{ t.url }}" style="background-color: {{ t.fondo or '#243447' }}">
-    {% if t.imagen %}
-    <img src="{{ url_for('static', filename='img/banners/' ~ t.imagen) }}" alt="" loading="lazy">
-    {% endif %}
-    <span class="bn-tile-copy">
-      <span class="bn-tile-title">{{ t.titulo }}</span>
-      {% if t.subtitulo %}<span class="bn-tile-sub">{{ t.subtitulo }}</span>{% endif %}
-      <span class="bn-btn">{{ t.cta or 'Comprar' }}</span>
-    </span>
-  </a>
-  {% endfor %}
-</section>
-{% endif %}
+
 
 <style>
   /* ---------- Carrusel principal ---------- */
