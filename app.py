@@ -39,7 +39,7 @@ BANNERS = [
         "cta": "Consultar",
         "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
         "imagen": "banner-cajas.jpg",          # opcional
-        "imagen_movil": "banner-cajas-m.jpg",  # opcional
+        "imagen_movil": "banner-cajas.jpg",  # opcional
         "fondo": "#1b2a3a",                    # color si no hay imagen
     },
     {
