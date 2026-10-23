@@ -600,13 +600,17 @@ def obtener_categorias_y_marcas(
 # PORTADA
 # =========================================================
 
-return render_template(
-    "portada.html",
-    popup=POPUP,
-    banners=BANNERS,
-    tiles=TILES,
-    **contexto
-)
+@app.route("/")
+def portada():
+    contexto = obtener_contexto_base()
+
+    return render_template(
+        "portada.html",
+        popup=POPUP,
+        banners=BANNERS,
+        tiles=TILES,
+        **contexto
+    )
 
 # =========================================================
 # CATÁLOGO

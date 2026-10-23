@@ -19,12 +19,6 @@
              alt="" {% if not loop.first %}loading="lazy"{% endif %}>
       </picture>
       {% endif %}
-      <span class="bn-copy">
-        {% if b.etiqueta %}<span class="bn-label">{{ b.etiqueta }}</span>{% endif %}
-        <span class="bn-title">{{ b.titulo }}</span>
-        {% if b.subtitulo %}<span class="bn-sub">{{ b.subtitulo }}</span>{% endif %}
-        <span class="bn-btn">{{ b.cta or 'Comprar' }}</span>
-      </span>
     </a>
     {% endfor %}
   </div>
@@ -57,12 +51,34 @@
   /* ---------- Carrusel principal ---------- */
   .bn-hero{position:relative;overflow:hidden;width:100%}
   .bn-track{display:flex;transition:transform .6s ease}
-  .bn-slide{position:relative;flex:0 0 100%;display:flex;align-items:flex-end;
-    min-height:clamp(360px,42vw,580px);color:#fff;text-decoration:none;overflow:hidden}
-  .bn-slide picture,.bn-slide img{position:absolute;inset:0;width:100%;height:100%}
-  .bn-slide img{object-fit:cover}
-  .bn-slide::after{content:"";position:absolute;inset:0;
-    background:linear-gradient(to top,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 60%)}
+.bn-slide{
+    position:relative;
+    flex:0 0 100%;
+    display:block;
+    height:auto;
+    min-height:0;
+    color:#fff;
+    text-decoration:none;
+    overflow:hidden;
+    background:#fff;
+}
+
+.bn-slide picture{
+    display:block;
+    width:100%;
+    line-height:0;
+}
+
+.bn-slide img{
+    display:block;
+    width:100%;
+    height:auto;
+    object-fit:contain;
+}
+
+.bn-slide::after{
+    content:none;
+}
   .bn-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;
     gap:10px;padding:0 clamp(20px,5vw,72px) clamp(36px,5vw,64px);max-width:720px}
   .bn-label{font-size:.9rem;font-weight:600}
@@ -101,7 +117,6 @@
     outline:3px solid #f2c200;outline-offset:-3px}
   @media (max-width:640px){
     .bn-nav{display:none}
-    .bn-slide{min-height:clamp(420px,120vw,560px)}
   }
   @media (prefers-reduced-motion:reduce){
     .bn-track,.bn-tile img{transition:none}
