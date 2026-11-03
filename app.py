@@ -35,7 +35,7 @@ BANNERS = [
     {
         "titulo": "Ya trabajamos con HEAD",
         "cta": "Ver productos",
-        "url": url_for('catalogo', deporte_slug='tenis', marca='Head'),
+        "url": "/catalogo/tenis?marca=Head",
         "imagen": "banner_head.png",
         "fondo": "#ffffff",
     },
