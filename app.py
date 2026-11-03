@@ -33,6 +33,13 @@ POPUP = {
 ES_PRODUCCION = os.environ.get("URL_BASE", "").startswith("https://")
 BANNERS = [
     {
+        "titulo": "Ya trabajamos con HEAD",
+        "cta": "Ver productos",
+        "url": url_for('catalogo', deporte_slug='tenis', marca='Head'),
+        "imagen": "banner_head.png",
+        "fondo": "#ffffff",
+    },
+    {
         "etiqueta": "Para profes y clubes",
         "titulo": "Cajas de pelotas x24",
         "subtitulo": "Head Pro, Head Championship y Penn Premier con envío gratis.",

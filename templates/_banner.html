@@ -106,6 +106,9 @@
   @media (prefers-reduced-motion:reduce){
     .bn-track,.bn-tile img{transition:none}
   }
+  /* puntos visibles sobre fondo blanco (banner Head) */
+  .bn-dots button{box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+  .bn-dots button.on{background:#111;box-shadow:none}
 </style>
 
 {% if banners and banners|length > 1 %}
