@@ -239,3 +239,49 @@ body[data-deporte="padel"] { --accent: var(--padel); }
 
     .shop-hero h1 { font-size: 56px; }
 }
+
+
+/* =========================================================
+   MENÚ LATERAL — ACORDEÓN DE CATEGORÍAS (≤ 800px)
+   ========================================================= */
+@media (max-width: 800px) {
+
+    .nav-acc-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 17px 20px;
+        border: 0;
+        border-bottom: 1px solid #efefec;
+        background: #fff;
+        color: var(--black);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-align: left;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .nav-acc-btn .nav-chevron { transition: transform .2s ease; }
+    .nav-acc-btn[aria-expanded="true"] .nav-chevron { transform: rotate(90deg); }
+    .nav-acc-btn[aria-expanded="true"] { background: var(--cream); }
+
+    .nav-acc-panel { background: var(--cream); }
+
+    .nav-drawer .nav-acc-panel a {
+        padding: 14px 20px 14px 34px;
+        border-bottom: 1px solid #e6e6e1;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: none;
+    }
+
+    .nav-drawer .nav-acc-panel a.nav-acc-all {
+        font-weight: 900;
+        color: var(--tenis);
+    }
+}

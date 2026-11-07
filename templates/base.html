@@ -163,10 +163,31 @@
     </div>
 
     {% for slug, nombre in nav_deportes.items() %}
+      {% set cats = nav_categorias.get(slug) if (nav_categorias is defined and nav_categorias) else none %}
+
+      {% if cats %}
+      <div class="nav-acc">
+        <button type="button" class="nav-acc-btn"
+                aria-expanded="{{ 'true' if deporte_slug == slug else 'false' }}">
+          <span>{{ nombre }}</span>
+          <span class="nav-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="nav-acc-panel"{% if deporte_slug != slug %} hidden{% endif %}>
+          <a href="{{ url_for('catalogo', deporte_slug=slug) }}" class="nav-acc-all">
+            Ver todo en {{ nombre }}
+          </a>
+          {% for cat in cats %}
+            <a href="{{ url_for('catalogo', deporte_slug=slug) }}#cat-{{ cat|lower|replace(' ', '-') }}">{{ cat }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% else %}
       <a href="{{ url_for('catalogo', deporte_slug=slug) }}"
          class="{% if deporte_slug == slug %}activo{% endif %}">
         {{ nombre }} <span class="nav-chevron" aria-hidden="true">›</span>
       </a>
+      {% endif %}
     {% endfor %}
 
     <a href="{{ url_for('quienes_somos') }}"
@@ -376,7 +397,37 @@
     toggle.addEventListener('click', abrir);
     if (close)   close.addEventListener('click', cerrar);
     if (overlay) overlay.addEventListener('click', cerrar);
-    drawer.addEventListener('click', function (e) { if (e.target.closest('a')) cerrar(); });
+    // Acordeón: tocar Tenis / Pádel despliega sus categorías
+    var accBtns = drawer.querySelectorAll('.nav-acc-btn');
+    accBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var estabaAbierto = btn.getAttribute('aria-expanded') === 'true';
+        accBtns.forEach(function (b) {
+          b.setAttribute('aria-expanded', 'false');
+          b.nextElementSibling.hidden = true;
+        });
+        if (!estabaAbierto) {
+          btn.setAttribute('aria-expanded', 'true');
+          btn.nextElementSibling.hidden = false;
+        }
+      });
+    });
+
+    // Links del menú: cierra el panel y, si ya estás en ese catálogo, cambia de categoría sin recargar
+    drawer.addEventListener('click', function (e) {
+      var a = e.target.closest('a');
+      if (!a) return;
+      cerrar();
+      var url = new URL(a.href, location.href);
+      if (url.pathname === location.pathname && url.hash) {
+        var cat = document.querySelector('.cat-btn[data-target="' + url.hash.slice(1) + '"]');
+        if (cat) {
+          e.preventDefault();
+          cat.click();
+          history.replaceState(null, '', url.hash);
+        }
+      }
+    });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
     window.addEventListener('resize', function () { if (window.innerWidth > 800) cerrar(); });
   })();

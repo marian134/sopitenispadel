@@ -432,7 +432,21 @@ NAV_DEPORTES = {
     "tenis": "Tenis",
     "padel": "Pádel",
 }
-
+@app.context_processor
+def inyectar_nav_categorias():
+    try:
+        nav = {}
+        for slug, nombre in NAV_DEPORTES.items():
+            filas = (db.session.query(Producto.categoria)
+                     .filter(Producto.deporte == nombre)
+                     .distinct()
+                     .all())
+            nav[slug] = sorted({c for (c,) in filas if c}, key=clave_categoria)
+        return {"nav_categorias": nav}
+    except Exception:
+        app.logger.exception("No se pudieron cargar las categorías del menú")
+        db.session.rollback()
+        return {"nav_categorias": {}}
 
 # =========================================================
 # CONTEXTO BASE
