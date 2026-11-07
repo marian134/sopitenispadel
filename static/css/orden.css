@@ -1,0 +1,241 @@
+/* =========================================================
+   SOPI SPORTS — ORDEN DE CABECERA Y CATÁLOGO (móvil)
+   Va DESPUÉS de style.css. No cambia colores ni tipografía.
+   ========================================================= */
+
+:root { --nav-h: 60px; }
+
+/* ---------- Logo ---------- */
+.brand { display: flex; align-items: center; }
+.brand-logo { display: block; height: 56px; width: auto; }
+.footer-logo { display: block; height: 64px; width: auto; margin-bottom: 14px; }
+
+/* ---------- Elementos solo móvil (ocultos en escritorio) ---------- */
+.nav-toggle,
+.nav-drawer,
+.nav-overlay { display: none; }
+
+.nav-cart { position: relative; }
+.nav-cart-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* ---------- Estilo del catálogo según deporte ---------- */
+body[data-deporte="tenis"] { --accent: var(--tenis); }
+body[data-deporte="padel"] { --accent: var(--padel); }
+
+/* =========================================================
+   MÓVIL / TABLET (≤ 800px)
+   ========================================================= */
+@media (max-width: 800px) {
+
+    /* --- Cabecera: ☰  |  logo  |  carrito --- */
+    .nav-row {
+        min-height: var(--nav-h);
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .nav-sports { display: none !important; }
+
+    .nav-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--black);
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .brand { justify-self: center; }
+    .brand-logo { height: 44px; }
+
+    .nav-actions { justify-self: end; }
+    .nav-cart {
+        width: 44px;
+        height: 44px;
+        justify-content: center;
+    }
+    .nav-cart-icon { width: 24px; height: 24px; }
+    .nav-cart-label { display: none; }
+    .nav-cart-count {
+        position: absolute;
+        top: 2px;
+        right: 0;
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
+
+    /* --- Menú lateral (drawer) --- */
+    .nav-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 190;
+        background: rgba(0, 0, 0, .55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+    }
+
+    .nav-drawer {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 200;
+        width: min(84vw, 320px);
+        background: #fff;
+        transform: translateX(-100%);
+        transition: transform .28s ease;
+        overflow-y: auto;
+    }
+
+    body.nav-open { overflow: hidden; }
+    body.nav-open .nav-overlay { opacity: 1; pointer-events: auto; }
+    body.nav-open .nav-drawer { transform: none; }
+
+    .nav-drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: var(--nav-h);
+        padding: 0 8px 0 18px;
+        border-bottom: 1px solid #e5e5e2;
+    }
+
+    .nav-drawer-head .brand-logo { height: 42px; }
+
+    .nav-close {
+        width: 44px;
+        height: 44px;
+        border: 0;
+        background: transparent;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .nav-drawer a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 17px 20px;
+        border-bottom: 1px solid #efefec;
+        color: var(--black);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+
+    .nav-drawer a.activo { background: var(--cream); }
+
+    .nav-chevron { font-size: 22px; font-weight: 400; line-height: 1; color: var(--gray); }
+
+    .nav-drawer-sub {
+        margin-top: auto;
+        padding: 10px 0 18px;
+        background: var(--cream);
+    }
+
+    .nav-drawer-sub a {
+        padding: 12px 20px;
+        border: 0;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: none;
+    }
+
+    /* --- Catálogo: categorías como pestañas fijas arriba --- */
+    .cat-nav {
+        position: sticky;
+        top: var(--nav-h);
+        z-index: 20;
+        padding: 10px 0;
+        background: #fff;
+        border-bottom: 1px solid #e5e5e2;
+    }
+
+    .cat-nav-title { display: none; }
+
+    .cat-btn {
+        padding: .55rem .95rem;
+        font-size: 13px;
+        font-weight: 800;
+        border-radius: 999px;
+    }
+
+    .cat-nav ul { scrollbar-width: none; }
+    .cat-nav ul::-webkit-scrollbar { display: none; }
+
+    .cat-panel-title { font-size: 1.15rem; }
+
+    /* --- Tarjetas compactas, 2 por fila --- */
+    .cat-grid { gap: 22px 10px; }
+
+    .cat-grid .shop-product-image {
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .cat-grid .shop-product-image img { padding: 8px; }
+
+    .cat-grid .shop-product-info { padding-top: 10px; }
+
+    .cat-grid .shop-product-brand { font-size: 9px; }
+
+    .cat-grid .shop-product-name {
+        min-height: 34px;
+        font-size: 13px;
+    }
+
+    .cat-grid .shop-product-price { font-size: 14px; }
+
+    .cat-grid .shop-product-bottom { margin-top: 10px; }
+
+    .cat-grid .shop-add {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    /* Botón de WhatsApp más chico para no tapar productos */
+    .wa-float {
+        width: 52px;
+        height: 52px;
+        font-size: 28px;
+        right: 14px;
+        bottom: 14px;
+    }
+}
+
+/* =========================================================
+   CELULAR CHICO (≤ 520px)
+   ========================================================= */
+@media (max-width: 520px) {
+
+    .sopi-promo-inner {
+        min-height: 0;
+        padding: 6px 0;
+        font-size: 8px;
+    }
+
+    .shop-content { padding: 40px 0 90px; }
+
+    .shop-hero,
+    .shop-hero-inner { min-height: 300px; }
+
+    .shop-hero-inner { padding-top: 60px; }
+
+    .shop-hero h1 { font-size: 56px; }
+}

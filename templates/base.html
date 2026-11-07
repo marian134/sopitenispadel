@@ -18,6 +18,7 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261107">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   {% block head_extra %}{% endblock %}
@@ -88,8 +89,15 @@
 
     <div class="container nav-row">
 
-      <a href="{{ url_for('portada') }}" class="brand">
-        SOPI Tenis<span class="dot">•</span>Pádel
+      <button type="button" class="nav-toggle" id="nav-toggle"
+              aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-drawer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+
+      <a href="{{ url_for('portada') }}" class="brand" aria-label="SOPI Sports - Inicio">
+        <img src="{{ url_for('static', filename='img/logo-sopi.png') }}"
+             alt="SOPI Sports" class="brand-logo"
+             onerror="this.replaceWith(document.createTextNode('SOPI Sports'))">
       </a>
 
       <nav class="nav-sports">
@@ -111,11 +119,11 @@
 
       <div class="nav-actions">
 
-        <a href="{{ url_for('carrito_ver') }}" class="nav-cart">
+        <a href="{{ url_for('carrito_ver') }}" class="nav-cart" aria-label="Carrito">
 
-          <i class="fas fa-shopping-cart"></i>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="nav-cart-icon"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20.5 8H6"/></svg>
 
-          Carrito
+          <span class="nav-cart-label">Carrito</span>
 
           {% if total_items_carrito %}
             <span class="nav-cart-count">
@@ -130,6 +138,55 @@
     </div>
 
   </header>
+
+
+  <!-- =====================================================
+       MENÚ LATERAL (celular)
+       Va fuera del <header> a propósito: el header tiene
+       backdrop-filter y eso rompería el position: fixed.
+       ===================================================== -->
+
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <aside class="nav-drawer" id="nav-drawer" aria-label="Menú principal">
+
+    <div class="nav-drawer-head">
+      <a href="{{ url_for('portada') }}" class="brand" aria-label="SOPI Sports - Inicio"
+         style="padding:0;border:0;">
+        <img src="{{ url_for('static', filename='img/logo-sopi.png') }}"
+             alt="SOPI Sports" class="brand-logo"
+             onerror="this.replaceWith(document.createTextNode('SOPI Sports'))">
+      </a>
+      <button type="button" class="nav-close" id="nav-close" aria-label="Cerrar menú">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+
+    {% for slug, nombre in nav_deportes.items() %}
+      <a href="{{ url_for('catalogo', deporte_slug=slug) }}"
+         class="{% if deporte_slug == slug %}activo{% endif %}">
+        {{ nombre }} <span class="nav-chevron" aria-hidden="true">›</span>
+      </a>
+    {% endfor %}
+
+    <a href="{{ url_for('quienes_somos') }}"
+       class="{% if request.endpoint == 'quienes_somos' %}activo{% endif %}">
+      Quiénes somos <span class="nav-chevron" aria-hidden="true">›</span>
+    </a>
+
+    <div class="nav-drawer-sub">
+      <a href="{{ url_for('legales.envios') }}">Envíos</a>
+      <a href="{{ url_for('legales.devoluciones') }}">Cambios y devoluciones</a>
+      <a href="{{ url_for('legales.contacto') }}">Contacto</a>
+      <a href="https://wa.me/5491128321531" target="_blank" rel="noopener">
+        <span><i class="fab fa-whatsapp"></i> WhatsApp</span>
+      </a>
+      <a href="https://www.instagram.com/sopi.tenispadel/" target="_blank" rel="noopener">
+        <span><i class="fab fa-instagram"></i> Instagram</span>
+      </a>
+    </div>
+
+  </aside>
 
 
   <!-- =====================================================
@@ -167,7 +224,11 @@
 
         <div class="footer-section">
 
-          <h3>SOPI SPORTS</h3>
+          <h3>
+            <img src="{{ url_for('static', filename='img/logo-sopi-blanco.png') }}"
+                 alt="SOPI Sports" class="footer-logo"
+                 onerror="this.replaceWith(document.createTextNode('SOPI SPORTS'))">
+          </h3>
 
           <p>
             Tu tienda online de artículos para
@@ -299,6 +360,27 @@
 
   </footer>
 
+
+<script>
+  (function () {
+    var body   = document.body;
+    var toggle = document.getElementById('nav-toggle');
+    var close  = document.getElementById('nav-close');
+    var overlay = document.getElementById('nav-overlay');
+    var drawer = document.getElementById('nav-drawer');
+    if (!toggle || !drawer) return;
+
+    function abrir()  { body.classList.add('nav-open');    toggle.setAttribute('aria-expanded', 'true'); }
+    function cerrar() { body.classList.remove('nav-open'); toggle.setAttribute('aria-expanded', 'false'); }
+
+    toggle.addEventListener('click', abrir);
+    if (close)   close.addEventListener('click', cerrar);
+    if (overlay) overlay.addEventListener('click', cerrar);
+    drawer.addEventListener('click', function (e) { if (e.target.closest('a')) cerrar(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
+    window.addEventListener('resize', function () { if (window.innerWidth > 800) cerrar(); });
+  })();
+</script>
 
 </body>
 </html>
