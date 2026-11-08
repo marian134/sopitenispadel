@@ -177,7 +177,7 @@
             Ver todo en {{ nombre }}
           </a>
           {% for cat in cats %}
-            <a href="{{ url_for('catalogo', deporte_slug=slug) }}#cat-{{ cat|lower|replace(' ', '-') }}">{{ cat }}</a>
+            <a href="{{ url_for('catalogo', deporte_slug=slug, categoria=cat) }}">{{ cat }}</a>
           {% endfor %}
         </div>
       </div>
@@ -413,21 +413,7 @@
       });
     });
 
-    // Links del menú: cierra el panel y, si ya estás en ese catálogo, cambia de categoría sin recargar
-    drawer.addEventListener('click', function (e) {
-      var a = e.target.closest('a');
-      if (!a) return;
-      cerrar();
-      var url = new URL(a.href, location.href);
-      if (url.pathname === location.pathname && url.hash) {
-        var cat = document.querySelector('.cat-btn[data-target="' + url.hash.slice(1) + '"]');
-        if (cat) {
-          e.preventDefault();
-          cat.click();
-          history.replaceState(null, '', url.hash);
-        }
-      }
-    });
+    drawer.addEventListener('click', function (e) { if (e.target.closest('a')) cerrar(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
     window.addEventListener('resize', function () { if (window.innerWidth > 800) cerrar(); });
   })();

@@ -1,0 +1,128 @@
+{# =====================================================================
+   BARRA MÓVIL DEL CATÁLOGO: ruta (Inicio › Tenis › Pelotas) + Filtrar + Ordenar
+   DÓNDE PEGARLO: en index.html, justo ANTES de la línea
+       <div class="cat-layout" id="cat-layout">
+   En escritorio no se ve (lo oculta orden.css); solo aparece en celular.
+   ===================================================================== #}
+
+{% macro mf_url(cat, marca, orden) -%}
+{{ url_for('catalogo',
+           deporte_slug=deporte_slug,
+           categoria=(cat or none),
+           marca=(marca or none),
+           orden=(orden if (orden and orden != 'relevancia') else none),
+           q=(filtros.q or none),
+           max_precio=(filtros.max_precio or none)) }}
+{%- endmacro %}
+
+{% set mf_activos = (1 if filtros.categoria else 0) + (1 if filtros.marca else 0) %}
+{% set mf_ordenes = [
+    ('relevancia', 'Recomendados'),
+    ('precio_asc', 'Menor precio'),
+    ('precio_desc', 'Mayor precio'),
+    ('nombre', 'Nombre (A-Z)'),
+    ('stock', 'Mayor stock'),
+] %}
+
+<div class="mf" id="mf">
+
+  <nav class="mf-crumbs" aria-label="Ruta">
+    <a href="{{ url_for('portada') }}">Inicio</a>
+    <span aria-hidden="true">›</span>
+    {% if filtros.categoria or filtros.marca %}
+      <a href="{{ mf_url('', '', filtros.orden) }}">{{ deporte }}</a>
+    {% else %}
+      <strong>{{ deporte }}</strong>
+    {% endif %}
+    {% if filtros.categoria %}
+      <span aria-hidden="true">›</span>
+      {% if filtros.marca %}
+        <a href="{{ mf_url(filtros.categoria, '', filtros.orden) }}">{{ filtros.categoria }}</a>
+      {% else %}
+        <strong>{{ filtros.categoria }}</strong>
+      {% endif %}
+    {% endif %}
+    {% if filtros.marca %}
+      <span aria-hidden="true">›</span>
+      <strong>{{ filtros.marca }}</strong>
+    {% endif %}
+  </nav>
+
+  <div class="mf-bar">
+
+    <button type="button" class="mf-btn" id="mf-open" aria-haspopup="dialog">
+      <span>Filtrar{% if mf_activos %} <b class="mf-badge">{{ mf_activos }}</b>{% endif %}</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+    </button>
+
+    <label class="mf-btn mf-sort">
+      <select aria-label="Ordenar productos" onchange="location.href=this.value">
+        {% for clave, etiqueta in mf_ordenes %}
+          <option value="{{ mf_url(filtros.categoria, filtros.marca, clave) }}"
+                  {% if filtros.orden == clave %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16M8 4L4 8M8 4l4 4M16 20V4M16 20l-4-4M16 20l4-4"/></svg>
+    </label>
+
+  </div>
+</div>
+
+<div class="mf-overlay" id="mf-overlay"></div>
+
+<div class="mf-sheet" id="mf-sheet" role="dialog" aria-label="Filtrar productos">
+
+  <div class="mf-sheet-head">
+    <strong>Filtrar</strong>
+    <button type="button" id="mf-close" aria-label="Cerrar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+
+  <div class="mf-sheet-body">
+
+    <p class="mf-label">Categoría</p>
+    <div class="mf-pills">
+      <a class="mf-pill{% if not filtros.categoria %} is-on{% endif %}"
+         href="{{ mf_url('', filtros.marca, filtros.orden) }}">Todas</a>
+      {% for c in categorias %}
+        <a class="mf-pill{% if filtros.categoria == c %} is-on{% endif %}"
+           href="{{ mf_url(c, filtros.marca, filtros.orden) }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+
+    {% if marcas %}
+    <p class="mf-label">Marca</p>
+    <div class="mf-pills">
+      <a class="mf-pill{% if not filtros.marca %} is-on{% endif %}"
+         href="{{ mf_url(filtros.categoria, '', filtros.orden) }}">Todas</a>
+      {% for m in marcas %}
+        <a class="mf-pill{% if filtros.marca == m %} is-on{% endif %}"
+           href="{{ mf_url(filtros.categoria, m, filtros.orden) }}">{{ m }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="mf-sheet-foot">
+    <a href="{{ mf_url('', '', filtros.orden) }}">Limpiar filtros</a>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var body = document.body;
+    var abrir = document.getElementById('mf-open');
+    var cerrar = document.getElementById('mf-close');
+    var overlay = document.getElementById('mf-overlay');
+    if (!abrir) return;
+    function on()  { body.classList.add('mf-abierto'); }
+    function off() { body.classList.remove('mf-abierto'); }
+    abrir.addEventListener('click', on);
+    cerrar.addEventListener('click', off);
+    overlay.addEventListener('click', off);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') off(); });
+  })();
+</script>
