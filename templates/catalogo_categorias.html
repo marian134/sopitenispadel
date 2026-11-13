@@ -12,30 +12,58 @@
 {% include 'filtros_movil.html' %}
 <div class="cat-layout" id="cat-layout">
 
+  {% set primera = secciones[0][0] %}
   <nav class="cat-nav" aria-label="Categorías">
     <p class="cat-nav-title">Categorías</p>
     <ul>
+      {% set ns = namespace(ind=false) %}
       {% for nombre, prods in secciones %}
-      <li>
-        <button type="button"
-                class="cat-btn{% if loop.first %} is-active{% endif %}"
-                data-target="cat-{{ nombre|lower|replace(' ', '-') }}"
-                aria-expanded="{{ 'true' if loop.first else 'false' }}"
-                aria-controls="cat-{{ nombre|lower|replace(' ', '-') }}">
-          <span>{{ nombre }}</span>
-          <span class="cat-count">{{ prods|length }}</span>
-        </button>
-      </li>
+
+        {% if nombre.startswith('Indumentaria ') %}
+          {% if not ns.ind %}
+            {% set ns.ind = true %}
+            <li class="cat-group">
+              <p class="cat-group-label">Indumentaria</p>
+              <ul>
+                {% for n2, p2 in secciones if n2.startswith('Indumentaria ') %}
+                <li>
+                  <button type="button"
+                          class="cat-btn{% if n2 == primera %} is-active{% endif %}"
+                          data-target="cat-{{ n2|lower|replace(' ', '-') }}"
+                          aria-expanded="{{ 'true' if n2 == primera else 'false' }}"
+                          aria-controls="cat-{{ n2|lower|replace(' ', '-') }}">
+                    <span><span class="cat-sub-prefix">Indumentaria </span>{{ n2.replace('Indumentaria ', '') }}</span>
+                    <span class="cat-count">{{ p2|length }}</span>
+                  </button>
+                </li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endif %}
+
+        {% else %}
+          <li>
+            <button type="button"
+                    class="cat-btn{% if nombre == primera %} is-active{% endif %}"
+                    data-target="cat-{{ nombre|lower|replace(' ', '-') }}"
+                    aria-expanded="{{ 'true' if nombre == primera else 'false' }}"
+                    aria-controls="cat-{{ nombre|lower|replace(' ', '-') }}">
+              <span>{{ nombre }}</span>
+              <span class="cat-count">{{ prods|length }}</span>
+            </button>
+          </li>
+        {% endif %}
+
       {% endfor %}
     </ul>
   </nav>
 
   <div class="cat-content">
     {% for nombre, prods in secciones %}
-    <section id="cat-{{ nombre|lower|replace(' ', '-') }}"
+        <section id="cat-{{ nombre|lower|replace(' ', '-') }}"
              class="cat-panel"
-             {% if not loop.first %}hidden{% endif %}>
-      <h2 class="cat-panel-title">{{ nombre }} <small>{{ prods|length }} productos</small></h2>
+             {% if nombre != primera %}hidden{% endif %}>
+      <h2 class="cat-panel-title">{{ nombre.replace('Indumentaria ', 'Indumentaria · ') }} <small>{{ prods|length }} productos</small></h2>
       <div class="cat-grid">
         {% for p in prods %}
           {% include '_tarjeta.html' %}
@@ -99,7 +127,16 @@
     background: rgba(128,128,128,.2);
   }
   .cat-btn.is-active .cat-count { background: rgba(255,255,255,.25); }
-
+  .cat-group-label {
+    margin: .9rem 0 .4rem;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+  .cat-group ul { padding-left: .75rem; }
+  .cat-sub-prefix { display: none; }
   /* Contenido */
   .cat-panel-title { margin: 0 0 1rem; font-size: 1.4rem; }
   .cat-panel-title small { font-size: .85rem; font-weight: 400; opacity: .7; margin-left: .5rem; }
@@ -119,6 +156,10 @@
   .cat-nav ul { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; -webkit-overflow-scrolling: touch; }
   .cat-btn { width: auto; white-space: nowrap; margin-bottom: 0; flex: 0 0 auto; }
   .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .cat-group { display: contents; }
+  .cat-group-label { display: none; }
+  .cat-group ul { display: flex; gap: .5rem; padding-left: 0; flex: 0 0 auto; }
+  .cat-sub-prefix { display: inline; }
   }
 
   @media (prefers-reduced-motion: reduce) {

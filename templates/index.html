@@ -65,7 +65,10 @@
     <style>
         .banner-promo { max-width: 1200px; margin: 24px auto; padding: 0 12px; }
         .banner-promo img { width: 100%; height: auto; display: block; border-radius: 12px; }
+        .shop-filter-menu .sub-categoria { padding-left: 28px; font-size: 0.92em; opacity: .85; }
+        .shop-filter-menu .sub-categoria::before { content: "– "; }
     </style>  
+
     <!-- CONTENIDO -->
      
     <section class="shop-content">
@@ -90,28 +93,35 @@
 
             <div class="shop-filters">
 
-                {% if categorias %}
-                <details class="shop-filter">
-                    <summary>
-                        Categoría
-                        <span>⌄</span>
-                    </summary>
+            {% if categorias_agrupadas %}
+<details class="shop-filter">
+    <summary>
+        Categoría
+        <span>⌄</span>
+    </summary>
 
-                    <div class="shop-filter-menu">
-                        <a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}">
-                            Todas
-                        </a>
+    <div class="shop-filter-menu">
+        <a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}">
+            Todas
+        </a>
 
-                        {% for categoria in categorias %}
-                        <a href="{{ url_for('catalogo',
-                            deporte_slug=deporte_slug,
-                            categoria=categoria) }}">
-                            {{ categoria }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                </details>
-                {% endif %}
+        {% for g in categorias_agrupadas %}
+            <a href="{{ url_for('catalogo', deporte_slug=deporte_slug, categoria=g.valor) }}"
+               {% if filtros.categoria == g.valor %}class="activo"
+               {% endif %}>
+                {{ g.nombre }}
+            </a>
+
+            {% for s in g.subs %}
+           <a class="sub-categoria{% if filtros.categoria == s.valor %} activo{% endif %}"
+             href="{{ url_for('catalogo', deporte_slug=deporte_slug, categoria=s.valor) }}">
+             {{ s.nombre }}
+            </a>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</details>
+{% endif %}
 
 
                 {% if marcas %}

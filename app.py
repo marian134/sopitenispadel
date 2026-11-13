@@ -435,18 +435,19 @@ NAV_DEPORTES = {
 @app.context_processor
 def inyectar_nav_categorias():
     try:
-        nav = {}
+        nav, nav_grupos = {}, {}
         for slug, nombre in NAV_DEPORTES.items():
             filas = (db.session.query(Producto.categoria)
                      .filter(Producto.deporte == nombre)
                      .distinct()
                      .all())
             nav[slug] = sorted({c for (c,) in filas if c}, key=clave_categoria)
-        return {"nav_categorias": nav}
+            nav_grupos[slug] = agrupar_categorias(nav[slug])
+        return {"nav_categorias": nav, "nav_grupos": nav_grupos}
     except Exception:
         app.logger.exception("No se pudieron cargar las categorías del menú")
         db.session.rollback()
-        return {"nav_categorias": {}}
+        return {"nav_categorias": {}, "nav_grupos": {}}
 
 # =========================================================
 # CONTEXTO BASE
@@ -511,10 +512,12 @@ def obtener_productos_por_deporte(
 
     # Categoría
     if filtros.get("categoria"):
-
-        query = query.filter_by(
-            categoria=filtros["categoria"]
-        )
+        cat = filtros["categoria"]
+        if cat == "Indumentaria":
+            # el grupo completo: Hombre + Mujer
+            query = query.filter(Producto.categoria.like("Indumentaria%"))
+        else:
+            query = query.filter_by(categoria=cat)
 
     # Marca
     if filtros.get("marca"):
@@ -574,7 +577,11 @@ def obtener_productos_por_deporte(
 
 # Orden en que se muestran las categorías en el catálogo.
 # Las que no estén acá van después, por orden alfabético.
-ORDEN_CATEGORIAS = ["Palas", "Pelotas", "Accesorios"]
+ORDEN_CATEGORIAS = [
+    "Palas", "Pelotas",
+    "Indumentaria Hombre", "Indumentaria Mujer",
+    "Accesorios",
+]
 
 
 def clave_categoria(categoria):
@@ -590,6 +597,22 @@ def agrupar_por_categoria(productos):
         grupos.setdefault(p.categoria or "Otros", []).append(p)
     return sorted(grupos.items(), key=lambda g: clave_categoria(g[0]))
 
+def grupo_y_sub(categoria):
+    """'Indumentaria Hombre' -> ('Indumentaria', 'Hombre'); 'Palas' -> ('Palas', None)"""
+    if (categoria or "").startswith("Indumentaria "):
+        return "Indumentaria", categoria.split(" ", 1)[1]
+    return categoria, None
+
+
+def agrupar_categorias(categorias):
+    """Arma el menú: [{'nombre', 'valor', 'subs': [{'nombre', 'valor'}]}]"""
+    grupos = {}
+    for c in categorias:
+        grupo, sub = grupo_y_sub(c)
+        g = grupos.setdefault(grupo, {"nombre": grupo, "valor": grupo, "subs": []})
+        if sub:
+            g["subs"].append({"nombre": sub, "valor": c})
+    return list(grupos.values())
 
 def obtener_categorias_y_marcas(
     deporte_slug
@@ -709,7 +732,7 @@ def catalogo(deporte_slug):
         "secciones": agrupar_por_categoria(productos),
 
         "categorias": categorias,
-
+        "categorias_agrupadas": agrupar_categorias(categorias),
         "marcas": marcas,
 
         "filtros": filtros,
