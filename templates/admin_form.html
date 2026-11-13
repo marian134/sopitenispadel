@@ -80,7 +80,7 @@
         {% if producto and producto.imagen %}
           <div class="campo">
             <label>Foto actual</label>
-            <img src="{{ url_for('static', filename='img/' + producto.imagen) }}" alt=""
+            <img src="{{ url_for('static', filename='img/' + producto.imagen|lower) }}" alt=""
                  style="width:90px; height:90px; object-fit:cover; border-radius:3px;">
           </div>
         {% endif %}

@@ -46,7 +46,7 @@
                 {% if item.producto.imagen %}
 
                     <img
-                        src="{{ url_for('static', filename='img/' + item.producto.imagen) }}"
+                        src="{{ url_for('static', filename='img/' + item.producto.imagen|lower) }}"
                         alt="{{ item.producto.nombre }}"
                     >
 

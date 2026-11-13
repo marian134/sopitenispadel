@@ -51,7 +51,7 @@
               <tr>
                 <td>
                   {% if p.imagen %}
-                    <img src="{{ url_for('static', filename='img/' + p.imagen) }}" alt=""
+                    <img src="{{ url_for('static', filename='img/' + p.imagen|lower) }}" alt=""
                          onerror="this.style.visibility='hidden';">
                   {% endif %}
                 </td>

@@ -1869,7 +1869,7 @@ def admin_precios():
                     errores.append(f"Fila {n} ({nombre}): número inválido")
                     continue
 
-                imagen = (fila.get("imagen") or "").strip()
+                imagen = (fila.get("imagen") or "").strip().lower()
 
                 if precio is None and costo is not None:
                     precio = precio_desde_costo(costo)

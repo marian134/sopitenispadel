@@ -6,10 +6,10 @@
 
 {% block og_type %}product{% endblock %}
 
-{% block og_image %}{% if producto.imagen %}{{ url_abs(url_for('static', filename='img/' + producto.imagen)) }}{% else %}{{ url_abs(url_for('static', filename='img/og-default.png')) }}{% endif %}{% endblock %}
+{% block og_image %}{% if producto.imagen %}{{ url_abs(url_for('static', filename='img/' + producto.imagen|lower)) }}{% else %}{{ url_abs(url_for('static', filename='img/og-default.png')) }}{% endif %}{% endblock %}
 
 {% block head_extra %}
-{% set imagen_abs = url_abs(url_for('static', filename='img/' + producto.imagen)) if producto.imagen else None %}
+{% set imagen_abs = url_abs(url_for('static', filename='img/' + producto.imagen|lower)) if producto.imagen else None %}
 <script type="application/ld+json">
 {{ {
   "@context": "https://schema.org/",
@@ -42,7 +42,7 @@
     <!-- IMAGEN IZQUIERDA -->
     <div class="foto-grande">
       {% if producto.imagen %}
-        <img src="{{ url_for('static', filename='img/' + producto.imagen) }}" alt="{{ producto.nombre }}"
+        <img src="{{ url_for('static', filename='img/' + producto.imagen|lower) }}" alt="{{ producto.nombre }}"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
         <div class="placeholder" style="display:none;">{{ producto.marca }}</div>
       {% else %}
