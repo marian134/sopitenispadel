@@ -613,6 +613,7 @@ a {
 
 .shop-hero {
     min-height: 390px;
+    padding: 50px 0;      /* nuevo */
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -640,15 +641,16 @@ a {
 
 .shop-hero-inner {
     width: min(1380px, 94%);
-    min-height: 390px;
+    min-height: 0;        /* antes: 390px */
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 40px;            /* nuevo: separa el texto del botón */
 }
 
 .shop-hero-copy {
-    max-width: 720px;
+    max-width: 900px;     /* antes: 720px */
     color: #fff;
 }
 
@@ -663,9 +665,9 @@ a {
 
 .shop-hero h1 {
     margin: 0;
-    font-size: clamp(80px, 11vw, 150px);
-    line-height: .82;
-    letter-spacing: -.07em;
+    font-size: clamp(44px, 5.5vw, 84px);
+    line-height: .92;
+    letter-spacing: -.05em;
     font-weight: 900;
     text-transform: uppercase;
 }

@@ -165,7 +165,7 @@ def admin_arrepentimientos():
 # FEED PARA GOOGLE MERCHANT CENTER
 # URL: /feed/google.xml
 # ---------------------------------------------------------
-@bp.route("/feed/google.xml")
+@bp.route("/feed/google-viejo.xml")
 def feed_google():
     items = []
 

@@ -12,6 +12,7 @@ from functools import wraps
 from flask_mail import Mail, Message
 from sqlalchemy import inspect, text
 from urllib.parse import urlencode, quote
+from xml.sax.saxutils import escape
 from models import (
     db, Producto, Pedido, LineaPedido, Cupon, CuponUso,
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
@@ -1788,6 +1789,85 @@ def mp_webhook():
     db.session.commit()
     return "", 200
 
+# =========================================================
+# FEED DE GOOGLE MERCHANT CENTER
+# =========================================================
+
+def feed_titulo(p):
+    t = (p.nombre or "").strip()
+    cat = (p.categoria or "").lower()
+    marca = (p.marca or "").strip()
+
+    # Títulos en MAYÚSCULAS (zapatillas Head): pasar a formato normal
+    if t.isupper():
+        t = t.title()
+
+    # Las zapatillas tienen que decir que son zapatillas
+    if cat.startswith("calzado") and "zapatilla" not in t.lower():
+        t = f"Zapatillas {marca.title()} {t}".replace("  ", " ")
+
+    return t
+
+
+def feed_categoria_google(p):
+    """Solo categorías generales de la taxonomía de Google, para evitar rechazos."""
+    cat = (p.categoria or "").lower()
+    if cat.startswith("calzado"):
+        return "Apparel & Accessories > Shoes"
+    if cat.startswith("indumentaria"):
+        return "Apparel & Accessories > Clothing"
+    return "Sporting Goods"
+
+
+@app.route("/feed/google.xml")
+def feed_google():
+    productos = (
+        Producto.query
+        .filter(
+            Producto.stock > 0,
+            Producto.precio > 0,
+            Producto.slug != None,                      # noqa: E711
+            db.func.coalesce(Producto.imagen, "") != "",
+        )
+        .order_by(Producto.id)
+        .all()
+    )
+
+    items = []
+    for p in productos:
+        titulo = feed_titulo(p)
+        marca = (p.marca or "SOPI").strip()
+        descripcion = (p.descripcion or "").strip() or f"{titulo} - {marca}"
+        imagen = (p.imagen or "").strip().lower()       # corrige el 404 por mayúsculas
+
+        link = url_abs(url_for("producto_detalle", slug=p.slug))
+        image_link = url_abs(url_for("static", filename=f"img/{imagen}"))
+
+        items.append(f"""<item>
+<g:id>{p.id}</g:id>
+<g:title>{escape(titulo)}</g:title>
+<g:description>{escape(descripcion)}</g:description>
+<g:link>{escape(link)}</g:link>
+<g:image_link>{escape(image_link)}</g:image_link>
+<g:availability>in_stock</g:availability>
+<g:price>{int(p.precio)}.00 ARS</g:price>
+<g:brand>{escape(marca)}</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>{escape(feed_categoria_google(p))}</g:google_product_category>
+<g:identifier_exists>no</g:identifier_exists>
+</item>""")
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n'
+        "<channel>\n"
+        "<title>SOPI Sports</title>\n"
+        f"<link>{URL_PUBLICA}</link>\n"
+        "<description>Productos de pádel y tenis</description>\n"
+        + "\n".join(items)
+        + "\n</channel>\n</rss>"
+    )
+    return Response(xml, mimetype="application/xml")
 
 # =========================================================
 # SEO: ROBOTS.TXT Y SITEMAP.XML
