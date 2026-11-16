@@ -1,5 +1,6 @@
 {# templates/_banner.html — pegar en portada.html con: {% include "_banner.html" %}
-   Recibe: banners (lista de slides) y tiles (lista de tarjetas). Ambas opcionales. #}
+   Recibe: banners (lista de slides) y tiles (lista de tarjetas). Ambas opcionales.
+   Cada banner puede traer "ancho" y "alto" (en píxeles) para evitar saltos de diseño al cargar. #}
 
 {% if banners %}
 <section class="bn-hero" aria-roledescription="carrusel" aria-label="Novedades y promociones">
@@ -16,7 +17,9 @@
                 srcset="{{ url_for('static', filename='img/banners/' ~ b.imagen_movil) }}">
         {% endif %}
         <img src="{{ url_for('static', filename='img/banners/' ~ b.imagen) }}"
-             alt="" {% if not loop.first %}loading="lazy"{% endif %}>
+             alt="{{ b.titulo }}{% if b.subtitulo %}. {{ b.subtitulo }}{% endif %}"
+             {% if b.ancho and b.alto %}width="{{ b.ancho }}" height="{{ b.alto }}"{% endif %}
+             {% if loop.first %}fetchpriority="high" decoding="async"{% else %}loading="lazy" decoding="async"{% endif %}>
       </picture>
       {% endif %}
     </a>

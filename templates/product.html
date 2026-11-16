@@ -2,30 +2,23 @@
 
 {% block title %}{{ producto.nombre }}{% if producto.marca and producto.marca not in producto.nombre %} - {{ producto.marca }}{% endif %} | SOPI Sports{% endblock %}
 
-{% block meta_description %}Comprá {{ producto.nombre }} a {{ producto.precio|pesos }}. Envíos a todo el país, Mercado Pago y 5% de descuento por transferencia.{% endblock %}
+{% block meta_description %}{{ seo.desc }}{% endblock %}
 
 {% block og_type %}product{% endblock %}
 
-{% block og_image %}{% if producto.imagen %}{{ url_abs(url_for('static', filename='img/' + producto.imagen|lower)) }}{% else %}{{ url_abs(url_for('static', filename='img/og-default.png')) }}{% endif %}{% endblock %}
+{% block og_image %}{{ seo.image }}{% endblock %}
 
-{% block head_extra %}
-{% set imagen_abs = url_abs(url_for('static', filename='img/' + producto.imagen|lower)) if producto.imagen else None %}
+{% block jsonld %}
+<script type="application/ld+json">{{ seo.jsonld | tojson }}</script>
 <script type="application/ld+json">
 {{ {
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": producto.nombre,
-  "image": [imagen_abs] if imagen_abs else [],
-  "description": producto.descripcion or producto.nombre,
-  "brand": {"@type": "Brand", "name": producto.marca},
-  "offers": {
-    "@type": "Offer",
-    "url": canonical_default,
-    "priceCurrency": "ARS",
-    "price": producto.precio,
-    "itemCondition": "https://schema.org/NewCondition",
-    "availability": "https://schema.org/InStock" if producto.stock > 0 else "https://schema.org/OutOfStock"
-  }
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Inicio", "item": url_abs(url_for('portada'))},
+    {"@type": "ListItem", "position": 2, "name": ('Pádel' if deporte_slug == 'padel' else 'Tenis'), "item": url_abs(url_for('catalogo', deporte_slug=deporte_slug))},
+    {"@type": "ListItem", "position": 3, "name": producto.nombre}
+  ]
 } | tojson }}
 </script>
 {% endblock %}
@@ -33,8 +26,8 @@
 {% block content %}
 
 <div class="container">
-<a href="{{ url_for('portada') }}" class="producto-volver">
-      ← Volver a SOPI
+<a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}" class="producto-volver">
+      ← Volver a {{ 'Pádel' if deporte_slug == 'padel' else 'Tenis' }}
 </a>
 
   <div class="producto-detalle">
@@ -42,7 +35,8 @@
     <!-- IMAGEN IZQUIERDA -->
     <div class="foto-grande">
       {% if producto.imagen %}
-        <img src="{{ url_for('static', filename='img/' + producto.imagen|lower) }}" alt="{{ producto.nombre }}"
+        <img src="{{ url_for('static', filename='img/' + producto.imagen|lower) }}"
+             alt="{{ producto.nombre }}{% if producto.marca and producto.marca not in producto.nombre %} {{ producto.marca }}{% endif %}"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
         <div class="placeholder" style="display:none;">{{ producto.marca }}</div>
       {% else %}

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Tenis y Pádel Online en Argentina | SOPI Sports{% endblock %}
+{% block title %}Tienda de Pádel y Tenis Online en Argentina | SOPI Sports{% endblock %}
 
-{% block meta_description %}Comprá equipamiento de tenis y pádel en SOPI Sports. Encontrá paletas, pelotas y accesorios, con envíos a todo el país y opciones de pago seguras.{% endblock %}
+{% block meta_description %}Paletas de pádel, raquetas y pelotas de tenis, grips e indumentaria. Envíos a todo el país, Mercado Pago y 5% de descuento por transferencia.{% endblock %}
 
 {% block content %}
 
@@ -18,7 +18,7 @@
         <div class="home-hero-copy">
 
             <span class="home-eyebrow">
-                SOPI SPORTS · EQUIPAMIENTO DEPORTIVO
+                TIENDA ONLINE DE TENIS Y PÁDEL EN ARGENTINA
             </span>
 
             <h1>
@@ -28,8 +28,8 @@
             </h1>
 
             <p>
-                Todo lo que necesitás para jugar,
-                entrenar y disfrutar el tenis y el pádel.
+                Paletas, raquetas, pelotas y accesorios de tenis y pádel
+                para jugar, entrenar y competir. Envíos a todo el país.
             </p>
 
             <div class="home-hero-buttons">
@@ -99,7 +99,7 @@
 
         <div>
             <strong>TRANSFERENCIA</strong>
-            <span>Consultá el beneficio.</span>
+            <span>5% de descuento.</span>
         </div>
 
     </div>
@@ -243,6 +243,55 @@
 </section>
 
 
+<!-- COMPRÁ POR CATEGORÍA (enlaces directos a cada categoría) -->
+
+{% if nav_grupos %}
+
+<style>
+    .home-cats { max-width: 1200px; margin: 40px auto; padding: 0 16px; }
+    .home-cats-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
+    .home-cats-grid a {
+        padding: 10px 18px;
+        border: 1px solid rgba(128, 128, 128, .35);
+        border-radius: 999px;
+        text-decoration: none;
+        color: inherit;
+        font-weight: 600;
+        font-size: .95rem;
+        transition: border-color .15s;
+    }
+    .home-cats-grid a:hover { border-color: currentColor; }
+</style>
+
+<section class="home-cats">
+
+    <div class="home-section-heading">
+
+        <span>
+            COMPRÁ POR CATEGORÍA
+        </span>
+
+        <h2>
+            Todo para tu juego
+        </h2>
+
+    </div>
+
+    <div class="home-cats-grid">
+        {% for slug, nombre_deporte in nav_deportes.items() %}
+            {% for g in nav_grupos.get(slug, []) %}
+            <a href="{{ url_for('catalogo', deporte_slug=slug, categoria=g.valor) }}">
+                {{ g.nombre }} de {{ nombre_deporte|lower }}
+            </a>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+</section>
+
+{% endif %}
+
+
 <!-- PRODUCTOS DESTACADOS -->
 
 {% if destacados %}
@@ -285,10 +334,11 @@
 
                 <img
                     src="{{ url_for('static', filename='img/' ~ p.imagen|lower) }}"
-                    alt="{{ p.nombre }}"
+                    alt="{{ p.nombre }}{% if p.marca and p.marca not in p.nombre %} {{ p.marca }}{% endif %}"
                     width="700"
                     height="700"
                     loading="lazy"
+                    decoding="async"
                 >
 
                 {% else %}
@@ -418,6 +468,15 @@
                 Seleccionamos productos de tenis y pádel
                 pensando en jugadores que entrenan,
                 compiten y disfrutan cada partido.
+            </p>
+
+            <p>
+                Trabajamos con clubes, profes y jugadores de todo el país:
+                paletas de pádel Adidas, Bullpadel, Nox y Siux, y pelotas,
+                raquetas y accesorios de tenis Head, Penn y Wilson.
+                Pagás con Mercado Pago o por transferencia con 5% de descuento,
+                y te lo enviamos a donde estés.
+                <a href="{{ url_for('quienes_somos') }}">Conocé más sobre SOPI</a>.
             </p>
 
         </div>

@@ -11,7 +11,7 @@ from datetime import timedelta, datetime, date
 from functools import wraps
 from flask_mail import Mail, Message
 from sqlalchemy import inspect, text
-
+from urllib.parse import urlencode, quote
 from models import (
     db, Producto, Pedido, LineaPedido, Cupon, CuponUso,
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
@@ -404,16 +404,21 @@ def filtro_hora_ar(fecha):
     return (fecha - timedelta(hours=3)).strftime("%d/%m/%Y %H:%M")
 
 
+# Parámetros de la URL que sí merecen canonical propio (el resto apunta a la URL limpia)
+PARAMS_CANONICOS = ("categoria", "marca")
+
+
+def url_abs(ruta):
+    """Ruta relativa -> URL absoluta (si ya es absoluta, queda igual)."""
+    return ruta if ruta.startswith("http") else f"{URL_PUBLICA}{ruta}"
+
+
 @app.context_processor
-def seo():
+def seo_helpers():
     """Helpers de SEO disponibles en todas las plantillas."""
-    def url_abs(ruta):
-        return f"{URL_PUBLICA}{ruta}"
-    return {
-        "url_abs": url_abs,
-        # sin query string: /catalogo/padel?orden=... apunta a la URL limpia
-        "canonical_default": f"{URL_PUBLICA}{request.path}",
-    }
+    qs = {k: request.args[k] for k in PARAMS_CANONICOS if request.args.get(k)}
+    canonical = f"{URL_PUBLICA}{request.path}" + (f"?{urlencode(qs)}" if qs else "")
+    return {"url_abs": url_abs, "canonical_default": canonical}
 
 
 @app.template_global()
@@ -641,6 +646,88 @@ def obtener_categorias_y_marcas(
 
 
 # =========================================================
+# SEO POR PÁGINA (título, descripción, JSON-LD)
+# =========================================================
+
+SEO_CATALOGO = {
+    "padel": {
+        "title": "Paletas, pelotas y accesorios de pádel | SOPI Sports",
+        "desc": "Paletas de pádel Adidas, Bullpadel, Nox, Siux y más, pelotas, grips e indumentaria. Envíos a todo el país.",
+        "h1": "Pádel: paletas, pelotas y accesorios",
+        "intro": "Encontrá paletas de pádel de las mejores marcas, pelotas, grips, bolsos e indumentaria. Enviamos a todo el país y, si pagás por transferencia, tenés 5% de descuento.",
+    },
+    "tenis": {
+        "title": "Raquetas, pelotas y accesorios de tenis | SOPI Sports",
+        "desc": "Raquetas de tenis Head, Wilson, Babolat y Dunlop, pelotas, overgrips, calzado e indumentaria. Envíos a todo el país.",
+        "h1": "Tenis: raquetas, pelotas y accesorios",
+        "intro": "Raquetas, pelotas, overgrips, calzado e indumentaria de tenis. Equipamiento para jugar, entrenar y dar clases, con envíos a todo el país.",
+    },
+}
+
+
+def seo_catalogo(deporte_slug, categoria="", marca="", categorias=(), marcas=()):
+    seo = dict(SEO_CATALOGO[deporte_slug])
+    deporte = "pádel" if deporte_slug == "padel" else "tenis"
+
+    # Solo se personaliza con valores que existen: evita títulos con texto arbitrario de la URL
+    categoria = categoria if (categoria in categorias or categoria == "Indumentaria") else ""
+    marca = marca if marca in marcas else ""
+
+    if categoria or marca:
+        nombre = f"{categoria or 'Productos'}{(' ' + marca) if marca else ''} de {deporte}"
+        seo["title"] = f"{nombre} | SOPI Sports"
+        seo["h1"] = nombre
+        seo["desc"] = f"{nombre} con envíos a todo el país. Comprá online en SOPI Sports."
+        seo["intro"] = ""  # el texto largo queda solo en la página principal del deporte
+    return seo
+
+
+def seo_producto(p):
+    precio_visible = bool(p.precio)
+
+    desc = f"Comprá {p.nombre}"
+    desc += f" ({p.marca})" if p.marca else ""
+    desc += " en SOPI Sports."
+    if precio_visible:
+        desc += f" Precio {filtro_pesos(p.precio)}."
+    else:
+        desc += " Consultá precio y disponibilidad por WhatsApp."
+    desc += " Envíos a todo el país."
+
+    img = (p.imagen or "").strip().lower() or "og-default.png"
+    imagen = url_abs(url_for("static", filename=f"img/{img}"))
+    url = url_abs(url_for("producto_detalle", slug=p.slug))
+
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": p.nombre,
+        "image": [imagen],
+        "description": (p.descripcion or desc)[:300],
+        "url": url,
+    }
+    if p.marca:
+        ld["brand"] = {"@type": "Brand", "name": p.marca}
+    if precio_visible:
+        ld["offers"] = {
+            "@type": "Offer",
+            "url": url,
+            "priceCurrency": "ARS",
+            "price": str(int(p.precio)),
+            "availability": "https://schema.org/InStock" if (p.stock or 0) > 0
+                            else "https://schema.org/OutOfStock",
+            "itemCondition": "https://schema.org/NewCondition",
+        }
+
+    return {
+        "title": f"{p.nombre} | {p.marca} | SOPI Sports" if p.marca else f"{p.nombre} | SOPI Sports",
+        "desc": desc[:155],
+        "image": imagen,
+        "jsonld": ld,
+    }
+
+
+# =========================================================
 # PORTADA
 # =========================================================
 
@@ -736,6 +823,14 @@ def catalogo(deporte_slug):
         "marcas": marcas,
 
         "filtros": filtros,
+
+        "seo": seo_catalogo(
+            deporte_slug,
+            filtros["categoria"],
+            filtros["marca"],
+            categorias,
+            marcas,
+        ),
     })
 
     return render_template(
@@ -772,6 +867,8 @@ def producto_detalle(slug):
     contexto = obtener_contexto_base()
 
     contexto["producto"] = producto
+
+    contexto["seo"] = seo_producto(producto)
 
     if producto.deporte == "Pádel":
 
@@ -1216,12 +1313,12 @@ def pagar_con_mercadopago(
         return "Mercado Pago no está configurado. Falta MP_ACCESS_TOKEN.", 500
 
     pedido = crear_pedido(
-    items,
-    "mercadopago",
-    total,
-    cupon,
-    descuento,
-    datos_cliente=datos_cliente,
+        items,
+        "mercadopago",
+        total,
+        cupon,
+        descuento,
+        datos_cliente=datos_cliente,
     )
 
     preference_data = {
@@ -1544,10 +1641,6 @@ def pedido_detalle(pedido_id):
     # INFORMACIÓN DEL MEDIO DE PAGO
     # -----------------------------------------------------
 
-        # -----------------------------------------------------
-    # INFORMACIÓN DEL MEDIO DE PAGO
-    # -----------------------------------------------------
-
     if pedido.medio_pago == "transferencia":
         medio_pago_titulo = "Transferencia bancaria"
         medio_pago_descripcion = (
@@ -1710,6 +1803,9 @@ def robots():
         "Disallow: /pago",
         "Disallow: /mp/",
         "Disallow: /health",
+        "Disallow: /*?*q=",
+        "Disallow: /*?*orden=",
+        "Disallow: /*?*max_precio=",
         "",
         f"Sitemap: {URL_PUBLICA}/sitemap.xml",
     ]
@@ -1718,7 +1814,21 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    rutas = ["/", "/catalogo/tenis", "/catalogo/padel"]
+    rutas = ["/", "/catalogo/tenis", "/catalogo/padel", url_for("quienes_somos")]
+
+    # Una URL por categoría que tenga productos (ej: /catalogo/padel?categoria=Palas)
+    slug_por_deporte = {nombre: slug for slug, nombre in NAV_DEPORTES.items()}
+    filas = (
+        db.session.query(Producto.deporte, Producto.categoria)
+        .filter(Producto.categoria != "")
+        .distinct()
+        .order_by(Producto.deporte, Producto.categoria)
+    )
+    for deporte, categoria in filas:
+        slug = slug_por_deporte.get(deporte)
+        if slug and categoria:
+            rutas.append(f"/catalogo/{slug}?categoria={quote(categoria)}")
+
     rutas += [
         url_for("producto_detalle", slug=slug)
         for (slug,) in db.session.query(Producto.slug)

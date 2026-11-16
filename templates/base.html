@@ -6,7 +6,12 @@
 
   <title>{% block title %}Paletas de Pádel y Tenis online | SOPI Sports{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Paletas, pelotas y accesorios de pádel y tenis con envíos a todo el país. Pagá con Mercado Pago o transferencia con 5% de descuento.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large{% endblock %}">
   <link rel="canonical" href="{% block canonical %}{{ canonical_default }}{% endblock %}">
+  <meta name="theme-color" content="#0b1f3a">
+
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
 
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="SOPI Sports">
@@ -17,9 +22,54 @@
   <meta property="og:image" content="{% block og_image %}{{ url_abs(url_for('static', filename='img/og-default.png')) }}{% endblock %}">
   <meta name="twitter:card" content="summary_large_image">
 
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261107">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    .wa-float {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #25d366;
+      color: #fff;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+      z-index: 1000;
+      transition: transform .2s;
+    }
+    .wa-float:hover { transform: scale(1.08); }
+  </style>
+
+  <!-- Datos estructurados: organización (en todas las páginas) -->
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "SOPI Sports",
+    "url": url_abs('/'),
+    "logo": url_abs(url_for('static', filename='img/logo-sopi.png')),
+    "sameAs": ["https://www.instagram.com/sopi.tenispadel/"],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+5491128321531",
+      "contactType": "customer service",
+      "areaServed": "AR",
+      "availableLanguage": "es"
+    }
+  } | tojson }}
+  </script>
+
+  {# Cada página puede sumar su propio JSON-LD (Product, BreadcrumbList, etc.) #}
+  {% block jsonld %}{% endblock %}
 
   {% block head_extra %}{% endblock %}
 </head>
@@ -31,28 +81,6 @@
    target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp">
   <i class="fa-brands fa-whatsapp"></i>
 </a>
-
-<style>
-  .wa-float {
-    position: fixed;
-    right: 18px;
-    bottom: 18px;
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    background: #25d366;
-    color: #fff;
-    font-size: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
-    z-index: 1000;
-    transition: transform .2s;
-  }
-  .wa-float:hover { transform: scale(1.08); }
-</style>
 
 
   <!-- =====================================================
@@ -100,7 +128,7 @@
              onerror="this.replaceWith(document.createTextNode('SOPI Sports'))">
       </a>
 
-      <nav class="nav-sports">
+      <nav class="nav-sports" aria-label="Deportes">
 
         {% for slug, nombre in nav_deportes.items() %}
 
@@ -172,6 +200,7 @@
           <span>{{ nombre }}</span>
           <span class="nav-chevron" aria-hidden="true">›</span>
         </button>
+        {# Los enlaces están en el HTML aunque el panel esté colapsado, así que Google los rastrea. #}
         <div class="nav-acc-panel"{% if deporte_slug != slug %} hidden{% endif %}>
           <a href="{{ url_for('catalogo', deporte_slug=slug) }}" class="nav-acc-all">
             Ver todo en {{ nombre }}
@@ -231,16 +260,17 @@
 
       <div class="footer-content">
 
-<div class="footer-section">
-  <h4>AYUDA</h4>
-  <p><a href="{{ url_for('legales.envios') }}">Envíos</a></p>
-  <p><a href="{{ url_for('legales.devoluciones') }}">Cambios y devoluciones</a></p>
-  <p><a href="{{ url_for('legales.arrepentimiento') }}">Botón de arrepentimiento</a></p>
-  <p><a href="{{ url_for('legales.contacto') }}">Contacto</a></p>
-  <p><a href="{{ url_for('legales.terminos') }}">Términos y condiciones</a></p>
-  <p><a href="{{ url_for('legales.privacidad') }}">Política de privacidad</a></p>
-  <p><a href="{{ url_for('quienes_somos') }}">Quiénes somos</a></p>
-</div>
+        <div class="footer-section">
+          <h4>AYUDA</h4>
+          <p><a href="{{ url_for('legales.envios') }}">Envíos</a></p>
+          <p><a href="{{ url_for('legales.devoluciones') }}">Cambios y devoluciones</a></p>
+          <p><a href="{{ url_for('legales.arrepentimiento') }}">Botón de arrepentimiento</a></p>
+          <p><a href="{{ url_for('legales.contacto') }}">Contacto</a></p>
+          <p><a href="{{ url_for('legales.terminos') }}">Términos y condiciones</a></p>
+          <p><a href="{{ url_for('legales.privacidad') }}">Política de privacidad</a></p>
+          <p><a href="{{ url_for('quienes_somos') }}">Quiénes somos</a></p>
+        </div>
+
         <!-- MARCA -->
 
         <div class="footer-section">

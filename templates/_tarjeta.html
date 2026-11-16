@@ -12,10 +12,11 @@
             {% if p.imagen %}
             <img
                 src="{{ url_for('static', filename='img/' ~ p.imagen|lower) }}"
-                alt="{{ p.nombre }}"
+                alt="{{ p.nombre }}{% if p.marca and p.marca not in p.nombre %} {{ p.marca }}{% endif %}"
                 width="700"
                 height="700"
                 loading="lazy"
+                decoding="async"
             >
             {% else %}
             <div class="shop-placeholder">{{ p.marca }}</div>
@@ -51,7 +52,7 @@
         <div class="shop-product-bottom">
 
             <strong class="shop-product-price">
-                ${{ "{:,.0f}".format(p.precio) }}
+                {{ p.precio|pesos }}
             </strong>
 
             {% if p.stock > 0 %}
@@ -59,7 +60,7 @@
                 method="post"
                 action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
             >
-                <button type="submit" class="shop-add" title="Agregar al carrito">+</button>
+                <button type="submit" class="shop-add" title="Agregar al carrito" aria-label="Agregar {{ p.nombre }} al carrito">+</button>
             </form>
             {% endif %}
 
