@@ -1,8 +1,9 @@
 """Arma el CSV de paletas del importador Pádel Mdq Shop para cargar en /admin/precios.
 
-Costo = el menor entre precio Silver y Premium del importador.
+Costo = el menor entre precio Silver y Premium del importador (si está en dólares,
+se pasa a pesos con la cotización de esa marca).
 Precio = lo calcula el admin con el margen (40%), porque la columna precio va vacía.
-Uso: python preparar_paletas_mdq.py [carpeta_fotos_webp]
+Uso: python preparar_paletas_mdq.py MARCA [carpeta_fotos_webp]
 """
 import csv
 import os
@@ -10,11 +11,10 @@ import re
 import sys
 import unicodedata
 
-MARCA = "Bullpadel"
 STOCK = {"Disponible": 3, "Pocas Unidades": 1}
 
 # (código importador, modelo, silver, premium, estado)
-PALETAS = [
+BULLPADEL = [
     ("2171", "Vertex 05 2027", 513350, 535680, "Pocas Unidades"),
     ("2172", "Vertex 05 Hybrid 2027", 493750, 515200, "Pocas Unidades"),
     ("2173", "Vertex 05 Geo 2027", 493750, 515200, "Pocas Unidades"),
@@ -62,8 +62,41 @@ PALETAS = [
     ("2215", "Vertex 04 2024", 365400, 381300, "Disponible"),
 ]
 
-# Ya están en la tienda con precio propio: no se tocan.
-YA_CARGADAS = {"Hack 04 2026", "Ionic Power 2026", "Vertex 05 Woman 2026"}
+# Precios en dólares
+NOX = [
+    ("2605", "AT10 Genius 18k Alum Bs.As 2026", 310, 300, "Disponible"),
+    ("2606", "AT10 Genius 18k Alum 2026", 300, 290, "Disponible"),
+    ("2607", "AT10 Genius 12k Alum 2026", 285, 275, "Disponible"),
+    ("2608", "AT10 Genius 12k Alum Lite 2026", 280, 270, "Disponible"),
+    ("2609", "AT Attack 18k Alum 2026", 285, 275, "Disponible"),
+    ("2610", "AT Attack 12k Alum 2026", 275, 265, "Disponible"),
+    ("2611", "EA10 Ventus Hybrid 12k 2026", 255, 245, "Disponible"),
+    ("2612", "EA10 Ventus Attack 12k 2026", 255, 245, "Disponible"),
+    ("2613", "ML10 Ventus Control 3k 2026", 280, 270, "Disponible"),
+    ("2614", "VK10 Ventus Control 12k 2026", 265, 255, "Disponible"),
+    ("2615", "Ventus Hybrid 12k Lite 2026", 270, 260, "Disponible"),
+    ("2616", "AT10 Pro Cup Hard 2026", 230, 215, "Disponible"),
+    ("2617", "AT10 Pro Cup Soft 2026", 230, 215, "Disponible"),
+    ("2618", "AT10 Genius Junior 2026", 175, 165, "Disponible"),
+    ("2619", "X-Hero 2026", 0, 0, "No Disponible"),
+    ("2620", "AT10 Genius 18k 2025", 255, 245, "Disponible"),
+    ("2621", "AT10 Genius 12k 2025", 250, 240, "Disponible"),
+    ("2622", "ML10 Quantum 3k 2025", 250, 240, "Disponible"),
+    ("2623", "Future Attack 12k 2025", 255, 245, "Pocas Unidades"),
+    ("2624", "Future Hybrid 12k 2025", 255, 245, "Pocas Unidades"),
+    ("2625", "AT10 Genius 18k 2024", 235, 225, "Disponible"),
+    ("2626", "AT10 Genius 12k 2024", 235, 225, "Disponible"),
+    ("2627", "AT10 Genius 18k 2023", 235, 225, "Disponible"),
+]
+
+# dolar: cotización si los precios vienen en dólares.
+# ya_cargadas: modelos que ya están en la tienda con precio propio (no se tocan).
+MARCAS = {
+    "Bullpadel": {"paletas": BULLPADEL, "dolar": None,
+                  "ya_cargadas": {"Hack 04 2026", "Ionic Power 2026", "Vertex 05 Woman 2026"}},
+    "Nox": {"paletas": NOX, "dolar": 1450,
+            "ya_cargadas": {"AT10 Genius 18k Alum Bs.As 2026", "AT Attack 18k Alum 2026", "AT10 Pro Cup Soft 2026"}},
+}
 
 
 def slug(texto):
@@ -71,11 +104,13 @@ def slug(texto):
     return re.sub(r"[^a-z0-9]+", "-", texto).strip("-")
 
 
-def descripcion(modelo):
-    partes = [f"Paleta de pádel {MARCA} {modelo}."]
+def descripcion(marca, modelo):
+    partes = [f"Paleta de pádel {marca} {modelo}."]
+    if "Junior" in modelo:
+        partes.append("Pensada para chicos.")
     if "Woman" in modelo:
         partes.append("Línea femenina, más liviana y manejable.")
-    if "Comfort" in modelo or "Light" in modelo:
+    if "Comfort" in modelo or "Light" in modelo or "Lite" in modelo:
         partes.append("Pensada para mayor confort y salida de bola.")
     if "Advanced" in modelo or "Indiga" in modelo:
         partes.append("Ideal para jugadores en progresión.")
@@ -93,13 +128,16 @@ def convertir_foto(origen, destino):
 
 
 def main():
-    carpeta_fotos = sys.argv[1] if len(sys.argv) > 1 else None
+    marca = sys.argv[1]
+    datos = MARCAS[marca]
+    carpeta_fotos = sys.argv[2] if len(sys.argv) > 2 else None
     base = os.path.dirname(os.path.abspath(__file__))
     filas, sin_foto = [], []
-    for codigo, modelo, silver, premium, estado in PALETAS:
-        if modelo in YA_CARGADAS or estado not in STOCK:
+    for codigo, modelo, silver, premium, estado in datos["paletas"]:
+        if modelo in datos["ya_cargadas"] or estado not in STOCK:
             continue
-        nombre = f"{MARCA} {modelo}"
+        costo = min(silver, premium) * (datos["dolar"] or 1)
+        nombre = f"{marca} {modelo}"
         imagen = ""
         origen = carpeta_fotos and os.path.join(carpeta_fotos, f"{codigo}.webp")
         if origen and os.path.exists(origen):
@@ -107,10 +145,10 @@ def main():
             convertir_foto(origen, os.path.join(base, "static", "img", imagen))
         else:
             sin_foto.append(nombre)
-        filas.append([nombre, MARCA, "Pádel", "Paletas", min(silver, premium), "", STOCK[estado],
-                      imagen, descripcion(modelo)])
+        filas.append([nombre, marca, "Pádel", "Paletas", costo, "", STOCK[estado],
+                      imagen, descripcion(marca, modelo)])
 
-    salida = os.path.join(base, f"paletas_{slug(MARCA)}.csv")
+    salida = os.path.join(base, f"paletas_{slug(marca)}.csv")
     with open(salida, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
         w.writerow(["nombre", "marca", "deporte", "categoria", "costo", "precio", "stock", "imagen", "descripcion"])
