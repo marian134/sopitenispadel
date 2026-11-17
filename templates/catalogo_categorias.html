@@ -16,23 +16,25 @@
   <nav class="cat-nav" aria-label="Categorías">
     <p class="cat-nav-title">Categorías</p>
     <ul>
-      {% set ns = namespace(ind=false) %}
+      {% set ns = namespace(hechos=[]) %}
       {% for nombre, prods in secciones %}
+        {% set grupo, detalle = partes_seccion(nombre) %}
 
-        {% if nombre.startswith('Indumentaria ') %}
-          {% if not ns.ind %}
-            {% set ns.ind = true %}
+        {% if detalle %}
+          {# Categoría dividida en subcategorías: un grupo con un botón por subcategoría #}
+          {% if grupo not in ns.hechos %}
+            {% set ns.hechos = ns.hechos + [grupo] %}
             <li class="cat-group">
-              <p class="cat-group-label">Indumentaria</p>
+              <p class="cat-group-label">{{ grupo }}</p>
               <ul>
-                {% for n2, p2 in secciones if n2.startswith('Indumentaria ') %}
+                {% for n2, p2 in secciones if partes_seccion(n2)[0] == grupo and partes_seccion(n2)[1] %}
                 <li>
                   <button type="button"
                           class="cat-btn{% if n2 == primera %} is-active{% endif %}"
                           data-target="cat-{{ n2|lower|replace(' ', '-') }}"
                           aria-expanded="{{ 'true' if n2 == primera else 'false' }}"
                           aria-controls="cat-{{ n2|lower|replace(' ', '-') }}">
-                    <span><span class="cat-sub-prefix">Indumentaria </span>{{ n2.replace('Indumentaria ', '') }}</span>
+                    <span><span class="cat-sub-prefix">{{ grupo }} </span>{{ partes_seccion(n2)[1] }}</span>
                     <span class="cat-count">{{ p2|length }}</span>
                   </button>
                 </li>
@@ -248,7 +250,11 @@
     });
 
     // Link directo, ej: /catalogo/padel#cat-paletas
-    if (location.hash) abrir(location.hash.slice(1), false);
+    if (location.hash) {
+      var destino = location.hash.slice(1);
+      try { destino = decodeURIComponent(destino); } catch (e) {}  // "·" llega como %C2%B7
+      abrir(destino, false);
+    }
   })();
 
   // ---------------------------------------------------------------

@@ -492,7 +492,7 @@ def filtro_hora_ar(fecha):
 
 
 # Parámetros de la URL que sí merecen canonical propio (el resto apunta a la URL limpia)
-PARAMS_CANONICOS = ("categoria", "marca")
+PARAMS_CANONICOS = ("categoria", "sub", "marca")
 
 
 def url_abs(ruta):
@@ -535,11 +535,35 @@ def inyectar_nav_categorias():
                      .all())
             nav[slug] = sorted({c for (c,) in filas if c}, key=clave_categoria)
             nav_grupos[slug] = agrupar_categorias(nav[slug])
-        return {"nav_categorias": nav, "nav_grupos": nav_grupos}
+        return {"nav_categorias": nav, "nav_grupos": nav_grupos, "nav_arbol": arbol_por_deporte()}
     except Exception:
         app.logger.exception("No se pudieron cargar las categorías del menú")
         db.session.rollback()
-        return {"nav_categorias": {}, "nav_grupos": {}}
+        return {"nav_categorias": {}, "nav_grupos": {}, "nav_arbol": {}}
+
+
+def arbol_por_deporte():
+    """Menú del celular, por deporte:
+    [{'nombre': 'Raquetas', 'hijos': [{'genero': None, 'categoria': 'Raquetas', 'subs': ['Babolat', 'Head']}]},
+     {'nombre': 'Indumentaria', 'hijos': [{'genero': 'Hombre', 'categoria': 'Indumentaria Hombre', 'subs': [...]},
+                                          {'genero': 'Mujer', ...}]},
+     {'nombre': 'Grips', 'hijos': [{'genero': None, 'categoria': 'Grips', 'subs': []}]}, ...]"""
+    filas = db.session.query(Producto.deporte, Producto.categoria, Producto.nombre, Producto.marca).all()
+    resultado = {}
+    for slug, deporte in NAV_DEPORTES.items():
+        productos = [
+            Producto(deporte=d, categoria=c, nombre=n, marca=m)
+            for d, c, n, m in filas if d == deporte and c
+        ]
+        subs = subcategorias_de(productos)
+        grupos = {}
+        for categoria in sorted({p.categoria for p in productos}, key=clave_categoria):
+            grupo, genero = grupo_y_sub(categoria)
+            grupos.setdefault(grupo, []).append(
+                {"genero": genero, "categoria": categoria, "subs": subs.get(categoria, [])}
+            )
+        resultado[slug] = [{"nombre": g, "hijos": h} for g, h in grupos.items()]
+    return resultado
 
 # =========================================================
 # CONTEXTO BASE
@@ -682,61 +706,162 @@ def clave_categoria(categoria):
     return (1, 0, categoria.lower())
 
 
-# Tipo de prenda según la primera palabra del nombre ("Remera Head..." -> Remeras).
-# El orden de cada lista es el orden en que se muestran en el catálogo.
-TIPOS_PRENDA = {
-    "Hombre": [
-        ("Remeras", ("remera", "camiseta")),
-        ("Chombas", ("chomba", "polo")),
-        ("Camperas y buzos", ("campera", "buzo")),
-        ("Shorts y bermudas", ("short", "bermuda")),
-        ("Pantalones", ("pantalon",)),
-    ],
-    "Mujer": [
-        ("Musculosas, remeras y tops", ("musculosa", "remera", "top", "camiseta")),
-        ("Camperas y buzos", ("campera", "buzo")),
-        ("Calzas y shorts", ("calza", "short")),
-        ("Polleras y vestidos", ("pollera", "vestido", "skort")),
-        ("Pantalones", ("pantalon",)),
-    ],
+# ---------------------------------------------------------
+# SUBCATEGORÍAS: salen solas del nombre o de la marca de cada producto.
+#   "por": "tipo"  -> se busca alguna de las palabras en el nombre
+#                     (con "primera": True, solo en la primera palabra)
+#   "por": "marca" -> una subcategoría por marca (si hay más de una)
+#   "resto"        -> dónde van los que no coinciden con ningún tipo
+#   "titulo"       -> título de la página filtrada ({sub}, {sub_min})
+# La clave es (deporte, categoría) o solo la categoría (vale para los dos deportes).
+# El orden de "tipos" es el orden en que se muestran.
+# ---------------------------------------------------------
+REGLAS_SUB = {
+    "Indumentaria Hombre": {
+        "por": "tipo", "primera": True, "resto": "Otros", "titulo": "{sub} de hombre",
+        "tipos": [
+            ("Remeras", ("remera", "camiseta")),
+            ("Chombas", ("chomba", "polo")),
+            ("Camperas y buzos", ("campera", "buzo")),
+            ("Shorts y bermudas", ("short", "bermuda")),
+            ("Pantalones", ("pantalon",)),
+        ],
+    },
+    "Indumentaria Mujer": {
+        "por": "tipo", "primera": True, "resto": "Otros", "titulo": "{sub} de mujer",
+        "tipos": [
+            ("Musculosas, remeras y tops", ("musculosa", "remera", "top", "camiseta")),
+            ("Camperas y buzos", ("campera", "buzo")),
+            ("Calzas y shorts", ("calza", "short")),
+            ("Polleras y vestidos", ("pollera", "vestido", "skort")),
+            ("Pantalones", ("pantalon",)),
+        ],
+    },
+    ("Tenis", "Raquetas"): {"por": "marca", "titulo": "Raquetas {sub}"},
+    ("Tenis", "Pelotas"): {"por": "marca", "titulo": "Pelotas {sub}"},
+    ("Tenis", "Overgrips"): {"por": "marca", "titulo": "Overgrips {sub}"},
+    ("Tenis", "Calzado"): {
+        "por": "tipo", "resto": "Unisex", "titulo": "Calzado {sub_min}",
+        "tipos": [
+            ("Hombre", ("men", "man", "hombre")),
+            ("Mujer", ("women", "woman", "mujer")),
+        ],
+    },
+    ("Pádel", "Paletas"): {"por": "marca", "titulo": "Paletas {sub}"},
+    ("Pádel", "Pelotas"): {"por": "marca", "titulo": "Pelotas {sub}"},
+    ("Pádel", "Overgrips"): {
+        "por": "tipo", "resto": "Overgrips sueltos", "titulo": "{sub}",
+        "tipos": [
+            ("Overgrips x3", ("x3", "blister")),
+            ("Cajas y carameleras", ("caramelera", "caja", re.compile(r"^x\d{2,}$"))),
+        ],
+    },
+    ("Pádel", "Accesorios"): {
+        "por": "tipo", "resto": "Otros accesorios", "titulo": "{sub}",
+        "tipos": [
+            ("Mochilas", ("mochila", "mochilas")),
+            ("Bandoleras", ("bandolera", "bandoleras")),
+            ("Paleteros", ("paletera", "paletero", "paleteros")),
+        ],
+    },
+    ("Pádel", "Accesorios Textil"): {
+        "por": "tipo", "resto": "Otros textiles", "titulo": "{sub}",
+        "tipos": [
+            ("Medias", ("medias", "media")),
+            ("Muñequeras", ("munequera", "munequeras")),
+            ("Gorras y viseras", ("gorra", "gorras", "visera", "viseras")),
+        ],
+    },
 }
-SEPARADOR_PRENDA = " · "
+SEPARADOR_SUB = " · "
 
 
-def tipo_prenda(producto):
-    """'Remera Head Carl Hombre' en 'Indumentaria Hombre' -> 'Remeras'."""
-    _, sub = grupo_y_sub(producto.categoria)
-    primera = slugify((producto.nombre or "").split(" ", 1)[0])
-    for tipo, palabras in TIPOS_PRENDA.get(sub, []):
-        if primera in palabras:
-            return tipo
-    return "Otros"
+def regla_de(deporte, categoria):
+    return REGLAS_SUB.get((deporte, categoria)) or REGLAS_SUB.get(categoria)
 
 
-def seccion_de(producto):
-    """Sección del catálogo: la categoría, y en indumentaria también el tipo de prenda."""
+def normalizar_marca(marca):
+    """'HEAD' -> 'Head', 'PRO GO' -> 'Pro Go'; las que ya tienen minúsculas quedan igual."""
+    marca = (marca or "").strip()
+    return marca.title() if marca.isupper() else marca
+
+
+def subcategoria_de(deporte, categoria, nombre, marca):
+    """Subcategoría de un producto, o None si su categoría no tiene subcategorías."""
+    regla = regla_de(deporte, categoria)
+    if not regla:
+        return None
+    if regla["por"] == "marca":
+        return normalizar_marca(marca) or "Otras marcas"
+    palabras = slugify(nombre).split("-")
+    if regla.get("primera"):
+        palabras = palabras[:1]
+    for tipo, claves in regla["tipos"]:
+        for clave in claves:
+            if any((clave.match(p) if hasattr(clave, "match") else p == clave) for p in palabras):
+                return tipo
+    return regla["resto"]
+
+
+def subcategoria(producto):
+    return subcategoria_de(producto.deporte, producto.categoria, producto.nombre, producto.marca)
+
+
+def orden_sub(deporte, categoria, sub):
+    """Para ordenar: los tipos en el orden de la regla (el resto al final); las marcas por nombre."""
+    regla = regla_de(deporte, categoria) or {}
+    tipos = [t for t, _ in regla.get("tipos", [])]
+    if sub in tipos:
+        return (0, tipos.index(sub), "")
+    return (1 if regla.get("por") == "marca" else 2, 0, (sub or "").lower())
+
+
+def subcategorias_de(productos):
+    """{categoria: [subs ordenadas]} solo para categorías con más de una subcategoría.
+    (Una categoría con una sola marca o un solo tipo no se divide.)"""
+    subs = {}
+    for p in productos:
+        s = subcategoria(p)
+        if s:
+            subs.setdefault((p.deporte, p.categoria), set()).add(s)
+    return {
+        cat: sorted(ss, key=lambda s, d=dep, c=cat: orden_sub(d, c, s))
+        for (dep, cat), ss in subs.items() if len(ss) > 1
+    }
+
+
+def seccion_de(producto, divididas):
+    """Sección del catálogo: 'Raquetas · Head', 'Indumentaria Hombre · Remeras' o solo la categoría."""
     categoria = producto.categoria or "Otros"
-    if categoria.startswith("Indumentaria "):
-        return f"{categoria}{SEPARADOR_PRENDA}{tipo_prenda(producto)}"
+    if categoria in divididas:
+        return f"{categoria}{SEPARADOR_SUB}{subcategoria(producto)}"
     return categoria
-
-
-def clave_seccion(seccion):
-    categoria, _, tipo = seccion.partition(SEPARADOR_PRENDA)
-    if not tipo:
-        return (*clave_categoria(categoria), 0)
-    _, sub = grupo_y_sub(categoria)
-    tipos = [t for t, _ in TIPOS_PRENDA.get(sub, [])]
-    return (*clave_categoria(categoria), tipos.index(tipo) if tipo in tipos else len(tipos))
 
 
 def agrupar_por_categoria(productos):
     """[(seccion, [productos...]), ...] respetando el orden de ORDEN_CATEGORIAS
-    y, dentro de indumentaria, el orden de TIPOS_PRENDA."""
+    y, dentro de cada categoría, el orden de sus subcategorías."""
+    divididas = subcategorias_de(productos)
+    deporte = productos[0].deporte if productos else ""
     grupos = {}
     for p in productos:
-        grupos.setdefault(seccion_de(p), []).append(p)
-    return sorted(grupos.items(), key=lambda g: clave_seccion(g[0]))
+        grupos.setdefault(seccion_de(p, divididas), []).append(p)
+
+    def clave(seccion):
+        categoria, _, sub = seccion.partition(SEPARADOR_SUB)
+        return (*clave_categoria(categoria), orden_sub(deporte, categoria, sub) if sub else (-1, 0, ""))
+
+    return sorted(grupos.items(), key=lambda g: clave(g[0]))
+
+
+@app.template_global()
+def partes_seccion(seccion):
+    """'Indumentaria Hombre · Remeras' -> ('Indumentaria', 'Hombre · Remeras');
+    'Raquetas · Head' -> ('Raquetas', 'Head'); 'Pelotas' -> ('Pelotas', None)."""
+    categoria, _, sub = seccion.partition(SEPARADOR_SUB)
+    grupo, genero = grupo_y_sub(categoria)
+    detalle = SEPARADOR_SUB.join(x for x in (genero, sub) if x)
+    return grupo, (detalle or None)
 
 def grupo_y_sub(categoria):
     """'Indumentaria Hombre' -> ('Indumentaria', 'Hombre'); 'Palas' -> ('Palas', None)"""
@@ -801,13 +926,18 @@ SEO_CATALOGO = {
 }
 
 
-def seo_catalogo(deporte_slug, categoria="", marca="", categorias=(), marcas=()):
+def seo_catalogo(deporte_slug, categoria="", marca="", categorias=(), marcas=(), sub=""):
     seo = dict(SEO_CATALOGO[deporte_slug])
     deporte = "pádel" if deporte_slug == "padel" else "tenis"
 
     # Solo se personaliza con valores que existen: evita títulos con texto arbitrario de la URL
     categoria = categoria if (categoria in categorias or categoria == "Indumentaria") else ""
     marca = marca if marca in marcas else ""
+
+    if categoria and sub:
+        # "Remeras de hombre de tenis", "Raquetas Head de tenis" (sub ya viene validada en catalogo())
+        regla = regla_de(NAV_DEPORTES[deporte_slug], categoria) or {}
+        categoria = regla.get("titulo", "{sub}").format(sub=sub, sub_min=sub.lower())
 
     if categoria or marca:
         nombre = f"{categoria or 'Productos'}{(' ' + marca) if marca else ''} de {deporte}"
@@ -921,6 +1051,11 @@ def catalogo(deporte_slug):
             "orden",
             "relevancia"
         ),
+
+        "sub": request.args.get(
+            "sub",
+            ""
+        ),
     }
 
     productos = (
@@ -929,6 +1064,13 @@ def catalogo(deporte_slug):
             filtros
         )
     )
+
+    # Subcategoría (marca o tipo): sale del nombre/marca, por eso se filtra acá.
+    # Solo vale si existe dentro de la categoría elegida.
+    if filtros["sub"] and filtros["sub"] in subcategorias_de(productos).get(filtros["categoria"], []):
+        productos = [p for p in productos if subcategoria(p) == filtros["sub"]]
+    else:
+        filtros["sub"] = ""
 
     categorias, marcas = (
         obtener_categorias_y_marcas(
@@ -966,6 +1108,7 @@ def catalogo(deporte_slug):
             filtros["marca"],
             categorias,
             marcas,
+            filtros["sub"],
         ),
     })
 

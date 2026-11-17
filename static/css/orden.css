@@ -271,6 +271,64 @@ body[data-deporte="padel"] { --accent: var(--padel); }
         font-weight: 900;
         color: var(--tenis);
     }
+
+    /* Indumentaria: segundo nivel dentro de Tenis / Pádel */
+    .nav-sub-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px 14px 34px;
+        border: 0;
+        border-bottom: 1px solid #e6e6e1;
+        background: transparent;
+        color: var(--black);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-align: left;
+        cursor: pointer;
+    }
+    .nav-sub-btn .nav-chevron { transition: transform .2s ease; }
+    .nav-sub-btn[aria-expanded="true"] .nav-chevron { transform: rotate(90deg); }
+    .nav-sub-btn[aria-expanded="true"] { font-weight: 900; }
+
+    .nav-sub-panel { background: #f3f2ec; }
+
+    .nav-drawer .nav-acc-panel a.nav-sub-genero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 14px 20px 10px 48px;
+        border-bottom: 0;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    .nav-drawer .nav-acc-panel a.nav-sub-genero small {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: none;
+        color: var(--tenis);
+    }
+
+    .nav-drawer .nav-acc-panel a.nav-sub-genero.nav-sub-todo {
+        padding: 12px 20px 12px 48px;
+        border-bottom: 1px solid #e6e6e1;
+        font-size: 12px;
+        letter-spacing: .02em;
+        text-transform: none;
+        color: var(--tenis);
+    }
+
+    .nav-drawer .nav-acc-panel a.nav-sub-tipo {
+        padding: 11px 20px 11px 60px;
+        border-bottom: 1px solid #e6e6e1;
+        font-weight: 600;
+    }
 }
 
 

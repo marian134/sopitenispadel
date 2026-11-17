@@ -36,11 +36,15 @@
     {% endif %}
     {% if filtros.categoria %}
       <span aria-hidden="true">›</span>
-      {% if filtros.marca %}
+      {% if filtros.marca or filtros.sub %}
         <a href="{{ mf_url(filtros.categoria, '', filtros.orden) }}">{{ filtros.categoria }}</a>
       {% else %}
         <strong>{{ filtros.categoria }}</strong>
       {% endif %}
+    {% endif %}
+    {% if filtros.sub %}
+      <span aria-hidden="true">›</span>
+      <strong>{{ filtros.sub }}</strong>
     {% endif %}
     {% if filtros.marca %}
       <span aria-hidden="true">›</span>

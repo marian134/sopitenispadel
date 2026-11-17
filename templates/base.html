@@ -24,7 +24,7 @@
 
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261107">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261117">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
@@ -205,8 +205,32 @@
           <a href="{{ url_for('catalogo', deporte_slug=slug) }}" class="nav-acc-all">
             Ver todo en {{ nombre }}
           </a>
-          {% for cat in cats %}
-            <a href="{{ url_for('catalogo', deporte_slug=slug, categoria=cat) }}">{{ cat }}</a>
+          {% set arbol = nav_arbol.get(slug, []) if nav_arbol is defined else [] %}
+          {% set cat_actual = request.args.get('categoria') or '' %}
+          {% for g in arbol %}
+            {% set con_subs = g.hijos|length > 1 or g.hijos[0].subs %}
+            {% if con_subs %}
+              {# Categoría con subcategorías: desplegable (Indumentaria tiene además Hombre / Mujer) #}
+              {% set abierto = deporte_slug == slug and (cat_actual == g.nombre or cat_actual in g.hijos|map(attribute='categoria')|list) %}
+              <div class="nav-sub">
+                <button type="button" class="nav-sub-btn" aria-expanded="{{ 'true' if abierto else 'false' }}">
+                  <span>{{ g.nombre }}</span>
+                  <span class="nav-chevron" aria-hidden="true">›</span>
+                </button>
+                <div class="nav-sub-panel"{% if not abierto %} hidden{% endif %}>
+                  {% for h in g.hijos %}
+                    <a class="nav-sub-genero{% if not h.genero %} nav-sub-todo{% endif %}" href="{{ url_for('catalogo', deporte_slug=slug, categoria=h.categoria) }}">
+                      {% if h.genero %}{{ h.genero }} <small>Ver todo</small>{% else %}Ver todo{% endif %}
+                    </a>
+                    {% for s in h.subs %}
+                      <a class="nav-sub-tipo" href="{{ url_for('catalogo', deporte_slug=slug, categoria=h.categoria, sub=s) }}">{{ s }}</a>
+                    {% endfor %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% else %}
+              <a href="{{ url_for('catalogo', deporte_slug=slug, categoria=g.hijos[0].categoria) }}">{{ g.nombre }}</a>
+            {% endif %}
           {% endfor %}
         </div>
       </div>
@@ -440,6 +464,15 @@
           btn.setAttribute('aria-expanded', 'true');
           btn.nextElementSibling.hidden = false;
         }
+      });
+    });
+
+    // Sub-desplegable (Indumentaria dentro de Tenis / Pádel)
+    drawer.querySelectorAll('.nav-sub-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var abierto = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+        btn.nextElementSibling.hidden = abierto;
       });
     });
 
