@@ -762,6 +762,7 @@ REGLAS_SUB = {
             ("Mochilas", ("mochila", "mochilas")),
             ("Bandoleras", ("bandolera", "bandoleras")),
             ("Paleteros", ("paletera", "paletero", "paleteros")),
+            ("Bolsos", ("bolso", "bolsos")),
         ],
     },
     ("Pádel", "Accesorios Textil"): {
@@ -780,9 +781,16 @@ def regla_de(deporte, categoria):
     return REGLAS_SUB.get((deporte, categoria)) or REGLAS_SUB.get(categoria)
 
 
+# Marcas que se escriben en mayúsculas (siglas): no se pasan a "Niu" / "Ama"
+MARCAS_EN_MAYUSCULAS = {"NIU", "AMA"}
+
+
 def normalizar_marca(marca):
-    """'HEAD' -> 'Head', 'PRO GO' -> 'Pro Go'; las que ya tienen minúsculas quedan igual."""
+    """'HEAD' -> 'Head', 'PRO GO' -> 'Pro Go'; las que ya tienen minúsculas quedan igual.
+    Las de MARCAS_EN_MAYUSCULAS quedan en mayúsculas ('Niu' -> 'NIU')."""
     marca = (marca or "").strip()
+    if marca.upper() in MARCAS_EN_MAYUSCULAS:
+        return marca.upper()
     return marca.title() if marca.isupper() else marca
 
 
