@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from flask_sqlalchemy import SQLAlchemy
@@ -10,22 +11,17 @@ ESTADO_PAGADO = "pagado"
 ESTADO_FALLIDO = "fallido"
 
 
+_PATRON_TALLE = re.compile(r"([^\s,;:=](?:[^,;:=]*?[^\s,;:=])?)\s*[:=]\s*(\d+)")
+
+
 def parsear_talles(texto):
-    """'S:2, M:0 L=3' -> {'S': 2, 'M': 0, 'L': 3}. Ignora lo que no entiende."""
+    """'S:2, M:0 L=3' -> {'S': 2, 'M': 0, 'L': 3}.
+    Acepta talles con espacios (grips): '4 1/4:0 4 3/8:41' -> {'4 1/4': 0, '4 3/8': 41}.
+    Ignora lo que no entiende."""
     resultado = {}
-    for parte in (texto or "").replace(";", ",").replace(" ", ",").split(","):
-        parte = parte.strip()
-        if not parte:
-            continue
-        separador = ":" if ":" in parte else ("=" if "=" in parte else None)
-        if not separador:
-            continue
-        talle, cantidad = parte.split(separador, 1)
-        talle = talle.strip().upper()
-        try:
-            resultado[talle] = max(0, int(cantidad.strip()))
-        except ValueError:
-            continue
+    for talle, cantidad in _PATRON_TALLE.findall(texto or ""):
+        talle = re.sub(r"\s+", " ", talle).strip().upper()[:10]
+        resultado[talle] = int(cantidad)
     return resultado
 
 

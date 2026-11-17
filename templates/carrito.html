@@ -79,7 +79,7 @@
 
                 {% if item.talle %}
                     <span class="carrito-marca">
-                        Talle <strong>{{ item.talle }}</strong>
+                        {{ palabra_talle(item.talle, item.producto) }} <strong>{{ item.talle }}</strong>
                     </span>
                 {% endif %}
 

@@ -1375,8 +1375,16 @@ def armar_items_carrito():
 
 
 @app.template_global()
+def palabra_talle(talle=None, producto=None):
+    """'Grip' para raquetas (4 3/8), 'Talle' para ropa (M)."""
+    if (producto is not None and (producto.categoria or "") == "Raquetas") or "/" in (talle or ""):
+        return "Grip"
+    return "Talle"
+
+
+@app.template_global()
 def nombre_con_talle(nombre, talle):
-    return f"{nombre} (talle {talle})" if talle else nombre
+    return f"{nombre} ({palabra_talle(talle).lower()} {talle})" if talle else nombre
 
 
 

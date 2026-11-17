@@ -95,7 +95,7 @@
         <form method="post" action="{{ url_for('carrito_agregar', producto_id=producto.id) }}">
           {% if producto.tiene_talles %}
           <fieldset class="selector-talles">
-            <legend>Talle</legend>
+            <legend>{{ palabra_talle(producto=producto) }}</legend>
             <div class="talles-opciones">
               {% for talle, cant in producto.stock_talles.items() if cant > 0 %}
                 <label class="talle-opcion">
@@ -104,7 +104,7 @@
                 </label>
               {% endfor %}
             </div>
-            <p class="talle-aviso" id="talle-aviso">Elegí un talle</p>
+            <p class="talle-aviso" id="talle-aviso" data-palabra="{{ palabra_talle(producto=producto) }}">Elegí {{ 'un grip' if palabra_talle(producto=producto) == 'Grip' else 'un talle' }}</p>
           </fieldset>
           {% endif %}
           <div class="form-cantidad">
@@ -147,9 +147,10 @@
         var max = parseInt(radio.dataset.stock, 10) || 1;
         cantidad.max = max;
         if ((parseInt(cantidad.value, 10) || 1) > max) cantidad.value = max;
+        var palabra = aviso.dataset.palabra || "Talle";
         aviso.textContent = max <= 3
-          ? "Talle " + radio.value + ": quedan " + max
-          : "Talle " + radio.value;
+          ? palabra + " " + radio.value + ": quedan " + max
+          : palabra + " " + radio.value;
       });
     });
   })();
