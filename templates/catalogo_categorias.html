@@ -69,6 +69,7 @@
           {% include '_tarjeta.html' %}
         {% endfor %}
       </div>
+      <nav class="cat-paginacion" aria-label="Páginas de {{ nombre.replace('Indumentaria ', 'Indumentaria · ') }}" hidden></nav>
     </section>
     {% endfor %}
   </div>
@@ -162,6 +163,55 @@
   .cat-sub-prefix { display: inline; }
   }
 
+  /* Paginación (debajo de la grilla de cada categoría) */
+  .cat-paginacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    margin: 2rem 0 .5rem;
+  }
+  .cat-paginacion[hidden],
+  .cat-grid > .shop-product-card[hidden] { display: none !important; }
+  .pag-btn {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0 .75rem;
+    gap: .4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    background: transparent;
+    border: 1px solid rgba(128,128,128,.35);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .pag-btn:hover:not(:disabled) { border-color: currentColor; }
+  .pag-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .pag-btn:disabled { opacity: .35; cursor: default; }
+  .pag-btn[aria-current="page"] {
+    background: var(--accent, #0f766e);
+    border-color: var(--accent, #0f766e);
+    color: #fff;
+  }
+  .pag-puntos { padding: 0 .25rem; opacity: .6; }
+  .pag-estado { display: none; font-weight: 600; padding: 0 .5rem; }
+  .pag-rango { flex-basis: 100%; text-align: center; font-size: .85rem; opacity: .7; margin-top: .25rem; }
+
+  /* Celular: solo flechas grandes y "Página 2 de 5" */
+  @media (max-width: 800px) {
+    .cat-paginacion { gap: .5rem; margin-top: 1.5rem; }
+    .pag-num, .pag-puntos { display: none; }
+    .pag-estado { display: inline; }
+    .pag-btn.pag-flecha { min-width: 3rem; height: 3rem; font-size: 1.1rem; }
+    .pag-texto { display: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .cat-panel:not([hidden]) { animation: none; }
   }
@@ -199,5 +249,116 @@
 
     // Link directo, ej: /catalogo/padel#cat-paletas
     if (location.hash) abrir(location.hash.slice(1), false);
+  })();
+
+  // ---------------------------------------------------------------
+  // Paginación: POR_PAGINA productos por categoría. Todos los productos
+  // siguen en el HTML (bueno para Google); solo se ocultan los de otras páginas.
+  // ---------------------------------------------------------------
+  (function () {
+    var POR_PAGINA = 10;
+    var layout = document.getElementById('cat-layout');
+    if (!layout) return;
+
+    // Números a mostrar: 1 … 4 5 6 … 12
+    function numeros(actual, total) {
+      if (total <= 7) return Array.from({length: total}, function (_, i) { return i + 1; });
+      var lista = [1];
+      var desde = Math.max(2, actual - 1), hasta = Math.min(total - 1, actual + 1);
+      if (desde > 2) lista.push('…');
+      for (var n = desde; n <= hasta; n++) lista.push(n);
+      if (hasta < total - 1) lista.push('…');
+      lista.push(total);
+      return lista;
+    }
+
+    function boton(texto, pagina, extra) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pag-btn ' + (extra || '');
+      b.dataset.pagina = pagina;
+      b.innerHTML = texto;
+      return b;
+    }
+
+    function mostrar(panel, pagina, desplazar) {
+      var tarjetas = panel.querySelectorAll('.cat-grid > .shop-product-card');
+      var nav = panel.querySelector('.cat-paginacion');
+      var total = Math.ceil(tarjetas.length / POR_PAGINA);
+      if (!nav) return;
+
+      if (total <= 1) {
+        tarjetas.forEach(function (t) { t.hidden = false; });
+        nav.hidden = true;
+        nav.innerHTML = '';
+        return;
+      }
+
+      pagina = Math.min(Math.max(1, pagina), total);
+      panel.dataset.pagina = pagina;
+      var inicio = (pagina - 1) * POR_PAGINA, fin = inicio + POR_PAGINA;
+      tarjetas.forEach(function (t, i) { t.hidden = (i < inicio || i >= fin); });
+
+      nav.innerHTML = '';
+      var ant = boton('‹ <span class="pag-texto">Anterior</span>', pagina - 1, 'pag-flecha');
+      ant.disabled = pagina === 1;
+      ant.setAttribute('aria-label', 'Página anterior');
+      nav.appendChild(ant);
+
+      numeros(pagina, total).forEach(function (n) {
+        if (n === '…') {
+          var s = document.createElement('span');
+          s.className = 'pag-puntos';
+          s.textContent = '…';
+          nav.appendChild(s);
+          return;
+        }
+        var b = boton(n, n, 'pag-num');
+        b.setAttribute('aria-label', 'Página ' + n);
+        if (n === pagina) b.setAttribute('aria-current', 'page');
+        nav.appendChild(b);
+      });
+
+      var estado = document.createElement('span');
+      estado.className = 'pag-estado';
+      estado.textContent = 'Página ' + pagina + ' de ' + total;
+      nav.appendChild(estado);
+
+      var sig = boton('<span class="pag-texto">Siguiente</span> ›', pagina + 1, 'pag-flecha');
+      sig.disabled = pagina === total;
+      sig.setAttribute('aria-label', 'Página siguiente');
+      nav.appendChild(sig);
+
+      var rango = document.createElement('p');
+      rango.className = 'pag-rango';
+      rango.textContent = 'Mostrando ' + (inicio + 1) + '–' + Math.min(fin, tarjetas.length) + ' de ' + tarjetas.length;
+      nav.appendChild(rango);
+
+      nav.hidden = false;
+
+      if (desplazar) {
+        var arriba = panel.getBoundingClientRect().top + window.scrollY - 90;  // deja lugar al header
+        window.scrollTo({top: Math.max(0, arriba), behavior: 'smooth'});
+      }
+    }
+
+    layout.addEventListener('click', function (e) {
+      var b = e.target.closest('.pag-btn');
+      if (!b || b.disabled) return;
+      mostrar(b.closest('.cat-panel'), parseInt(b.dataset.pagina, 10), true);
+    });
+
+    // Al cambiar de categoría en el menú, la nueva arranca en la página 1
+    layout.querySelectorAll('.cat-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var panel = document.getElementById(btn.dataset.target);
+        if (panel) mostrar(panel, 1, false);
+      });
+    });
+
+    window.repaginarCatalogo = function () {
+      layout.querySelectorAll('.cat-panel').forEach(function (p) { mostrar(p, 1, false); });
+    };
+    window.repaginarCatalogo();
   })();
 </script>

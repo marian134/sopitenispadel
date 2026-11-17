@@ -229,6 +229,9 @@ function ordenarProductos(valor) {
             grid.appendChild(producto);
         });
     });
+
+    // con el nuevo orden, cada categoría vuelve a la página 1
+    if (window.repaginarCatalogo) window.repaginarCatalogo();
 }
 </script>
 
