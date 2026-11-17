@@ -694,6 +694,7 @@ def obtener_productos_por_deporte(
 # Orden en que se muestran las categorías en el catálogo.
 # Las que no estén acá van después, por orden alfabético.
 ORDEN_CATEGORIAS = [
+    "Paletas", "Raquetas",   # lo primero que busca el cliente
     "Palas", "Pelotas",
     "Indumentaria Hombre", "Indumentaria Mujer",
     "Accesorios",

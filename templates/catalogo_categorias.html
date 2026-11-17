@@ -137,6 +137,13 @@
     letter-spacing: .04em;
     text-transform: uppercase;
     opacity: .7;
+    transition: color .15s, opacity .15s;
+  }
+  /* La categoría que estás mirando (Paletas, Pelotas...) se pinta del color del deporte */
+  .cat-group:has(.cat-btn.is-active) .cat-group-label {
+    color: var(--accent, #0f766e);
+    opacity: 1;
+    font-weight: 800;
   }
   .cat-group ul { padding-left: .75rem; }
   .cat-sub-prefix { display: none; }
