@@ -34,7 +34,7 @@
     <h2>Productos</h2>
     <ul>
       {% for linea in pedido.lineas %}
-        <li>{{ linea.cantidad }} × {{ linea.nombre_producto }}</li>
+        <li>{{ linea.cantidad }} × {{ nombre_con_talle(linea.nombre_producto, linea.talle) }}</li>
       {% endfor %}
     </ul>
 

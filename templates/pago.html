@@ -283,7 +283,7 @@
             <ul class="co-items">
                 {% for item in items %}
                 <li>
-                    <span>{{ item.producto.nombre }} × {{ item.cantidad }}</span>
+                    <span>{{ nombre_con_talle(item.producto.nombre, item.talle) }} × {{ item.cantidad }}</span>
                     <span>{{ item.subtotal|pesos }}</span>
                 </li>
                 {% endfor %}

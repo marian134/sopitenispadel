@@ -15,7 +15,7 @@ from sqlalchemy import inspect, text
 from urllib.parse import urlencode, quote
 from xml.sax.saxutils import escape
 from models import (
-    db, Producto, Pedido, LineaPedido, Cupon, CuponUso,
+    db, Producto, Pedido, LineaPedido, Cupon, CuponUso, parsear_talles,
     ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO,
 )
 
@@ -145,7 +145,7 @@ def avisar_pedido_nuevo(pedido):
     """Avisa que se registró un pedido nuevo, con los datos del comprador."""
     detalle = [
         (
-            f"- {linea.nombre_producto} x {linea.cantidad}: "
+            f"- {nombre_con_talle(linea.nombre_producto, linea.talle)} x {linea.cantidad}: "
             f"${linea.precio_unitario * linea.cantidad:,.0f}"
         )
         for linea in pedido.lineas
@@ -314,6 +314,17 @@ with app.app_context():
     columnas_productos = [c["name"] for c in inspect(db.engine).get_columns("productos")]
     if "costo" not in columnas_productos:
         db.session.execute(text("ALTER TABLE productos ADD COLUMN costo INTEGER"))
+        db.session.commit()
+
+    # Migración liviana: stock por talle (productos) y talle comprado (líneas de pedido)
+    columnas_productos = [c["name"] for c in inspect(db.engine).get_columns("productos")]
+    if "talles" not in columnas_productos:
+        db.session.execute(text("ALTER TABLE productos ADD COLUMN talles VARCHAR(200)"))
+        db.session.commit()
+
+    columnas_lineas = [c["name"] for c in inspect(db.engine).get_columns("lineas_pedido")]
+    if "talle" not in columnas_lineas:
+        db.session.execute(text("ALTER TABLE lineas_pedido ADD COLUMN talle VARCHAR(10)"))
         db.session.commit()
 
     # Migración liviana: agrega slug y lo rellena en los productos existentes
@@ -671,12 +682,61 @@ def clave_categoria(categoria):
     return (1, 0, categoria.lower())
 
 
+# Tipo de prenda según la primera palabra del nombre ("Remera Head..." -> Remeras).
+# El orden de cada lista es el orden en que se muestran en el catálogo.
+TIPOS_PRENDA = {
+    "Hombre": [
+        ("Remeras", ("remera", "camiseta")),
+        ("Chombas", ("chomba", "polo")),
+        ("Camperas y buzos", ("campera", "buzo")),
+        ("Shorts y bermudas", ("short", "bermuda")),
+        ("Pantalones", ("pantalon",)),
+    ],
+    "Mujer": [
+        ("Musculosas, remeras y tops", ("musculosa", "remera", "top", "camiseta")),
+        ("Camperas y buzos", ("campera", "buzo")),
+        ("Calzas y shorts", ("calza", "short")),
+        ("Polleras y vestidos", ("pollera", "vestido", "skort")),
+        ("Pantalones", ("pantalon",)),
+    ],
+}
+SEPARADOR_PRENDA = " · "
+
+
+def tipo_prenda(producto):
+    """'Remera Head Carl Hombre' en 'Indumentaria Hombre' -> 'Remeras'."""
+    _, sub = grupo_y_sub(producto.categoria)
+    primera = slugify((producto.nombre or "").split(" ", 1)[0])
+    for tipo, palabras in TIPOS_PRENDA.get(sub, []):
+        if primera in palabras:
+            return tipo
+    return "Otros"
+
+
+def seccion_de(producto):
+    """Sección del catálogo: la categoría, y en indumentaria también el tipo de prenda."""
+    categoria = producto.categoria or "Otros"
+    if categoria.startswith("Indumentaria "):
+        return f"{categoria}{SEPARADOR_PRENDA}{tipo_prenda(producto)}"
+    return categoria
+
+
+def clave_seccion(seccion):
+    categoria, _, tipo = seccion.partition(SEPARADOR_PRENDA)
+    if not tipo:
+        return (*clave_categoria(categoria), 0)
+    _, sub = grupo_y_sub(categoria)
+    tipos = [t for t, _ in TIPOS_PRENDA.get(sub, [])]
+    return (*clave_categoria(categoria), tipos.index(tipo) if tipo in tipos else len(tipos))
+
+
 def agrupar_por_categoria(productos):
-    """[(categoria, [productos...]), ...] respetando el orden de ORDEN_CATEGORIAS."""
+    """[(seccion, [productos...]), ...] respetando el orden de ORDEN_CATEGORIAS
+    y, dentro de indumentaria, el orden de TIPOS_PRENDA."""
     grupos = {}
     for p in productos:
-        grupos.setdefault(p.categoria or "Otros", []).append(p)
-    return sorted(grupos.items(), key=lambda g: clave_categoria(g[0]))
+        grupos.setdefault(seccion_de(p), []).append(p)
+    return sorted(grupos.items(), key=lambda g: clave_seccion(g[0]))
 
 def grupo_y_sub(categoria):
     """'Indumentaria Hombre' -> ('Indumentaria', 'Hombre'); 'Palas' -> ('Palas', None)"""
@@ -980,39 +1040,7 @@ def producto(producto_id):
 @app.route("/carrito")
 def carrito_ver():
 
-    carrito = session.get(
-        "carrito",
-        {}
-    )
-
-    items = []
-    total = 0
-
-    for producto_id, cantidad in carrito.items():
-
-        producto = db.session.get(
-            Producto,
-            int(producto_id)
-        )
-
-        if not producto:
-            continue
-
-        subtotal = (
-            producto.precio
-            * cantidad
-        )
-
-        items.append({
-
-            "producto": producto,
-
-            "cantidad": cantidad,
-
-            "subtotal": subtotal,
-        })
-
-        total += subtotal
+    items, total, _ = armar_items_carrito()
 
     contexto = obtener_contexto_base()
 
@@ -1039,7 +1067,11 @@ def carrito_agregar(producto_id):
         producto_id
     )
 
-    if producto.stock <= 0:
+    talle = talle_del_form(producto)
+    disponible = producto.stock_de(talle)
+
+    # Sin stock, o falta elegir talle: vuelve a la ficha sin agregar nada
+    if disponible <= 0:
 
         return redirect(
             request.referrer
@@ -1054,9 +1086,7 @@ def carrito_agregar(producto_id):
         {}
     )
 
-    clave = str(
-        producto_id
-    )
+    clave = clave_carrito(producto_id, talle)
 
     cantidad_actual = carrito.get(
         clave,
@@ -1072,7 +1102,7 @@ def carrito_agregar(producto_id):
 
     carrito[clave] = min(
         cantidad_actual + cantidad_pedida,
-        producto.stock
+        disponible
     )
 
     session["carrito"] = carrito
@@ -1116,9 +1146,9 @@ def carrito_actualizar(producto_id):
         {}
     )
 
-    clave = str(
-        producto_id
-    )
+    talle = talle_del_form(producto)
+
+    clave = clave_carrito(producto_id, talle)
 
     if cantidad <= 0:
 
@@ -1131,7 +1161,7 @@ def carrito_actualizar(producto_id):
 
         cantidad = min(
             cantidad,
-            producto.stock
+            producto.stock_de(talle)
         )
 
         carrito[clave] = cantidad
@@ -1158,8 +1188,10 @@ def carrito_eliminar(producto_id):
         {}
     )
 
+    talle = (request.form.get("talle") or "").strip().upper() or None
+
     carrito.pop(
-        str(producto_id),
+        clave_carrito(producto_id, talle),
         None
     )
 
@@ -1292,22 +1324,59 @@ def cupon_quitar():
 # PEDIDOS: HELPERS
 # =========================================================
 
+def clave_carrito(producto_id, talle=None):
+    """Clave del ítem en el carrito: '12' o, si tiene talle, '12|M'."""
+    return f"{producto_id}|{talle}" if talle else str(producto_id)
+
+
+def separar_clave(clave):
+    """'12|M' -> (12, 'M'); '12' -> (12, None)."""
+    producto_id, _, talle = str(clave).partition("|")
+    return int(producto_id), (talle or None)
+
+
+def talle_del_form(producto):
+    """Talle elegido por el cliente, solo si el producto lo tiene. None si no aplica."""
+    if not producto.tiene_talles:
+        return None
+    talle = (request.form.get("talle") or "").strip().upper()
+    return talle if talle in producto.stock_talles else None
+
+
 def armar_items_carrito():
     """Lee el carrito de la sesión y devuelve (items, total, total_items).
     Los precios salen SIEMPRE de la base de datos, nunca del navegador."""
     carrito = session.get("carrito", {})
     items, total, total_items = [], 0, 0
 
-    for producto_id, cantidad in carrito.items():
-        producto = db.session.get(Producto, int(producto_id))
+    for clave, cantidad in carrito.items():
+        try:
+            producto_id, talle = separar_clave(clave)
+        except ValueError:
+            continue
+        producto = db.session.get(Producto, producto_id)
         if not producto or cantidad <= 0:
             continue
+        # Si el producto tiene talles, el ítem tiene que tener uno válido (y al revés)
+        if producto.tiene_talles != bool(talle) or (talle and talle not in producto.stock_talles):
+            continue
         subtotal = producto.precio * cantidad
-        items.append({"producto": producto, "cantidad": cantidad, "subtotal": subtotal})
+        items.append({
+            "producto": producto,
+            "talle": talle,
+            "cantidad": cantidad,
+            "stock_disponible": producto.stock_de(talle),
+            "subtotal": subtotal,
+        })
         total += subtotal
         total_items += cantidad
 
     return items, total, total_items
+
+
+@app.template_global()
+def nombre_con_talle(nombre, talle):
+    return f"{nombre} (talle {talle})" if talle else nombre
 
 
 
@@ -1349,6 +1418,7 @@ def crear_pedido(
                 nombre_producto=p.nombre,
                 precio_unitario=item.get("precio_unitario", p.precio),
                 cantidad=int(item["cantidad"]),
+                talle=item.get("talle"),
             )
         )
 
@@ -1383,7 +1453,14 @@ def confirmar_pago(pedido):
         return
     for linea in pedido.lineas:
         producto = db.session.get(Producto, linea.producto_id) if linea.producto_id else None
-        if producto:
+        if not producto:
+            continue
+        talles = producto.stock_talles
+        if linea.talle and linea.talle in talles:
+            # descuenta del talle comprado; `stock` queda como la suma
+            talles[linea.talle] = max(0, talles[linea.talle] - linea.cantidad)
+            producto.guardar_talles(talles)
+        else:
             producto.stock = max(0, producto.stock - linea.cantidad)
     pedido.estado = ESTADO_PAGADO
     db.session.commit()
@@ -1416,7 +1493,7 @@ def pagar_con_mercadopago(
     preference_data = {
         "items": [
             {
-                "title": i["producto"].nombre,
+                "title": nombre_con_talle(i["producto"].nombre, i.get("talle")),
                 "quantity": int(i["cantidad"]),
                 "unit_price": float(i.get("precio_unitario", i["producto"].precio)),
                 "currency_id": "ARS",
@@ -1646,9 +1723,10 @@ def carrito_pagar():
     # -----------------------------------------------------
 
     for item in items:
-        if item["cantidad"] > item["producto"].stock:
+        if item["cantidad"] > item["stock_disponible"]:
             return (
-                f"No hay stock suficiente de {item['producto'].nombre}.",
+                f"No hay stock suficiente de "
+                f"{nombre_con_talle(item['producto'].nombre, item['talle'])}.",
                 400
             )
 
@@ -2212,6 +2290,12 @@ def admin_precios():
 
                 imagen = (fila.get("imagen") or "").strip().lower()
 
+                # Columna opcional "talles", ej: "S:2 M:3 L:0" (si viene, manda sobre "stock")
+                talles_csv = parsear_talles(fila.get("talles"))
+                if (fila.get("talles") or "").strip() and not talles_csv:
+                    errores.append(f"Fila {n} ({nombre}): talles inválidos (formato: S:2 M:3 L:0)")
+                    continue
+
                 if precio is None and costo is not None:
                     precio = precio_desde_costo(costo)
 
@@ -2233,7 +2317,9 @@ def admin_precios():
                         p.costo = costo
                     if precio is not None:
                         p.precio = precio
-                    if stock is not None:
+                    if talles_csv:
+                        p.guardar_talles(talles_csv)
+                    elif stock is not None and not p.tiene_talles:
                         p.stock = stock
                     if imagen:
                         p.imagen = imagen
@@ -2257,7 +2343,7 @@ def admin_precios():
                             f"Fila {n} ({nombre}): producto nuevo, falta deporte (Tenis/Pádel) o precio/costo"
                         )
                         continue
-                    db.session.add(Producto(
+                    nuevo = Producto(
                         nombre=nombre,
                         slug=generar_slug(nombre),
                         marca=(fila.get("marca") or "").strip(),
@@ -2268,7 +2354,10 @@ def admin_precios():
                         costo=costo,
                         precio=precio,
                         stock=stock or 0,
-                    ))
+                    )
+                    if talles_csv:
+                        nuevo.guardar_talles(talles_csv)
+                    db.session.add(nuevo)
                     creados += 1
 
             db.session.commit()
@@ -2306,6 +2395,22 @@ def admin_productos():
     contexto = obtener_contexto_base()
 
     return render_template("admin_productos.html", **contexto, productos=productos)
+
+
+@app.route("/admin/productos/<int:producto_id>/talles", methods=["POST"])
+@admin_requerido
+def admin_producto_talles(producto_id):
+    """Carga el stock por talle desde el listado, ej: 'S:2 M:3 L:0'.
+    Vacío = el producto deja de usar talles (conserva su stock actual)."""
+    producto = db.get_or_404(Producto, producto_id)
+    texto = (request.form.get("talles") or "").strip()
+    talles = parsear_talles(texto)
+    if talles:
+        producto.guardar_talles(talles)
+    elif not texto:
+        producto.talles = None
+    db.session.commit()
+    return redirect(url_for("admin_productos") + f"#p{producto.id}")
 
 
 @app.route("/admin/productos/<int:producto_id>/borrar", methods=["POST"])

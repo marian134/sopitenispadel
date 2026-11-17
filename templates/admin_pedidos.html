@@ -59,7 +59,7 @@
 <td>{{ p.medio_pago or "—" }}</td>
 
         <td>
-          {% for l in p.lineas %}{{ l.cantidad }} × {{ l.nombre_producto }}<br>{% endfor %}
+          {% for l in p.lineas %}{{ l.cantidad }} × {{ nombre_con_talle(l.nombre_producto, l.talle) }}<br>{% endfor %}
         </td>
         <td>{{ p.total | pesos }}</td>
         <td><strong>{{ p.estado }}</strong></td>

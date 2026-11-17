@@ -10,6 +10,25 @@ ESTADO_PAGADO = "pagado"
 ESTADO_FALLIDO = "fallido"
 
 
+def parsear_talles(texto):
+    """'S:2, M:0 L=3' -> {'S': 2, 'M': 0, 'L': 3}. Ignora lo que no entiende."""
+    resultado = {}
+    for parte in (texto or "").replace(";", ",").replace(" ", ",").split(","):
+        parte = parte.strip()
+        if not parte:
+            continue
+        separador = ":" if ":" in parte else ("=" if "=" in parte else None)
+        if not separador:
+            continue
+        talle, cantidad = parte.split(separador, 1)
+        talle = talle.strip().upper()
+        try:
+            resultado[talle] = max(0, int(cantidad.strip()))
+        except ValueError:
+            continue
+    return resultado
+
+
 class Producto(db.Model):
     __tablename__ = "productos"
 
@@ -24,6 +43,31 @@ class Producto(db.Model):
     imagen = db.Column(db.String(120), nullable=False, default="")
     stock = db.Column(db.Integer, nullable=False, default=0)
     costo = db.Column(db.Integer, nullable=True)  # lo que se paga al mayorista (uso interno)
+    # Stock por talle, ej: "S:2,M:0,L:3". Vacío = el producto no tiene talles.
+    # Cuando hay talles, `stock` es siempre la suma de todos.
+    talles = db.Column(db.String(200), nullable=True)
+
+    @property
+    def stock_talles(self):
+        """{'S': 2, 'M': 0, 'L': 3} en el orden en que se cargaron."""
+        return parsear_talles(self.talles)
+
+    @property
+    def tiene_talles(self):
+        return bool(self.stock_talles)
+
+    def guardar_talles(self, talles_dict):
+        """Guarda el stock por talle y deja `stock` como la suma."""
+        talles_dict = {t: max(0, int(c)) for t, c in talles_dict.items()}
+        self.talles = ",".join(f"{t}:{c}" for t, c in talles_dict.items()) or None
+        if talles_dict:
+            self.stock = sum(talles_dict.values())
+
+    def stock_de(self, talle=None):
+        """Stock disponible de un talle (o del producto si no tiene talles)."""
+        if self.tiene_talles:
+            return self.stock_talles.get(talle or "", 0)
+        return self.stock or 0
 
     def to_dict(self):
         return {
@@ -95,6 +139,7 @@ class LineaPedido(db.Model):
     nombre_producto = db.Column(db.String(120), nullable=False)
     precio_unitario = db.Column(db.Integer, nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
+    talle = db.Column(db.String(10), nullable=True)
 
     @property
     def subtotal(self):
@@ -106,6 +151,7 @@ class LineaPedido(db.Model):
             "nombre_producto": self.nombre_producto,
             "precio_unitario": self.precio_unitario,
             "cantidad": self.cantidad,
+            "talle": self.talle,
             "subtotal": self.subtotal,
         }
 class Cupon(db.Model):

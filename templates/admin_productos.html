@@ -26,7 +26,17 @@
         <td>{{ p.categoria }}</td>
         <td>{{ p.costo|pesos if p.costo else "-" }}</td>
         <td>{{ p.precio|pesos }}</td>
-        <td>{{ p.stock }}</td>
+        <td id="p{{ p.id }}">
+          {{ p.stock }}
+          {% if p.categoria and p.categoria.startswith('Indumentaria') or p.tiene_talles %}
+          <form method="post" action="{{ url_for('admin_producto_talles', producto_id=p.id) }}"
+                style="display:flex; gap:4px; margin-top:4px;">
+            <input type="text" name="talles" value="{{ p.talles or '' }}"
+                   placeholder="S:2 M:3 L:0" style="width:130px;" aria-label="Stock por talle de {{ p.nombre }}">
+            <button type="submit" class="btn btn-outline">Guardar</button>
+          </form>
+          {% endif %}
+        </td>
         <td>{{ p.imagen or "-" }}</td>
         <td>
           <form method="post" action="{{ url_for('admin_producto_borrar', producto_id=p.id) }}"

@@ -77,6 +77,12 @@
                     </span>
                 {% endif %}
 
+                {% if item.talle %}
+                    <span class="carrito-marca">
+                        Talle <strong>{{ item.talle }}</strong>
+                    </span>
+                {% endif %}
+
                 <strong class="carrito-precio-unitario">
                     ${{ "{:,}".format(item.producto.precio).replace(",", ".") }}
                 </strong>
@@ -96,6 +102,8 @@
                     class="cantidad-control"
                 >
 
+                    {% if item.talle %}<input type="hidden" name="talle" value="{{ item.talle }}">{% endif %}
+
                     <button
                         type="button"
                         class="cantidad-btn"
@@ -110,7 +118,7 @@
                         name="cantidad"
                         value="{{ item.cantidad }}"
                         min="1"
-                        max="{{ item.producto.stock }}"
+                        max="{{ item.stock_disponible }}"
                         readonly
                     >
 
@@ -148,6 +156,8 @@
                 action="{{ url_for('carrito_eliminar', producto_id=item.producto.id) }}"
                 class="carrito-eliminar-form"
             >
+
+                {% if item.talle %}<input type="hidden" name="talle" value="{{ item.talle }}">{% endif %}
 
                 <button
                     type="submit"

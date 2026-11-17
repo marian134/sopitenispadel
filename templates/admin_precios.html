@@ -16,6 +16,11 @@
     "Tenis" o "Pádel" y un precio o costo).
     Los números van sin puntos ni comas (por ejemplo 450000).
   </p>
+  <p>
+    Indumentaria: agregá la columna opcional <code>talles</code> con el stock de cada talle,
+    por ejemplo <code>S:2 M:3 L:0 XL:1</code>. Si viene, reemplaza a <code>stock</code>
+    (el stock total pasa a ser la suma de los talles).
+  </p>
 
   <form method="post" enctype="multipart/form-data">
     <input type="file" name="csv" accept=".csv" required>
