@@ -6,6 +6,7 @@ import io
 import hmac
 import unicodedata
 import mercadopago
+import correo_argentino as micorreo
 from templates import legales
 from datetime import timedelta, datetime, date
 from functools import wraps
@@ -166,6 +167,7 @@ def avisar_pedido_nuevo(pedido):
             f"Localidad: {pedido.localidad or 'No informada'}",
             f"Provincia: {pedido.provincia or 'No informada'}",
             f"Código postal: {pedido.codigo_postal or 'No informado'}",
+            f"Envío: {pedido.servicio_envio or 'A coordinar'} (${(pedido.costo_envio or 0):,.0f})",
         ]
     else:
         datos_entrega = ["Entrega: Retiro en Quilmes"]
@@ -278,7 +280,7 @@ with app.app_context():
         db.session.execute(text("ALTER TABLE pedidos ADD COLUMN medio_pago VARCHAR(20)"))
         db.session.commit()
 
-    # Migración: datos del cliente y modalidad de entrega
+    # Migración: datos del cliente, modalidad de entrega y envío
     columnas_pedidos = [
         c["name"] for c in inspect(db.engine).get_columns("pedidos")
     ]
@@ -292,6 +294,8 @@ with app.app_context():
         "localidad": "VARCHAR(100)",
         "provincia": "VARCHAR(100)",
         "codigo_postal": "VARCHAR(20)",
+        "costo_envio": "INTEGER",
+        "servicio_envio": "VARCHAR(80)",
     }
 
     for nombre_columna, tipo_columna in nuevas_columnas_pedidos.items():
@@ -381,6 +385,77 @@ def total_con_transferencia(items):
         else round(item["subtotal"] * (1 - DESCUENTO_TRANSFERENCIA))
         for item in items
     )
+
+
+# =========================================================
+# ENVÍO POR CORREO ARGENTINO (MiCorreo)
+# =========================================================
+
+# Envío gratis cuando el subtotal (sin descuentos) llega a este monto
+ENVIO_GRATIS_DESDE = 150000
+
+# (peso por unidad en g, largo, ancho, alto en cm). Son estimaciones: ajustalas.
+EMBALAJE = {
+    "Palas":        (600, 50, 30, 12),
+    "Raquetas":     (350, 70, 30, 10),
+    "Pelotas":      (220, 25, 8, 8),     # un tubo
+    "Calzado":      (1100, 35, 25, 15),
+    "Indumentaria": (400, 30, 25, 5),
+    "Accesorios":   (80, 20, 15, 3),
+}
+EMBALAJE_DEFECTO = (500, 30, 20, 10)
+
+
+def embalaje_de(producto):
+    categoria = producto.categoria or ""
+    for clave, valores in EMBALAJE.items():
+        if categoria.startswith(clave):
+            return valores
+    return EMBALAJE_DEFECTO
+
+
+def dimensiones_carrito(items):
+    """Peso total y medidas del bulto estimadas a partir del carrito."""
+    peso, largo, ancho, alto = 300, 0, 0, 0  # 300 g de embalaje
+    for item in items:
+        p, l, a, h = embalaje_de(item["producto"])
+        unidades = item["cantidad"] * (3 if es_pack(item["producto"]) else 1)
+        peso += p * unidades
+        largo, ancho = max(largo, l), max(ancho, a)
+        alto += h * unidades
+    return {
+        "weight": int(peso),
+        "length": int(largo),
+        "width": int(ancho),
+        "height": int(min(alto, 40)),
+    }
+
+
+def normalizar_cp(texto):
+    """Extrae los 4 dígitos del código postal (acepta 'B1878ABC', '1878', etc.)."""
+    m = re.search(r"\d{4}", texto or "")
+    return m.group(0) if m else None
+
+
+def tarifas_envio(items, subtotal, cp):
+    """Opciones de envío para el carrito. Lanza MiCorreoError si la API falla."""
+    tarifas = micorreo.cotizar_envio(cp, dimensiones_carrito(items))
+    if subtotal >= ENVIO_GRATIS_DESDE:
+        # envío gratis: solo la opción más barata, a costo 0 para el cliente
+        return [dict(tarifas[0], precio_original=tarifas[0]["precio"], precio=0)]
+    return tarifas
+
+
+def resolver_envio(items, subtotal, cp_texto, codigo):
+    """Devuelve (costo, servicio). Se recalcula SIEMPRE acá: nunca viene del navegador."""
+    try:
+        opciones = tarifas_envio(items, subtotal, normalizar_cp(cp_texto))
+    except micorreo.MiCorreoError:
+        app.logger.exception("No se pudo cotizar el envío")
+        return 0, "A coordinar"
+    elegida = next((o for o in opciones if o["codigo"] == codigo), opciones[0])
+    return elegida["precio"], elegida["nombre"]
+
 
 # Datos que se muestran al cliente que paga por transferencia
 DATOS_TRANSFERENCIA = {
@@ -1237,8 +1312,11 @@ def crear_pedido(
     cupon=None,
     descuento=0,
     datos_cliente=None,
+    costo_envio=0,
+    servicio_envio=None,
 ):
-    """Registra el pedido con los datos del comprador y sus productos."""
+    """Registra el pedido con los datos del comprador y sus productos.
+    `total` ya incluye el costo de envío."""
     datos_cliente = datos_cliente or {}
 
     pedido = Pedido(
@@ -1253,6 +1331,8 @@ def crear_pedido(
         localidad=datos_cliente.get("localidad"),
         provincia=datos_cliente.get("provincia"),
         codigo_postal=datos_cliente.get("codigo_postal"),
+        costo_envio=int(costo_envio or 0),
+        servicio_envio=servicio_envio,
     )
 
     for item in items:
@@ -1309,7 +1389,10 @@ def pagar_con_mercadopago(
     cupon=None,
     descuento=0,
     datos_cliente=None,
+    costo_envio=0,
+    servicio_envio=None,
 ):
+    """`total` ya incluye el costo de envío (el webhook lo compara con lo cobrado)."""
     if mp is None:
         return "Mercado Pago no está configurado. Falta MP_ACCESS_TOKEN.", 500
 
@@ -1320,6 +1403,8 @@ def pagar_con_mercadopago(
         cupon,
         descuento,
         datos_cliente=datos_cliente,
+        costo_envio=costo_envio,
+        servicio_envio=servicio_envio,
     )
 
     preference_data = {
@@ -1339,6 +1424,15 @@ def pagar_con_mercadopago(
             "pending": f"{URL_PUBLICA}/pago/pendiente",
         },
     }
+
+    # El envío va como un ítem más para que lo cobrado coincida con pedido.total
+    if costo_envio and costo_envio > 0:
+        preference_data["items"].append({
+            "title": f"Envío {servicio_envio or 'Correo Argentino'}",
+            "quantity": 1,
+            "unit_price": float(costo_envio),
+            "currency_id": "ARS",
+        })
 
     # auto_return y webhook exigen una URL pública con https
     if URL_PUBLICA.startswith("https://"):
@@ -1363,6 +1457,31 @@ def pagar_con_mercadopago(
     pedido.mp_preference_id = respuesta.get("id")
     db.session.commit()
     return redirect(respuesta["init_point"])
+
+
+# =========================================================
+# COTIZAR ENVÍO (lo llama el checkout cuando se escribe el CP)
+# =========================================================
+
+@app.route("/envio/cotizar", methods=["POST"])
+def envio_cotizar():
+    items, total, _ = armar_items_carrito()
+    if not items:
+        return {"error": "Tu carrito está vacío."}, 400
+
+    cp = normalizar_cp((request.get_json(silent=True) or {}).get("cp"))
+    if not cp:
+        return {"error": "Ingresá un código postal de 4 números."}, 400
+
+    try:
+        opciones = tarifas_envio(items, total, cp)
+    except micorreo.MiCorreoError:
+        app.logger.exception("Error cotizando envío")
+        return {
+            "error": "No pudimos cotizar el envío ahora. Podés continuar y te lo informamos."
+        }, 502
+
+    return {"opciones": opciones}
 
 
 # =========================================================
@@ -1512,6 +1631,9 @@ def carrito_pagar():
                 400,
             )
 
+        if not normalizar_cp(datos_cliente["codigo_postal"]):
+            return "Ingresá un código postal válido (4 números).", 400
+
 
     # -----------------------------------------------------
     # CONTROLAR STOCK
@@ -1527,16 +1649,31 @@ def carrito_pagar():
     session["modalidad_entrega"] = modalidad_entrega
 
     # -----------------------------------------------------
+    # COSTO DE ENVÍO (se recalcula en el servidor)
+    # -----------------------------------------------------
+
+    costo_envio, servicio_envio = 0, None
+    if modalidad_entrega == "envio":
+        costo_envio, servicio_envio = resolver_envio(
+            items,
+            total,
+            datos_cliente["codigo_postal"],
+            request.form.get("servicio_envio"),
+        )
+
+    # -----------------------------------------------------
     # MERCADO PAGO
     # -----------------------------------------------------
 
     if medio_pago == "mercadopago":
         respuesta = pagar_con_mercadopago(
             items,
-            total_cupon,
+            total_cupon + costo_envio,
             cupon,
             descuento_cupon,
             datos_cliente=datos_cliente,
+            costo_envio=costo_envio,
+            servicio_envio=servicio_envio,
         )
         session.pop("cupon", None)
         return respuesta
@@ -1557,16 +1694,18 @@ def carrito_pagar():
             item["precio_unitario"] = item["producto"].precio
 
     # -----------------------------------------------------
-    # CREAR PEDIDO
+    # CREAR PEDIDO (el 5% va solo sobre los productos, no sobre el envío)
     # -----------------------------------------------------
 
     pedido = crear_pedido(
         items,
         medio_pago,
-        total_final,
+        total_final + costo_envio,
         cupon,
         descuento_cupon,
         datos_cliente=datos_cliente,
+        costo_envio=costo_envio,
+        servicio_envio=servicio_envio,
     )
     session.pop("cupon", None)
 
@@ -1577,7 +1716,7 @@ def carrito_pagar():
     pedidos_entrega = session.get("pedidos_entrega", {})
     pedidos_entrega[str(pedido.id)] = {
         "modalidad": modalidad_entrega,
-        "costo_envio": 0,
+        "costo_envio": costo_envio,
     }
     session["pedidos_entrega"] = pedidos_entrega
 
@@ -1613,7 +1752,7 @@ def pedido_detalle(pedido_id):
     pedidos_entrega = session.get("pedidos_entrega", {})
     datos_entrega = pedidos_entrega.get(str(pedido.id), {})
     modalidad_entrega = pedido.modalidad_entrega or datos_entrega.get("modalidad", "retiro")
-    costo_envio = datos_entrega.get("costo_envio", 0)
+    costo_envio = pedido.costo_envio or 0
 
     # -----------------------------------------------------
     # INFORMACIÓN DE ENTREGA
@@ -1632,11 +1771,16 @@ def pedido_detalle(pedido_id):
 
         entrega_titulo = "Envío a domicilio"
 
-        entrega_descripcion = (
-            "Realizamos envíos a domicilio por Andreani "
-            "o Correo Argentino. El costo del envío se "
-            "coordina según destino y tamaño del paquete."
-        )
+        if pedido.servicio_envio and pedido.servicio_envio != "A coordinar":
+            entrega_descripcion = (
+                f"Enviamos tu pedido por Correo Argentino ({pedido.servicio_envio}). "
+                "El costo del envío ya está incluido en el total."
+            )
+        else:
+            entrega_descripcion = (
+                "Enviamos tu pedido por Correo Argentino. "
+                "Te vamos a informar el costo del envío según destino y tamaño del paquete."
+            )
 
     # -----------------------------------------------------
     # INFORMACIÓN DEL MEDIO DE PAGO
@@ -1882,6 +2026,7 @@ def robots():
         "Disallow: /pedido",
         "Disallow: /pago",
         "Disallow: /mp/",
+        "Disallow: /envio/",
         "Disallow: /health",
         "Disallow: /*?*q=",
         "Disallow: /*?*orden=",

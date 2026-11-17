@@ -46,7 +46,8 @@ class Pedido(db.Model):
     'pagado' o 'fallido' según el resultado real del cobro.
     """
     __tablename__ = "pedidos"
-
+    costo_envio = db.Column(db.Integer, default=0)
+    servicio_envio = db.Column(db.String(80))
     id = db.Column(db.Integer, primary_key=True)
     estado = db.Column(db.String(20), nullable=False, default=ESTADO_PENDIENTE)
     total = db.Column(db.Integer, nullable=False, default=0)

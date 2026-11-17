@@ -49,6 +49,10 @@
 .co-domicilio[hidden] { display: none; }
 .co-domicilio h3 { margin: 0 0 12px; font-size: 15px; }
 
+/* costo de envío (opciones que devuelve Correo Argentino) */
+.co-envio { margin-top: 18px; }
+.co-envio-estado { margin: 0; font-size: 14px; color: #64748b; }
+
 /* cupón */
 .co-cupon summary { cursor: pointer; font-weight: 800; font-size: 15px; list-style: none; display: flex; align-items: center; gap: 8px; }
 .co-cupon summary::-webkit-details-marker { display: none; }
@@ -141,7 +145,7 @@
                         <div class="co-opcion-box">
                             <div class="co-opcion-texto">
                                 <strong>📦 Envío a domicilio</strong>
-                                <span>Andreani o Correo Argentino. El costo se informa según destino y tamaño del paquete.</span>
+                                <span>Por Correo Argentino. Calculamos el costo con tu código postal.</span>
                             </div>
                         </div>
                     </label>
@@ -183,8 +187,17 @@
                             </div>
                             <div class="co-campo">
                                 <label for="codigo_postal">Código postal *</label>
-                                <input type="text" id="codigo_postal" name="codigo_postal" maxlength="20" autocomplete="postal-code">
+                                <input type="text" id="codigo_postal" name="codigo_postal" maxlength="20" autocomplete="postal-code" inputmode="numeric">
                             </div>
+                        </div>
+
+                        <!-- Opciones de envío que devuelve Correo Argentino según el CP -->
+                        <div class="co-envio">
+                            <h3>🚚 Costo de envío</h3>
+                            <div id="opciones-envio">
+                                <p class="co-envio-estado">Ingresá tu código postal para calcular el envío.</p>
+                            </div>
+                            <p class="co-cupon-error" id="msg-envio" hidden></p>
                         </div>
                     </div>
                 </section>
@@ -303,7 +316,7 @@
             </div>
 
             <p class="co-nota" id="nota-envio" hidden>
-                📦 El costo del envío se informa según destino y tamaño del paquete.
+                📦 Ingresá tu código postal para calcular el costo del envío.
             </p>
             {% if cupon %}
             <p class="co-nota" id="nota-cupon-transferencia" hidden>
@@ -343,6 +356,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var btn = document.getElementById("btn-confirmar");
     var ayuda = document.getElementById("ayuda-confirmar");
 
+    // --- Cotización de envío (Correo Argentino) ---
+    // costoEnvio: null = todavía sin calcular; 0 = gratis; >0 = monto en pesos.
+    // Es solo informativo: el servidor lo recalcula al confirmar el pedido.
+    var costoEnvio = null;
+    var reqEnvio = 0;
+    var timerCP = null;
+    var inputCP = document.getElementById("codigo_postal");
+    var cajaEnvio = document.getElementById("opciones-envio");
+    var msgEnvio = document.getElementById("msg-envio");
+    var TEXTO_ESPERA = "Ingresá tu código postal para calcular el envío.";
+
     function pesos(n) { return "$" + Math.round(n).toLocaleString("es-AR"); }
 
     var TEXTOS = {
@@ -363,12 +387,20 @@ document.addEventListener("DOMContentLoaded", function () {
         var esTransf = medio === "transferencia";
 
         // Entrega
-        elEntrega.textContent = esEnvio ? "Envío a domicilio · A informar" : "Retiro en Quilmes · Gratis";
-        notaEnvio.hidden = !esEnvio;
+        var envioMonto = (esEnvio && costoEnvio !== null) ? costoEnvio : 0;
+
+        if (!esEnvio) {
+            elEntrega.textContent = "Retiro en Quilmes · Gratis";
+        } else if (costoEnvio === null) {
+            elEntrega.textContent = "Envío a domicilio · a calcular";
+        } else {
+            elEntrega.textContent = "Envío · " + (costoEnvio === 0 ? "Gratis" : pesos(costoEnvio));
+        }
+        notaEnvio.hidden = !(esEnvio && costoEnvio === null);
 
         // Totales y descuentos: el único descuento propio es 5% por transferencia
         if (esTransf) {
-            elTotal.textContent = pesos(TOTAL_TRANSFERENCIA);
+            elTotal.textContent = pesos(TOTAL_TRANSFERENCIA + envioMonto);
             if (HAY_CUPON && TRANSFERENCIA_CON_CUPON) {
                 // gana el cupón: se mantiene su línea
                 lineaTransf.hidden = true;
@@ -382,7 +414,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (notaCuponTransf) notaCuponTransf.hidden = !HAY_CUPON;
             }
         } else {
-            elTotal.textContent = pesos(TOTAL_NORMAL);
+            elTotal.textContent = pesos(TOTAL_NORMAL + envioMonto);
             lineaTransf.hidden = true;
             if (lineaCupon) lineaCupon.hidden = false;
             if (notaCuponTransf) notaCuponTransf.hidden = true;
@@ -394,8 +426,110 @@ document.addEventListener("DOMContentLoaded", function () {
         ayuda.textContent = t[1];
     }
 
+    function seleccionarEnvio() {
+        var r = form.querySelector('input[name="servicio_envio"]:checked');
+        costoEnvio = r ? Number(r.dataset.precio) : null;
+        actualizar();
+    }
+
+    function pintarOpciones(opciones) {
+        cajaEnvio.innerHTML = "";
+        opciones.forEach(function (o, i) {
+            var label = document.createElement("label");
+            label.className = "co-opcion";
+
+            var input = document.createElement("input");
+            input.type = "radio";
+            input.name = "servicio_envio";
+            input.value = o.codigo;
+            input.dataset.precio = o.precio;
+            input.checked = (i === 0);
+            input.addEventListener("change", seleccionarEnvio);
+
+            var box = document.createElement("div");
+            box.className = "co-opcion-box";
+
+            var txt = document.createElement("div");
+            txt.className = "co-opcion-texto";
+
+            var strong = document.createElement("strong");
+            strong.textContent = o.nombre + " · " + (o.precio === 0 ? "Gratis" : pesos(o.precio));
+
+            var span = document.createElement("span");
+            span.textContent = (o.plazo_min && o.plazo_max)
+                ? "Llega en " + o.plazo_min + " a " + o.plazo_max + " días hábiles"
+                : "";
+
+            txt.appendChild(strong);
+            txt.appendChild(span);
+            box.appendChild(txt);
+            label.appendChild(input);
+            label.appendChild(box);
+            cajaEnvio.appendChild(label);
+        });
+        seleccionarEnvio();
+    }
+
+    function mostrarEspera(texto) {
+        cajaEnvio.innerHTML = "";
+        var p = document.createElement("p");
+        p.className = "co-envio-estado";
+        p.textContent = texto;
+        cajaEnvio.appendChild(p);
+    }
+
+    function cotizarEnvio() {
+        var mi = ++reqEnvio;            // descarta respuestas viejas si siguió escribiendo
+        msgEnvio.hidden = true;
+        costoEnvio = null;
+
+        if (!/\d{4}/.test(inputCP.value)) {
+            mostrarEspera(TEXTO_ESPERA);
+            actualizar();
+            return;
+        }
+
+        mostrarEspera("Calculando envío…");
+        actualizar();
+
+        fetch("{{ url_for('envio_cotizar') }}", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({cp: inputCP.value})
+        })
+        .then(function (r) {
+            return r.json().then(function (d) { return {ok: r.ok, d: d}; });
+        })
+        .then(function (res) {
+            if (mi !== reqEnvio) return;
+            if (!res.ok) throw new Error(res.d.error);
+            pintarOpciones(res.d.opciones);
+        })
+        .catch(function (e) {
+            if (mi !== reqEnvio) return;
+            mostrarEspera(TEXTO_ESPERA);
+            msgEnvio.textContent = (e && e.message)
+                ? e.message
+                : "No pudimos cotizar el envío. Podés continuar y te lo informamos.";
+            msgEnvio.hidden = false;
+            costoEnvio = null;
+            actualizar();
+        });
+    }
+
     radiosPago.forEach(function (r) { r.addEventListener("change", actualizar); });
-    radiosEntrega.forEach(function (r) { r.addEventListener("change", actualizar); });
+    radiosEntrega.forEach(function (r) {
+        r.addEventListener("change", actualizar);
+        r.addEventListener("change", function () {
+            // al pasar a "envío" con el CP ya escrito, cotiza si todavía no hay precio
+            if (r.checked && r.value === "envio" && costoEnvio === null && inputCP.value) cotizarEnvio();
+        });
+    });
+
+    inputCP.addEventListener("input", function () {
+        clearTimeout(timerCP);
+        timerCP = setTimeout(cotizarEnvio, 500);
+    });
 
     // --- Conservar lo que escribió al aplicar / quitar un cupón (la página se recarga) ---
     var KEY = "sopi_checkout_datos";
@@ -426,6 +560,10 @@ document.addEventListener("DOMContentLoaded", function () {
             } catch (err) {}
         });
     });
+
+    // Si volvió de aplicar un cupón con envío y CP ya cargados, se vuelve a cotizar
+    var entregaInicial = form.querySelector('input[name="modalidad_entrega"]:checked');
+    if (inputCP.value && entregaInicial && entregaInicial.value === "envio") cotizarEnvio();
 
     // Evita doble clic en el botón final
     form.addEventListener("submit", function () {
