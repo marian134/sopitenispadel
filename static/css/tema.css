@@ -1,0 +1,555 @@
+/* =========================================================
+   TEMA "NOCHE AZUL" (colores del manual de marca)
+   Fondo azul noche, títulos en Krona One, texto en Archivo,
+   naranja #E57E3C y amarillo pelota #EAE339 del manual. Se carga después de todo lo
+   demás y pisa colores y letras; las medidas no se tocan.
+   Los selectores empiezan con "html body" para ganarle a los
+   estilos que vienen dentro de cada plantilla.
+   ========================================================= */
+
+:root {
+    --bg: #060d1c;
+    --surface: #0d1830;
+    --surface-2: #13213d;
+    --line: #1c2b4a;
+    --line-2: #2a3d63;
+    --text: #ffffff;
+    --muted: #9fb0cc;
+    --lime: #E57E3C;       /* naranja de marca (el nombre quedó de la versión anterior) */
+    --amarillo: #EAE339;
+    --on-amarillo: #0b1530;
+    --verde: #8fb487;
+    --azul: #144280;
+    --lime-dark: #cf6a2a;
+    --on-lime: #ffffff;
+    --tenis-claro: #E57E3C;   /* naranja de marca */
+    --padel-claro: #4f8fe0;   /* azul de marca, más claro para leerse sobre el fondo */
+    --radio: 14px;
+    --f-titulo: "Krona One", Arial, sans-serif;
+    --f-boton: "Archivo", Arial, sans-serif;
+    --f-texto: "Archivo", Arial, Helvetica, sans-serif;
+
+    /* las variables viejas pasan a modo oscuro */
+    --black: #ffffff;
+    --white: #060d1c;
+    --cream: #13213d;
+    --gray: #9fb0cc;
+    --light-gray: #1c2b4a;
+    --sopi-red: #E57E3C;
+    color-scheme: dark;
+}
+
+html body[data-deporte="tenis"] { --accent: var(--tenis-claro); }
+html body[data-deporte="padel"] { --accent: var(--padel-claro); }
+
+/* ---------- Base ---------- */
+html body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--f-texto);
+}
+
+html body h1, html body h2, html body h3,
+html body .home-hero h1, html body .shop-hero h1,
+html body .product-title, html body .carrito-header h1,
+html body .pago-header h1, html body .co-head h1 {
+    font-family: var(--f-boton);
+    font-weight: 800;
+    letter-spacing: -.005em;
+    text-transform: uppercase;
+    color: var(--text);
+}
+
+html body a { color: inherit; }
+html body ::selection { background: var(--lime); color: var(--on-lime); }
+
+html body input, html body select, html body textarea {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--line-2);
+}
+html body input::placeholder, html body textarea::placeholder { color: #6f6f6a; }
+
+/* ---------- Barra de promos ---------- */
+html body .sopi-promo-bar {
+    background: var(--lime);
+    color: var(--on-lime);
+    border-bottom: 0;
+    font-family: var(--f-texto);
+    font-weight: 700;
+}
+html body .sopi-promo-bar i { color: var(--on-lime); }
+
+/* ---------- Cabecera ---------- */
+html body .nav {
+    background: rgba(6, 13, 28, .92);
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+}
+html body .nav-sport-link {
+    font-family: var(--f-boton);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text);
+}
+html body .nav-sport-link::after { background: var(--lime); }
+html body .nav-sport-link:hover,
+html body .nav-sport-link.activo { color: var(--lime); }
+html body .nav-cart, html body .nav-toggle, html body .nav-close { color: var(--text); }
+html body .nav-cart-count { background: var(--lime); color: var(--on-lime); }
+
+/* menú lateral del celular */
+html body .nav-drawer { background: var(--bg); color: var(--text); border-color: var(--line); }
+html body .nav-drawer a, html body .nav-acc-btn { color: var(--text); border-color: var(--line); }
+html body .nav-drawer a.activo,
+html body .nav-acc-btn[aria-expanded="true"],
+html body .nav-acc-panel { background: var(--surface); }
+html body .nav-acc-btn span { font-family: var(--f-boton); font-size: 20px; letter-spacing: .04em; text-transform: uppercase; }
+html body .nav-overlay { background: rgba(0, 0, 0, .7); }
+
+/* ---------- Botones generales: lima ---------- */
+html body .shop-add,
+html body .product-add-button,
+html body .btn-primary,
+html body .btn-checkout,
+html body .co-confirmar,
+html body .pago-metodos .btn-checkout,
+html body .carrito-seguir-comprando,
+html body .pago-resumen .carrito-seguir-comprando,
+html body .co-cupon-form button,
+html body .cupon-form button,
+html body .home-product-cart {
+    background: var(--lime);
+    border-color: var(--lime);
+    color: var(--on-lime);
+    border-radius: 10px;
+    font-family: var(--f-boton);
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+html body .shop-add:hover,
+html body .product-add-button:hover,
+html body .btn-primary:hover:not(:disabled),
+html body .btn-checkout:hover,
+html body .co-confirmar:hover,
+html body .pago-metodos .btn-checkout:hover,
+html body .carrito-seguir-comprando:hover,
+html body .pago-resumen .carrito-seguir-comprando:hover,
+html body .co-cupon-form button:hover,
+html body .cupon-form button:hover,
+html body .home-product-cart:hover {
+    background: var(--lime-dark);
+    border-color: var(--lime-dark);
+    color: var(--on-lime);
+}
+html body .btn-whatsapp { border-radius: 10px; }
+
+/* ---------- INICIO ---------- */
+html body .home-sopi { background: var(--bg); }
+
+/* carrusel */
+html body .bn-slide { background: var(--surface); }
+html body .bn-btn { background: var(--lime); color: var(--on-lime); border-radius: 999px; font-family: var(--f-boton); letter-spacing: .05em; text-transform: uppercase; }
+html body .bn-slide:hover .bn-btn, html body .bn-tile:hover .bn-btn { background: var(--lime-dark); }
+html body .bn-nav { background: rgba(6, 13, 28, .8); color: var(--text); }
+html body .bn-dots button.on { background: var(--lime); }
+
+/* portada: negro con dos franjas de color del deporte */
+html body .home-hero {
+    background:
+        radial-gradient(60% 80% at 100% 0%, rgba(56, 170, 240, .30), transparent 60%),
+        radial-gradient(60% 80% at 0% 100%, rgba(20, 66, 128, .55), transparent 65%),
+        var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+html body .home-eyebrow { color: var(--lime); font-weight: 700; letter-spacing: .14em; }
+html body .home-hero h1 { font-size: clamp(64px, 9vw, 128px); line-height: .88; }
+html body .home-hero h1 span { color: var(--lime); }
+html body .home-hero p { color: var(--muted); }
+html body .home-btn {
+    border-radius: 999px;
+    font-family: var(--f-boton);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    background: var(--lime);
+    color: var(--on-lime);
+}
+html body .home-btn:hover { background: var(--lime-dark); }
+html body .home-btn-padel {
+    background: transparent;
+    color: var(--text);
+    box-shadow: inset 0 0 0 2px var(--text);
+}
+html body .home-btn-padel:hover { background: var(--text); color: var(--bg); }
+html body .home-hero-side { border-color: var(--line-2); }
+html body .home-hero-side strong { font-family: var(--f-boton); font-size: 28px; letter-spacing: .02em; }
+html body .home-hero-side span { color: var(--muted); }
+html body .home-hero-side-number { color: var(--lime); }
+
+/* beneficios */
+html body .home-benefits { border-color: var(--line); }
+html body .home-benefit { border-color: var(--line); }
+html body .home-benefit-icon { color: var(--lime); }
+html body .home-benefit strong { font-family: var(--f-boton); font-size: 19px; letter-spacing: .04em; }
+html body .home-benefit span { color: var(--muted); }
+
+/* encabezados de sección */
+html body .home-section-heading > span { color: var(--lime); letter-spacing: .14em; font-weight: 700; }
+html body .home-section-heading h2 { font-size: clamp(40px, 5vw, 64px); line-height: .95; }
+html body .home-section-heading p { color: var(--muted); }
+
+/* tarjetas de deporte */
+html body .home-sport-card { border-radius: var(--radio); }
+html body .home-sport-tenis { background: linear-gradient(140deg, #E57E3C 0%, #7a3510 100%); }
+html body .home-sport-padel { background: linear-gradient(140deg, #144280 0%, #071a38 100%); }
+html body .home-sport-card h3 { font-family: var(--f-boton); font-size: 92px; letter-spacing: 0; }
+html body .home-sport-card strong { color: var(--lime); font-family: var(--f-boton); font-size: 18px; letter-spacing: .06em; }
+
+/* categorías del inicio */
+html body .home-cats-grid a {
+    border-color: var(--line-2);
+    border-radius: 999px;
+    background: var(--surface);
+}
+html body .home-cats-grid a:hover { border-color: var(--lime); color: var(--lime); }
+
+/* productos destacados del inicio */
+html body .home-product-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radio);
+    overflow: hidden;
+}
+html body .home-product-image { background: #fff; }
+html body .home-product-badge, html body .home-new-tag { background: var(--lime); color: var(--on-lime); }
+html body .home-new-perks span { background: var(--surface-2); color: var(--text); border-left-color: var(--lime); }
+html body .home-product-bottom strong { color: var(--text); font-family: var(--f-boton); font-size: 26px; }
+html body .home-product-info p { color: var(--muted); }
+html body .home-products .home-products-link a { border-radius: var(--radio); border-bottom: 0; font-family: var(--f-boton); letter-spacing: .05em; }
+html body .home-products .home-products-link .link-tenis { background: linear-gradient(115deg, #E57E3C 0%, #8a3f17 100%); }
+html body .home-products .home-products-link .link-padel { background: linear-gradient(115deg, #144280 0%, #071a38 100%); }
+
+/* marca y llamado final */
+html body .home-brand { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+html body .home-brand-content > span { color: var(--lime); }
+html body .home-brand-content h2 em { color: var(--lime); font-style: normal; }
+html body .home-brand-content p { color: var(--muted); }
+html body .home-brand-number { color: var(--line-2); font-family: var(--f-boton); }
+html body .home-cta { background: var(--lime); color: var(--on-lime); }
+html body .home-cta h2 { color: var(--on-lime); }
+html body .home-cta-content p { color: rgba(255, 255, 255, .85); }
+html body .home-cta-btn { background: var(--bg); color: var(--text); border-radius: 999px; font-family: var(--f-boton); letter-spacing: .05em; }
+html body .home-cta-btn:hover { background: #13213d; }
+
+/* ---------- CATÁLOGO ---------- */
+html body .shop-page { background: var(--bg); }
+html body .shop-hero-tenis {
+    background: linear-gradient(120deg, rgba(229, 126, 60, .55), rgba(6, 13, 28, 0) 70%), var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+html body .shop-hero-padel {
+    background: linear-gradient(120deg, rgba(20, 66, 128, .6), rgba(6, 13, 28, 0) 70%), var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+html body .shop-hero h1 { font-size: clamp(56px, 8vw, 110px); line-height: .9; }
+html body .shop-hero p { color: var(--muted); }
+html body .shop-hero-action a { background: var(--lime); color: var(--on-lime); border-radius: 999px; }
+html body .shop-kicker, html body .shop-count, html body .shop-intro { color: var(--muted); }
+html body .shop-toolbar, html body .shop-filter summary, html body .shop-sort { border-color: var(--line); }
+html body .shop-filter-menu { background: var(--surface); border-color: var(--line); }
+html body .shop-filter-menu a { color: var(--text); }
+html body .shop-filter-menu a:hover { background: var(--surface-2); }
+html body .shop-sort select { background: var(--bg); color: var(--text); }
+
+/* barra de categorías */
+html body .cat-btn { border-color: var(--line-2); border-radius: 999px; }
+html body .cat-btn:hover { border-color: var(--text); }
+html body .cat-btn.is-active { background: var(--accent, var(--lime)); border-color: var(--accent, var(--lime)); color: #fff; }
+html body .cat-count { background: rgba(255, 255, 255, .1); }
+html body .cat-group-label { font-family: var(--f-boton); font-size: 15px; letter-spacing: .08em; }
+html body .pag-btn { border-color: var(--line-2); border-radius: 10px; }
+html body .pag-btn[aria-current="page"] { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+
+/* tarjeta de producto */
+html body .shop-product-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radio);
+    overflow: hidden;
+    transition: border-color .2s ease, transform .2s ease;
+}
+html body .shop-product-card:hover { border-color: var(--line-2); transform: translateY(-3px); }
+html body .shop-product-image { background: #fff; }
+html body .shop-favorite { background: rgba(6, 13, 28, .75); color: var(--text); }
+html body .shop-badge-low { background: var(--lime); color: var(--on-lime); }
+html body .shop-badge-out { background: #3a3a3a; color: var(--text); }
+html body .shop-product-brand { color: var(--muted); letter-spacing: .1em; }
+html body .shop-product-name { color: var(--text); }
+html body .shop-product-price { color: var(--text); font-family: var(--f-boton); font-size: 24px; font-weight: 800; }
+html body .shop-placeholder { background: var(--surface-2); color: var(--muted); font-family: var(--f-boton); }
+html body .shop-empty { border-color: var(--line); }
+html body .shop-empty p { color: var(--muted); }
+
+/* catálogo en celular */
+html body .mf-crumbs, html body .mf-crumbs a { color: var(--muted); }
+html body .mf-crumbs strong { color: var(--text); }
+
+/* ---------- FICHA DE PRODUCTO ---------- */
+html body .product-page { background: var(--bg); }
+html body .product-back a { color: var(--muted); }
+html body .product-detail { background: var(--surface); border-color: var(--line); border-radius: var(--radio); }
+html body .product-main-image, html body .foto-grande img { background: #fff; border-radius: 12px; }
+html body .product-placeholder { color: var(--muted); }
+html body .product-brand, html body .marca { color: var(--muted); letter-spacing: .1em; }
+html body .product-title { font-size: clamp(36px, 4vw, 56px); line-height: .95; }
+html body .product-price { color: var(--lime); font-family: var(--f-boton); font-size: 44px; font-weight: 800; }
+html body .product-stock-ok { background: rgba(229, 126, 60, .12); color: var(--lime); }
+html body .product-stock-low { background: rgba(255, 170, 60, .14); color: #ffb35c; }
+html body .product-stock-out { background: rgba(255, 90, 90, .12); color: #ff8080; }
+html body .product-description, html body .product-extra, html body .product-extra-item { border-color: var(--line); }
+html body .product-description p, html body .descripcion { color: #c7c7c2; }
+html body .product-extra-item small { color: var(--muted); }
+html body .quantity-control { background: var(--surface-2); border-color: var(--line-2); border-radius: 10px; }
+html body .quantity-btn { color: var(--text); }
+html body .quantity-btn:hover { background: var(--line); }
+html body .quantity-control input { background: transparent; color: var(--text); }
+html body .ficha-tecnica th { background: var(--surface-2); color: var(--muted); }
+html body .ficha-tecnica td { border-color: var(--line); }
+html body .talle-opcion span { background: var(--surface-2); border-color: var(--line-2); color: var(--text); }
+html body .talle-opcion span:hover { border-color: var(--lime); }
+html body .talle-opcion input:checked + span { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+html body .talle-aviso { color: var(--muted); }
+html body .precio { color: var(--lime); }
+html body .breadcrumb { color: var(--muted); }
+
+/* ---------- CARRITO ---------- */
+html body .carrito-eyebrow { color: var(--lime); }
+html body .carrito-header h1 { color: var(--text); }
+html body .carrito-header p, html body .carrito-paso-siguiente { color: var(--muted); }
+html body .carrito-producto, html body .carrito-resumen, html body .carrito-vacio {
+    background: var(--surface);
+    border-color: var(--line);
+}
+html body .carrito-producto-imagen { background: #fff; }
+html body .carrito-producto-info h2, html body .carrito-precio-unitario,
+html body .carrito-subtotal strong, html body .carrito-resumen h2,
+html body .resumen-total, html body .carrito-vacio h2 { color: var(--text); }
+html body .carrito-marca, html body .resumen-linea, html body .carrito-vacio p,
+html body .carrito-subtotal > span { color: var(--muted); }
+html body .resumen-separador { background: var(--line); }
+html body .cantidad-control { background: var(--surface-2); border-color: var(--line-2); }
+html body .cantidad-btn { background: var(--surface-2); color: var(--text); }
+html body .cantidad-btn:hover { background: var(--line); }
+html body .cantidad-control input { background: transparent; color: var(--text); border-color: var(--line-2); }
+html body .carrito-eliminar { color: var(--muted); }
+html body .carrito-eliminar:hover { background: rgba(255, 90, 90, .12); color: #ff8080; }
+html body .btn-vaciar, html body .producto-volver {
+    background: transparent;
+    border-color: var(--line-2);
+    color: var(--muted);
+}
+html body .btn-vaciar:hover, html body .producto-volver:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---------- PAGO ---------- */
+html body .co-page { color: var(--text); }
+html body .co-head p, html body .co-envio-estado, html body .co-confirmar-ayuda,
+html body .co-opcion-texto span, html body .co-cupon-nota, html body .co-volver { color: var(--muted); }
+html body .co-volver:hover { color: var(--text); }
+html body .co-card, html body .co-resumen {
+    background: var(--surface);
+    border-color: var(--line);
+    box-shadow: none;
+}
+html body .co-num { background: var(--lime); color: var(--on-lime); }
+html body .co-opcion-box { background: var(--surface-2); border-color: var(--line-2); }
+html body .co-opcion:hover .co-opcion-box { border-color: #555; }
+html body .co-opcion-box::before { background: var(--bg); border-color: #666; }
+html body .co-opcion input:checked + .co-opcion-box { border-color: var(--lime); background: rgba(229, 126, 60, .06); }
+html body .co-opcion input:checked + .co-opcion-box::before {
+    border-color: var(--lime);
+    background: radial-gradient(circle, var(--lime) 0 45%, var(--bg) 50%);
+}
+html body .co-opcion input:disabled + .co-opcion-box { background: var(--surface); }
+html body .co-opcion-texto strong, html body .co-linea strong, html body .co-total { color: var(--text); }
+html body .co-etiqueta { background: rgba(229, 126, 60, .14); color: var(--lime); }
+html body .co-campo label { color: #d0d0cb; }
+html body .co-campo input, html body .co-cupon-form input {
+    background: var(--surface-2);
+    border-color: var(--line-2);
+    color: var(--text);
+}
+html body .co-campo input:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(229, 126, 60, .15); }
+html body .co-cupon-quitar { background: transparent; border-color: var(--line-2); color: var(--muted); }
+html body .co-cupon-detalle, html body .co-total { border-color: var(--line); }
+html body .co-cupon-detalle, html body .co-linea, html body .co-items li span:first-child,
+html body .co-cupon-ok span { color: #c7c7c2; }
+html body .co-cupon-ok strong, html body .co-linea.co-ahorro, html body .co-linea.co-ahorro strong { color: var(--lime); }
+html body .co-card.co-cupon--ok { border-color: rgba(229, 126, 60, .4); background: rgba(229, 126, 60, .05); }
+html body .co-nota { background: var(--surface-2); color: #c7c7c2; }
+html body .co-cupon-error, html body .cupon-error { color: #ff8080; }
+
+/* pantalla de pago vieja (por si alguna página todavía la usa) */
+html body .pago-metodos, html body .pago-resumen, html body .pago-opcion,
+html body .pago-metodos .cupon, html body .pago-metodos .datos-comprador {
+    background: var(--surface);
+    border-color: var(--line);
+}
+html body .pago-header h1, html body .pago-opcion strong, html body .pago-resumen h2,
+html body .pago-resumen .resumen-total, html body .cupon-titulo,
+html body .pago-descuento strong { color: var(--text); }
+html body .pago-header p, html body .pago-opcion span, html body .pago-resumen .resumen-linea,
+html body .pago-descuento { color: var(--muted); }
+html body .pago-descuento { background: var(--surface-2); }
+html body .pago-efectivo-total { background: rgba(229, 126, 60, .1); color: var(--lime); }
+html body .pago-efectivo-total strong { color: var(--lime); }
+
+/* ---------- Ventana de promo ---------- */
+html body .sp-overlay { --sp-ink: #f2f2f0; --sp-accent: #d4f03c; --sp-tint: #1f1f1f; background: rgba(0, 0, 0, .75); }
+html body .sp-card { background: var(--surface); border: 1px solid var(--line); }
+html body .sp-card h2, html body .sp-card h3 { font-family: var(--f-boton); }
+html body .sp-cta { color: var(--on-lime); border-radius: 999px; font-family: var(--f-boton); letter-spacing: .05em; }
+
+/* ---------- Pie ---------- */
+html body .footer { background: #040914; border-top: 1px solid var(--line); }
+html body .footer h3, html body .footer h4 { font-family: var(--f-boton); letter-spacing: .06em; }
+html body .footer-section p { color: var(--muted); }
+html body .footer-benefits { border-color: var(--line); }
+html body .footer-benefits i { color: var(--lime); }
+html body .footer-bottom { border-color: var(--line); }
+html body .social-icon:hover { color: var(--lime); }
+
+/* ---------- Ajustes finos ---------- */
+/* títulos grandes: sin el apretado de letras que tenían con Arial */
+html body .home-section-heading h2,
+html body .home-hero h1,
+html body .shop-hero h1,
+html body .home-brand-content h2,
+html body .home-cta h2,
+html body .product-title { letter-spacing: .005em; }
+
+/* la etiqueta "recién llegadas" es un span dentro del encabezado */
+html body .home-section-heading > span.home-new-tag {
+    color: var(--on-lime);
+    background: var(--lime);
+    border-radius: 999px;
+}
+
+/* nombre del producto en las tarjetas: letra normal, sin subrayado */
+html body .home-product-info h3,
+html body .home-product-info h3 a {
+    font-family: var(--f-texto);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
+    line-height: 1.3;
+}
+html body .home-product-info h3 a:hover { color: var(--lime); }
+html body .shop-product-name { text-decoration: none; font-weight: 600; }
+html body .shop-product-name:hover { color: var(--lime); }
+
+/* ficha de producto (plantilla product.html) */
+html body .header-sopi { border-bottom-color: var(--line); }
+html body .header-sopi h2 { color: var(--lime); }
+html body .producto-detalle h1 {
+    color: var(--text);
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: .95;
+    letter-spacing: .005em;
+}
+html body .stock-badge.ok { background: rgba(229, 126, 60, .12); color: var(--lime); }
+html body .stock-badge.bajo { background: rgba(255, 170, 60, .14); color: #ffb35c; }
+html body .stock-badge.sin { background: rgba(255, 90, 90, .12); color: #ff8080; }
+html body .form-cantidad label { color: var(--muted); }
+html body .form-cantidad input { background: var(--surface-2); border-color: var(--line-2); color: var(--text); border-radius: 10px; }
+html body .form-cantidad input:focus { border-color: var(--lime); }
+html body .btn-outline { color: var(--muted); border-color: var(--line-2); border-radius: 10px; }
+html body .placeholder { background: var(--surface-2); color: var(--muted); }
+
+/* menú lateral y filtros del celular (orden.css) */
+html body .nav-drawer,
+html body .nav-acc-btn,
+html body .mf-sheet { background: var(--bg); color: var(--text); }
+html body .nav-acc-btn[aria-expanded="true"] { background: var(--surface); }
+html body .nav-sub-btn { color: var(--text); }
+html body .nav-sub-panel { background: var(--surface-2); }
+html body .nav-drawer .nav-acc-panel a.nav-acc-all,
+html body .nav-drawer .nav-acc-panel a.nav-sub-genero small,
+html body .nav-drawer .nav-acc-panel a.nav-sub-genero.nav-sub-todo { color: var(--lime); }
+html body .mf-btn { background: var(--surface); color: var(--text); border-color: var(--line-2); }
+html body .mf-btn.is-on, html body .mf-pill.is-on { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+html body .mf-pill { border-color: var(--line-2); color: var(--text); background: transparent; }
+html body .mf-badge { background: var(--lime); color: var(--on-lime); }
+
+/* botones del inicio en celular: espacio entre texto y flecha */
+html body .home-btn { gap: 10px; }
+
+/* carrito: el total resalta */
+html body .resumen-linea.resumen-total,
+html body .resumen-linea.resumen-total strong { color: var(--text); }
+html body .carrito-producto-info h2 {
+    font-family: var(--f-texto);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+
+/* =========================================================
+   NOCHE AZUL: Krona One solo en los títulos grandes.
+   Es una letra ancha y de un solo grosor, por eso va en 400
+   y con tamaños más chicos que la condensada anterior.
+   ========================================================= */
+html body h1, html body h2, html body h3,
+html body .home-hero h1, html body .shop-hero h1,
+html body .home-section-heading h2, html body .home-brand-content h2,
+html body .home-cta h2, html body .home-sport-card h3,
+html body .product-title, html body .producto-detalle h1,
+html body .carrito-header h1, html body .pago-header h1, html body .co-head h1,
+html body .carrito-resumen h2, html body .sp-card h2, html body .sp-card h3 {
+    font-family: var(--f-titulo);
+    font-weight: 400;
+    letter-spacing: -.01em;
+    line-height: 1.08;
+}
+html body .home-hero h1 { font-size: clamp(38px, 6vw, 84px); }
+html body .shop-hero h1 { font-size: clamp(30px, 4.6vw, 64px); }
+html body .home-section-heading h2 { font-size: clamp(26px, 3.2vw, 42px); }
+html body .home-sport-card h3 { font-size: clamp(40px, 5vw, 64px); }
+html body .product-title, html body .producto-detalle h1 { font-size: clamp(24px, 2.8vw, 36px); }
+html body .home-cta h2, html body .home-brand-content h2 { font-size: clamp(26px, 3.2vw, 42px); }
+html body .carrito-header h1, html body .co-head h1, html body .pago-header h1 { font-size: clamp(26px, 3vw, 36px); }
+
+/* amarillo pelota para etiquetas y contador del carrito */
+html body .nav-cart-count,
+html body .home-product-badge,
+html body .home-section-heading > span.home-new-tag,
+html body .shop-badge-low,
+html body .mf-badge { background: var(--amarillo); color: var(--on-amarillo); }
+html body .home-eyebrow,
+html body .home-section-heading > span:not(.home-new-tag),
+html body .home-hero h1 span { color: var(--lime); }
+
+/* en el fondo azul, los precios de las tarjetas van en blanco y en la ficha en amarillo */
+html body .product-price, html body .precio { color: var(--amarillo); }
+
+/* "en stock" y descuentos en verde (no naranja) */
+html body .product-stock-ok, html body .stock-badge.ok,
+html body .co-etiqueta, html body .pago-efectivo-total { background: rgba(143, 180, 135, .14); color: var(--verde); }
+html body .co-cupon-ok strong, html body .co-linea.co-ahorro,
+html body .co-linea.co-ahorro strong, html body .pago-efectivo-total strong { color: var(--verde); }
+
+/* el botón "Ver pádel" del inicio va en azul de marca */
+html body .home-btn-padel { background: var(--azul); color: #fff; box-shadow: none; }
+html body .home-btn-padel:hover { background: #1b56a6; color: #fff; }
+
+/* barra de categorías: la marcada en pádel con el azul de marca */
+html body[data-deporte="padel"] .cat-btn.is-active { background: var(--azul); border-color: var(--azul); }
+
+/* "Explorar" en las tarjetas de deporte: amarillo, se lee sobre naranja y sobre azul */
+html body .home-sport-card strong { color: var(--amarillo); }

@@ -8,7 +8,7 @@
   <meta name="description" content="{% block meta_description %}Paletas, pelotas y accesorios de pádel y tenis con envíos a todo el país. Pagá con Mercado Pago o transferencia con 5% de descuento.{% endblock %}">
   <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large{% endblock %}">
   <link rel="canonical" href="{% block canonical %}{{ canonical_default }}{% endblock %}">
-  <meta name="theme-color" content="#0b1f3a">
+  <meta name="theme-color" content="#060d1c">
 
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
@@ -23,6 +23,9 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Krona+One&family=Archivo:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261117">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -72,6 +75,9 @@
   {% block jsonld %}{% endblock %}
 
   {% block head_extra %}{% endblock %}
+
+  {# Tema oscuro: va último para pisar al resto #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261118">
 </head>
 
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
@@ -123,7 +129,7 @@
       </button>
 
       <a href="{{ url_for('portada') }}" class="brand" aria-label="SOPI Sports - Inicio">
-        <img src="{{ url_for('static', filename='img/logo-sopi.png') }}"
+        <img src="{{ url_for('static', filename='img/logo-sopi-blanco.png') }}"
              alt="SOPI Sports" class="brand-logo"
              onerror="this.replaceWith(document.createTextNode('SOPI Sports'))">
       </a>
@@ -181,7 +187,7 @@
     <div class="nav-drawer-head">
       <a href="{{ url_for('portada') }}" class="brand" aria-label="SOPI Sports - Inicio"
          style="padding:0;border:0;">
-        <img src="{{ url_for('static', filename='img/logo-sopi.png') }}"
+        <img src="{{ url_for('static', filename='img/logo-sopi-blanco.png') }}"
              alt="SOPI Sports" class="brand-logo"
              onerror="this.replaceWith(document.createTextNode('SOPI Sports'))">
       </a>
