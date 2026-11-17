@@ -1063,11 +1063,17 @@ def carrito_agregar(producto_id):
         0
     )
 
-    if cantidad_actual < producto.stock:
+    # cantidad elegida en la ficha del producto (si no viene, suma 1)
+    try:
+        cantidad_pedida = int(request.form.get("cantidad", 1))
+    except ValueError:
+        cantidad_pedida = 1
+    cantidad_pedida = max(cantidad_pedida, 1)
 
-        carrito[clave] = (
-            cantidad_actual + 1
-        )
+    carrito[clave] = min(
+        cantidad_actual + cantidad_pedida,
+        producto.stock
+    )
 
     session["carrito"] = carrito
 
