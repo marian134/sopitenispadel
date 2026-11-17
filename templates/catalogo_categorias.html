@@ -24,7 +24,7 @@
           {# Categoría dividida en subcategorías: un grupo con un botón por subcategoría #}
           {% if grupo not in ns.hechos %}
             {% set ns.hechos = ns.hechos + [grupo] %}
-            <li class="cat-group">
+            <li class="cat-group{% for n2, p2 in secciones if n2 == primera and partes_seccion(n2)[0] == grupo %} is-open{% endfor %}">
               <p class="cat-group-label">{{ grupo }}</p>
               <ul>
                 {% for n2, p2 in secciones if partes_seccion(n2)[0] == grupo and partes_seccion(n2)[1] %}
@@ -140,7 +140,7 @@
     transition: color .15s, opacity .15s;
   }
   /* La categoría que estás mirando (Paletas, Pelotas...) se pinta del color del deporte */
-  .cat-group:has(.cat-btn.is-active) .cat-group-label {
+  .cat-group.is-open .cat-group-label {
     color: var(--accent, #0f766e);
     opacity: 1;
     font-weight: 800;
@@ -243,6 +243,10 @@
         var activo = b.dataset.target === id;
         b.classList.toggle('is-active', activo);
         b.setAttribute('aria-expanded', activo ? 'true' : 'false');
+      });
+      // Pinta el nombre de la categoría que contiene la marca/tipo elegido
+      layout.querySelectorAll('.cat-group').forEach(function (g) {
+        g.classList.toggle('is-open', !!g.querySelector('.cat-btn.is-active'));
       });
       if (actualizarHash) history.replaceState(null, '', '#' + id);
     }
