@@ -8,6 +8,7 @@ Uso (desde la raiz del proyecto, en Git Bash):
     py preparar_vieytes.py                   # busca el JSON mas reciente en ~/Downloads
     py preparar_vieytes.py RUTA_AL_JSON      # o un JSON puntual
     py preparar_vieytes.py --sin-fotos       # solo arma el CSV (para revisar nombres)
+    py preparar_vieytes.py vieytes_hombre.json --solo-mujer   # solo la indumentaria de mujer
 Genera indumentaria_vieytes.csv y deja las fotos en static/img/ (minuscula, .jpg).
 Despues se carga el CSV en /admin/precios y las fotos se suben con git.
 """
@@ -21,7 +22,8 @@ MARCA = "Head"
 DEPORTE = "Tenis"
 STOCK = 5                 # stock fijo por producto, como en los demas Head
 FACTOR_LISTA = 1.9        # precio de venta = precio de lista (tachado) x 1.9, redondeado a $10
-INCLUIR_MUJER = False     # True para sumar tambien los productos "W ..." (Indumentaria Mujer)
+INCLUIR_MUJER = True      # False para dejar afuera los productos "W ..." (Indumentaria Mujer)
+TALLES_JSON = "vieytes_talles.json"   # stock por talle (ver talles_vieytes.py); si no esta, va sin talles
 
 # Ya cargados en la tienda: se saltean (ni CSV ni foto).
 YA_CARGADOS = {"1021630", "1021660", "721922", "721868", "1021607", "1021611"}
@@ -47,7 +49,8 @@ COLORES = [  # de mas largo a mas corto; se busca al final del nombre
     ("ALIGHT LILAC", "lila"), ("LIGHTLIME", "lima"), ("CYCLAM", "ciclamen"),
     ("BLACK", "negro"), ("WHITE", "blanco"), ("ROYAL", "azul"), ("NAVY", "azul marino"),
     ("RED", "rojo"), ("ORANGE", "naranja"), ("GREY", "gris"), ("GREEN", "verde"),
-    ("BK", "negro"), ("WH", "blanco"),
+    ("XWZI", "blanco y lila"),
+    ("BK", "negro"), ("WH", "blanco"), ("MA", "magenta"),
 ]
 
 
@@ -102,10 +105,16 @@ def bajar_foto(url, destino):
     fondo.convert("RGB").save(destino, "JPEG", quality=90, optimize=True)
 
 
-def main(ruta_json, con_fotos):
+def main(ruta_json, con_fotos, solo_mujer=False):
     productos = json.load(open(ruta_json, encoding="utf-8"))["productos"]
     print(f"JSON: {ruta_json.name} | productos: {len(productos)}")
 
+    talles = {}
+    if Path(TALLES_JSON).exists():
+        talles = json.load(open(TALLES_JSON, encoding="utf-8"))
+        print(f"Talles: {TALLES_JSON} | productos con talles: {len(talles)}")
+
+    salida = SALIDA.replace(".csv", "_mujer.csv") if solo_mujer else SALIDA
     filas, vistos, dudosos, fallidas = [], set(), [], []
     DESTINO.mkdir(parents=True, exist_ok=True)
     for p in productos:
@@ -117,6 +126,8 @@ def main(ruta_json, con_fotos):
         if nombre in vistos:
             nombre += f" {p['id']}"
         vistos.add(nombre)
+        if solo_mujer and categoria != "Indumentaria Mujer":
+            continue
         if dudoso:
             dudosos.append((p["nombre"], nombre))
         costo = int(p["precio"])
@@ -128,14 +139,17 @@ def main(ruta_json, con_fotos):
                 bajar_foto(p["imagen"], DESTINO / imagen)
             except Exception as e:
                 fallidas.append((nombre, str(e)[:60]))
-        filas.append([nombre, MARCA, DEPORTE, categoria, costo, precio, STOCK, imagen])
+        st = talles.get(p["id"]) or {}
+        texto_talles = " ".join(f"{t}:{c}" for t, c in st.items())
+        stock = sum(st.values()) if st else STOCK
+        filas.append([nombre, MARCA, DEPORTE, categoria, costo, precio, stock, imagen, texto_talles])
 
-    with open(SALIDA, "w", encoding="utf-8", newline="") as f:
+    with open(salida, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, delimiter=";", lineterminator="\n")
-        w.writerow(["nombre", "marca", "deporte", "categoria", "costo", "precio", "stock", "imagen"])
+        w.writerow(["nombre", "marca", "deporte", "categoria", "costo", "precio", "stock", "imagen", "talles"])
         w.writerows(filas)
 
-    print(f"CSV: {SALIDA} | filas: {len(filas)}")
+    print(f"CSV: {salida} | filas: {len(filas)}")
     if con_fotos:
         print(f"Fotos listas: {len(filas) - len(fallidas)} de {len(filas)} (en {DESTINO}/)")
     for n, e in fallidas:
@@ -155,4 +169,4 @@ if __name__ == "__main__":
         if not jsons:
             sys.exit("No encontre vieytes_hombre.json en ~/Downloads (pasa la ruta como argumento)")
         ruta = jsons[-1]
-    main(ruta, "--sin-fotos" not in sys.argv)
+    main(ruta, "--sin-fotos" not in sys.argv, "--solo-mujer" in sys.argv)
