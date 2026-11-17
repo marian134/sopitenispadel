@@ -142,7 +142,9 @@ def main():
         origen = carpeta_fotos and os.path.join(carpeta_fotos, f"{codigo}.webp")
         if origen and os.path.exists(origen):
             imagen = f"{slug(nombre)}.jpg"
-            convertir_foto(origen, os.path.join(base, "static", "img", imagen))
+            destino = os.path.join(base, "static", "img", imagen)
+            if not os.path.exists(destino):  # no pisar una foto que ya está en la tienda
+                convertir_foto(origen, destino)
         else:
             sin_foto.append(nombre)
         filas.append([nombre, marca, "Pádel", "Paletas", costo, "", STOCK[estado],
