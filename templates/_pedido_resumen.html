@@ -1,0 +1,61 @@
+{# Resumen de un pedido para el cliente. Recibe: pedido, resumen, entrega. #}
+<div class="pr-card">
+  <div class="pr-fila pr-cabecera">
+    <span>Pedido <strong>#{{ pedido.id }}</strong> · {{ pedido.creado_en|hora_ar }}</span>
+    {% if pedido.estado == "pagado" %}
+      <span class="pr-estado pr-ok">✔ Pago confirmado</span>
+    {% elif pedido.estado == "fallido" %}
+      <span class="pr-estado pr-mal">Cancelado</span>
+    {% else %}
+      <span class="pr-estado pr-pend">Pago pendiente</span>
+    {% endif %}
+  </div>
+
+  <ul class="pr-items">
+    {% for l in pedido.lineas %}
+    <li>
+      <span>{{ l.cantidad }} × {{ nombre_con_talle(l.nombre_producto, l.talle) }}</span>
+      <span>{{ (l.precio_unitario * l.cantidad)|pesos }}</span>
+    </li>
+    {% endfor %}
+    {% if resumen.envio %}
+    <li class="pr-sec"><span>Envío{% if pedido.servicio_envio %} ({{ pedido.servicio_envio }}){% endif %}</span><span>{{ resumen.envio|pesos }}</span></li>
+    {% endif %}
+    {% if resumen.descuento %}
+    <li class="pr-desc"><span>Descuento{% if pedido.medio_pago == "transferencia" %} por transferencia{% endif %}</span><span>-{{ resumen.descuento|pesos }}</span></li>
+    {% endif %}
+    <li class="pr-total"><span>Total</span><span>{{ pedido.total|pesos }}</span></li>
+  </ul>
+
+  <div class="pr-bloque">
+    <h3>Entrega</h3>
+    <p>{{ entrega }}</p>
+  </div>
+
+  <div class="pr-bloque">
+    <h3>Tus datos</h3>
+    <p>{{ pedido.nombre_cliente }} · {{ pedido.email_cliente }} · {{ pedido.telefono_cliente }}</p>
+  </div>
+</div>
+
+<style>
+  .pr-card { max-width: 640px; margin: 22px auto 0; text-align: left; background: var(--surface, #fff);
+             border: 1px solid var(--line, #e2e8f0); border-radius: 14px; padding: 18px 20px; }
+  .pr-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pr-cabecera { font-size: 14px; color: var(--muted, #64748b); padding-bottom: 12px; border-bottom: 1px solid var(--line, #e2e8f0); }
+  .pr-cabecera strong { color: var(--text, #102a43); }
+  .pr-estado { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; }
+  .pr-ok { background: rgba(143,180,135,.18); color: #8fb487; }
+  .pr-pend { background: rgba(229,126,60,.15); color: #E57E3C; }
+  .pr-mal { background: rgba(255,90,90,.12); color: #ff8080; }
+  .pr-items { list-style: none; margin: 0; padding: 6px 0 0; }
+  .pr-items li { display: flex; justify-content: space-between; gap: 14px; padding: 8px 0; font-size: 15px;
+                 border-bottom: 1px solid var(--line, #e2e8f0); }
+  .pr-items li span:last-child { white-space: nowrap; }
+  .pr-sec { color: var(--muted, #64748b); }
+  .pr-desc { color: #8fb487; }
+  .pr-total { font-size: 18px !important; font-weight: 800; border-bottom: 0 !important; }
+  .pr-bloque { margin-top: 12px; }
+  .pr-bloque h3 { margin: 0 0 4px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #64748b); }
+  .pr-bloque p { margin: 0; font-size: 15px; line-height: 1.5; }
+</style>

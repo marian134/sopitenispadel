@@ -4,6 +4,7 @@ import re
 import csv
 import io
 import hmac
+import secrets
 import unicodedata
 import mercadopago
 import correo_argentino as micorreo
@@ -196,20 +197,96 @@ def avisar_pedido_nuevo(pedido):
 
 
 def avisar_pago_confirmado(pedido):
-    """Avisa que Mercado Pago confirmó el cobro."""
-    cuerpo = "\n".join([
+    """Avisa que se confirmó el cobro (Mercado Pago o transferencia marcada en el panel)."""
+    lineas = [
         f"Pago confirmado para el pedido #{pedido.id}",
         "",
+        f"Cliente: {pedido.nombre_cliente or 'No informado'}",
+        f"Medio de pago: {pedido.medio_pago}",
         f"Total cobrado: ${pedido.total:,.0f}",
-        f"ID de pago de Mercado Pago: {pedido.mp_payment_id}",
-        "",
-        f"Panel de administración: {URL_PUBLICA}/admin/pedidos",
-    ])
+    ]
+    if pedido.mp_payment_id:
+        lineas.append(f"ID de pago de Mercado Pago: {pedido.mp_payment_id}")
+    lineas += ["", f"Panel de administración: {URL_PUBLICA}/admin/pedidos"]
 
     enviar_aviso_venta(
         f"SOPI: pago confirmado del pedido #{pedido.id}",
-        cuerpo,
+        "\n".join(lineas),
     )
+
+
+# =========================================================
+# MAILS AL CLIENTE
+# =========================================================
+
+def link_pedido(pedido):
+    """Link privado para que el cliente vea su pedido desde cualquier lado."""
+    if not pedido.token:
+        pedido.token = secrets.token_urlsafe(16)
+        db.session.commit()
+    return f"{URL_PUBLICA}/pedido/{pedido.id}/{pedido.token}"
+
+
+def resumen_pedido(pedido):
+    """Números del pedido para mostrarle al cliente (página y mails)."""
+    subtotal = sum(l.precio_unitario * l.cantidad for l in pedido.lineas)
+    envio = pedido.costo_envio or 0
+    descuento = max(0, subtotal + envio - pedido.total)
+    return {"subtotal": subtotal, "envio": envio, "descuento": descuento}
+
+
+def texto_entrega(pedido):
+    if pedido.modalidad_entrega == "envio":
+        if pedido.servicio_envio and pedido.servicio_envio != "A coordinar":
+            servicio = pedido.servicio_envio
+            if "correo" not in servicio.lower():
+                servicio = f"Correo Argentino ({servicio})"
+            return (f"Envío por {servicio} a "
+                    f"{pedido.direccion}, {pedido.localidad}, {pedido.provincia} "
+                    f"(CP {pedido.codigo_postal}). Te mandamos el número de seguimiento "
+                    "cuando lo despachemos.")
+        return (f"Envío por Correo Argentino a {pedido.direccion}, {pedido.localidad}, "
+                f"{pedido.provincia} (CP {pedido.codigo_postal}). Te escribimos para "
+                "confirmar el costo del envío.")
+    return "Retiro en Quilmes. Te escribimos para coordinar día y horario."
+
+
+def avisar_cliente(pedido, motivo):
+    """Mail al comprador. motivo: 'recibido' (transferencia, con los datos para
+    pagar) o 'pagado' (pago confirmado). Si falla, la compra sigue igual."""
+    if not pedido.email_cliente:
+        return False
+    if not app.config.get("MAIL_USERNAME") or not app.config.get("MAIL_PASSWORD"):
+        app.logger.warning("Falta configurar las credenciales de Gmail")
+        return False
+
+    if motivo == "pagado":
+        asunto = f"SOPI Sports: confirmamos el pago de tu pedido #{pedido.id}"
+    else:
+        asunto = f"SOPI Sports: recibimos tu pedido #{pedido.id}"
+
+    datos = dict(
+        pedido=pedido,
+        motivo=motivo,
+        resumen=resumen_pedido(pedido),
+        entrega=texto_entrega(pedido),
+        link=link_pedido(pedido),
+        transferencia=DATOS_TRANSFERENCIA,
+        whatsapp=WHATSAPP_VENDEDOR,
+    )
+    try:
+        mensaje = Message(
+            subject=asunto,
+            recipients=[pedido.email_cliente],
+            reply_to=VENTAS_EMAIL or None,
+            body=render_template("email_pedido.txt", **datos),
+            html=render_template("email_pedido.html", **datos),
+        )
+        mail.send(mensaje)
+        return True
+    except Exception:
+        app.logger.exception("Error enviando mail al cliente del pedido %s", pedido.id)
+        return False
 
 # =========================================================
 # BASE DE DATOS
@@ -296,6 +373,7 @@ with app.app_context():
         "codigo_postal": "VARCHAR(20)",
         "costo_envio": "INTEGER",
         "servicio_envio": "VARCHAR(80)",
+        "token": "VARCHAR(40)",
     }
 
     for nombre_columna, tipo_columna in nuevas_columnas_pedidos.items():
@@ -1678,6 +1756,7 @@ def crear_pedido(
         codigo_postal=datos_cliente.get("codigo_postal"),
         costo_envio=int(costo_envio or 0),
         servicio_envio=servicio_envio,
+        token=secrets.token_urlsafe(16),
     )
 
     for item in items:
@@ -1736,6 +1815,46 @@ def confirmar_pago(pedido):
     db.session.commit()
 
 
+def registrar_pago(pedido):
+    """Confirma el pago (una sola vez) y avisa a la tienda y al cliente.
+    Devuelve True si el pedido recién pasó a pagado."""
+    if pedido.estado == ESTADO_PAGADO:
+        return False
+    confirmar_pago(pedido)
+    avisar_pago_confirmado(pedido)
+    avisar_cliente(pedido, "pagado")
+    return True
+
+
+def procesar_pago_mp(payment_id):
+    """Consulta un pago a la API de Mercado Pago (no se confía en lo que manda el
+    navegador ni el aviso) y actualiza su pedido. Devuelve el pedido o None."""
+    if mp is None or not payment_id:
+        return None
+    r = mp.payment().get(payment_id)
+    if r.get("status") != 200:
+        raise RuntimeError(f"Mercado Pago respondió {r.get('status')}")
+    pago = r["response"]
+    try:
+        pedido = db.session.get(Pedido, int(pago.get("external_reference") or 0))
+    except ValueError:
+        return None
+    if not pedido or pedido.medio_pago != "mercadopago":
+        return None
+
+    pedido.mp_payment_id = str(payment_id)
+    estado_mp = pago.get("status")
+    if estado_mp == "approved":
+        if float(pago.get("transaction_amount") or 0) >= pedido.total:
+            registrar_pago(pedido)
+        else:
+            app.logger.error("Monto pagado menor al del pedido %s", pedido.id)
+    elif estado_mp in ("rejected", "cancelled") and pedido.estado != ESTADO_PAGADO:
+        pedido.estado = ESTADO_FALLIDO
+    db.session.commit()
+    return pedido
+
+
 def pagar_con_mercadopago(
     items,
     total,
@@ -1771,6 +1890,11 @@ def pagar_con_mercadopago(
             for i in items
         ],
         "external_reference": str(pedido.id),
+        "payer": {
+            "name": pedido.nombre_cliente or "",
+            "email": pedido.email_cliente or "",
+        },
+        "statement_descriptor": "SOPI SPORTS",
         "back_urls": {
             "success": f"{URL_PUBLICA}/pago/exitoso",
             "failure": f"{URL_PUBLICA}/pago/fallido",
@@ -1918,10 +2042,10 @@ def carrito_pagar():
     # MOSTRAR PANTALLA DE PAGO
     # -----------------------------------------------------
 
-    if request.method == "GET":
-
+    def mostrar_pago(error_form=None):
         return render_template(
             "pago.html",
+            error_form=error_form,
             **contexto,
             items=items,
             total=total,
@@ -1934,7 +2058,11 @@ def carrito_pagar():
             hay_pack=any(es_pack(i["producto"]) for i in items),
             error_cupon=error_cupon,
             descuento_transferencia=DESCUENTO_TRANSFERENCIA * 100,
-        )
+        ), (400 if error_form else 200)
+
+    if request.method == "GET":
+        return mostrar_pago()
+
     # -----------------------------------------------------
     # DATOS DEL FORMULARIO
     # -----------------------------------------------------
@@ -1942,10 +2070,10 @@ def carrito_pagar():
     modalidad_entrega = request.form.get("modalidad_entrega")
 
     if medio_pago not in ("mercadopago", "transferencia"):
-        return redirect(url_for("carrito_pagar"))
+        return mostrar_pago("Elegí cómo querés pagar.")
 
     if modalidad_entrega not in ("retiro", "envio"):
-        return redirect(url_for("carrito_pagar"))
+        return mostrar_pago("Elegí cómo querés recibir tu pedido.")
 
     # Leer los datos del comprador.
     datos_cliente = {
@@ -1965,11 +2093,11 @@ def carrito_pagar():
         datos_cliente["email_cliente"],
         datos_cliente["telefono_cliente"],
     )):
-        return "Completá tu nombre, email y teléfono para continuar.", 400
+        return mostrar_pago("Completá tu nombre, email y teléfono para continuar.")
 
     email = datos_cliente["email_cliente"]
     if "@" not in email or "." not in email.rsplit("@", 1)[-1]:
-        return "Ingresá un email válido para continuar.", 400
+        return mostrar_pago("Revisá tu email: parece que tiene un error.")
 
     if modalidad_entrega == "envio":
         if not all((
@@ -1978,14 +2106,12 @@ def carrito_pagar():
             datos_cliente["provincia"],
             datos_cliente["codigo_postal"],
         )):
-            return (
-                "Para el envío, completá dirección, localidad, "
-                "provincia y código postal.",
-                400,
+            return mostrar_pago(
+                "Para el envío, completá dirección, localidad, provincia y código postal."
             )
 
         if not normalizar_cp(datos_cliente["codigo_postal"]):
-            return "Ingresá un código postal válido (4 números).", 400
+            return mostrar_pago("Ingresá un código postal válido (4 números).")
 
 
     # -----------------------------------------------------
@@ -1994,10 +2120,10 @@ def carrito_pagar():
 
     for item in items:
         if item["cantidad"] > item["stock_disponible"]:
-            return (
-                f"No hay stock suficiente de "
-                f"{nombre_con_talle(item['producto'].nombre, item['talle'])}.",
-                400
+            return mostrar_pago(
+                f"Ya no queda stock suficiente de "
+                f"{nombre_con_talle(item['producto'].nombre, item['talle'])}. "
+                "Ajustá la cantidad en el carrito."
             )
 
     session["modalidad_entrega"] = modalidad_entrega
@@ -2029,6 +2155,11 @@ def carrito_pagar():
             costo_envio=costo_envio,
             servicio_envio=servicio_envio,
         )
+        if isinstance(respuesta, tuple):  # no se pudo iniciar el pago
+            return mostrar_pago(
+                "No pudimos conectar con Mercado Pago. Probá de nuevo en un momento "
+                "o elegí pagar por transferencia."
+            )
         session.pop("cupon", None)
         return respuesta
 
@@ -2062,6 +2193,7 @@ def carrito_pagar():
         servicio_envio=servicio_envio,
     )
     session.pop("cupon", None)
+    avisar_cliente(pedido, "recibido")
 
     # -----------------------------------------------------
     # GUARDAR DATOS DE ENTREGA
@@ -2087,6 +2219,19 @@ def carrito_pagar():
 # =========================================================
 # DETALLE DE PEDIDO
 # =========================================================
+
+@app.route("/pedido/<int:pedido_id>/<token>")
+def pedido_con_link(pedido_id, token):
+    """Link privado del mail: deja ver el pedido desde cualquier dispositivo."""
+    pedido = db.session.get(Pedido, pedido_id)
+    if not pedido or not pedido.token or not hmac.compare_digest(pedido.token, token):
+        abort(404)
+    pedidos = session.get("pedidos", [])
+    if pedido_id not in pedidos:
+        pedidos.append(pedido_id)
+        session["pedidos"] = pedidos
+    return redirect(url_for("pedido_detalle", pedido_id=pedido_id))
+
 
 @app.route("/pedido/<int:pedido_id>")
 def pedido_detalle(pedido_id):
@@ -2189,6 +2334,10 @@ def pedido_detalle(pedido_id):
 
         "medio_pago_descripcion": medio_pago_descripcion,
 
+        "resumen": resumen_pedido(pedido),
+
+        "entrega": texto_entrega(pedido),
+
     })
 
     return render_template(
@@ -2211,11 +2360,33 @@ def resultado_pago(estado):
         session["carrito"] = {}
         session.modified = True
 
+    # Mercado Pago vuelve con el número de pedido (external_reference) y el pago.
+    # Solo se muestra si el pedido se creó en este navegador.
+    pedido = None
+    try:
+        pedido_id = int(request.args.get("external_reference") or 0)
+    except ValueError:
+        pedido_id = 0
+    if pedido_id and pedido_id in session.get("pedidos", []):
+        pedido = db.session.get(Pedido, pedido_id)
+
+    # Si volvió aprobado y el aviso de MP todavía no llegó, se confirma ya
+    # consultando el pago a Mercado Pago (nunca con lo que dice la URL).
+    if pedido and estado == "exito" and pedido.estado != ESTADO_PAGADO:
+        try:
+            procesar_pago_mp(request.args.get("payment_id"))
+        except Exception:
+            app.logger.exception("No se pudo confirmar el pago al volver de MP")
+        db.session.refresh(pedido)
+
     contexto = obtener_contexto_base()
 
     return render_template(
         "pago_resultado.html", **contexto,
         estado=estado,
+        pedido=pedido,
+        resumen=resumen_pedido(pedido) if pedido else None,
+        entrega=texto_entrega(pedido) if pedido else None,
         payment_id=request.args.get("payment_id"),
         status=request.args.get("status"),
     )
@@ -2247,44 +2418,19 @@ def mp_webhook():
         return "", 200
 
     data = request.get_json(silent=True) or {}
-    tipo = request.args.get("type") or data.get("type")
-    payment_id = request.args.get("data.id") or (data.get("data") or {}).get("id")
+    # Formato nuevo (type / data.id) y el viejo de IPN (topic / id)
+    tipo = request.args.get("type") or request.args.get("topic") or data.get("type")
+    payment_id = (request.args.get("data.id") or (data.get("data") or {}).get("id")
+                  or (request.args.get("id") if tipo == "payment" else None))
 
     if tipo != "payment" or not payment_id:
         return "", 200
 
-    # Se consulta el pago a la API de MP: no se confía en lo que llega en el POST
-    r = mp.payment().get(payment_id)
-    if r.get("status") != 200:
-        return "", 500  # MP reintenta
-
-    pago = r["response"]
-
     try:
-        pedido = db.session.get(Pedido, int(pago.get("external_reference") or 0))
-    except ValueError:
-        return "", 200
-
-    if not pedido or pedido.medio_pago != "mercadopago":
-        return "", 200
-
-    pedido.mp_payment_id = str(payment_id)
-    estado_mp = pago.get("status")
-
-    if estado_mp == "approved":
-        if float(pago.get("transaction_amount", 0)) >= pedido.total:
-            if pedido.estado != ESTADO_PAGADO:
-                confirmar_pago(pedido)
-                avisar_pago_confirmado(pedido)
-        else:
-            app.logger.error(
-                "Monto pagado menor al del pedido %s",
-                pedido.id,
-            )
-    elif estado_mp in ("rejected", "cancelled") and pedido.estado != ESTADO_PAGADO:
-        pedido.estado = ESTADO_FALLIDO
-
-    db.session.commit()
+        procesar_pago_mp(payment_id)
+    except RuntimeError:
+        app.logger.exception("No se pudo consultar el pago %s", payment_id)
+        return "", 500  # MP reintenta
     return "", 200
 
 # =========================================================
@@ -2491,7 +2637,7 @@ def admin_pedidos():
 @admin_requerido
 def admin_pedido_pagado(pedido_id):
     pedido = db.get_or_404(Pedido, pedido_id)
-    confirmar_pago(pedido)  # descuenta stock una sola vez
+    registrar_pago(pedido)  # descuenta stock una sola vez y avisa al cliente
     return redirect(url_for("admin_pedidos", estado=request.form.get("volver", "")))
 
 

@@ -102,6 +102,8 @@ class Pedido(db.Model):
     codigo_postal = db.Column(db.String(20), nullable=True)
     mp_payment_id = db.Column(db.String(50), nullable=True)
     mp_preference_id = db.Column(db.String(50), nullable=True)
+    # Código secreto del link que recibe el cliente por mail para ver su pedido
+    token = db.Column(db.String(40), nullable=True)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     actualizado_en = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow

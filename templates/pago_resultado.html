@@ -1,22 +1,56 @@
 {% extends "base.html" %}
+
 {% block title %}Resultado del pago{% endblock %}
+
+{% block robots %}noindex,nofollow{% endblock %}
+
 {% block content %}
+
 <div class="container">
+
   <div class="resultado-pago {{ estado }}">
-    {% if estado == "exito" %}
+
+    {% if estado == "exito" and pedido and pedido.estado == "pagado" %}
+      <div class="resultado-icono">✓</div>
+      <h1>¡Pago confirmado!</h1>
+      <p>Tu pedido <strong>#{{ pedido.id }}</strong> está confirmado y ya lo estamos preparando.</p>
+    {% elif estado == "exito" %}
       <div class="resultado-icono">✓</div>
       <h1>¡Gracias por tu compra!</h1>
-      <p>Estamos confirmando el pago con Mercado Pago. En un momento vas a recibir la confirmación definitiva.</p>
+      <p>Estamos terminando de confirmar el pago con Mercado Pago{% if pedido %} para tu pedido <strong>#{{ pedido.id }}</strong>{% endif %}. Te avisamos por mail apenas se acredite.</p>
     {% elif estado == "fallo" %}
       <div class="resultado-icono">✕</div>
       <h1>El pago no se pudo completar</h1>
-      <p>No se acreditó el pago. Podés volver a intentarlo desde tu carrito.</p>
+      <p>No se te cobró nada. Tus productos siguen en el carrito para que lo vuelvas a intentar.</p>
     {% else %}
       <div class="resultado-icono">…</div>
       <h1>Pago pendiente</h1>
-      <p>Tu pago está siendo procesado. Te vamos a confirmar apenas se acredite.</p>
+      <p>Tu pago está siendo procesado{% if pedido %} para el pedido <strong>#{{ pedido.id }}</strong>{% endif %}. Te avisamos por mail apenas se acredite.</p>
     {% endif %}
-    <a href="{{ url_for('portada') }}" class="btn btn-primary">Volver a la tienda</a>
+
+    {% if pedido and estado != "fallo" %}
+      {% if pedido.email_cliente %}
+      <p class="pr-aviso-mail">📩 El detalle te llega a <strong>{{ pedido.email_cliente }}</strong>. Si no lo ves, revisá la carpeta de spam.</p>
+      {% endif %}
+      {% include "_pedido_resumen.html" %}
+    {% endif %}
+
+    <div class="pr-botones">
+      {% if estado == "fallo" %}
+        <a href="{{ url_for('carrito_ver') }}" class="btn btn-primary">Volver al carrito</a>
+      {% elif pedido %}
+        <a href="{{ url_for('pedido_detalle', pedido_id=pedido.id) }}" class="btn btn-primary">Ver mi pedido</a>
+      {% endif %}
+      <a href="{{ url_for('portada') }}" class="btn btn-outline">Volver a la tienda</a>
+    </div>
+
   </div>
+
 </div>
+
+<style>
+  .pr-aviso-mail { font-size: 14px; color: var(--muted, #64748b); }
+  .pr-botones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+</style>
+
 {% endblock %}

@@ -553,3 +553,16 @@ html body[data-deporte="padel"] .cat-btn.is-active { background: var(--azul); bo
 
 /* "Explorar" en las tarjetas de deporte: amarillo, se lee sobre naranja y sobre azul */
 html body .home-sport-card strong { color: var(--amarillo); }
+
+/* ---------- Pedido y vuelta de Mercado Pago ---------- */
+html body .resultado-pago { max-width: 720px; margin: 40px auto 64px; padding: 0 16px; text-align: center; }
+html body .resultado-icono {
+    width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; background: rgba(229, 126, 60, .15); color: var(--lime);
+}
+html body .resultado-pago.exito .resultado-icono { background: rgba(143, 180, 135, .18); color: var(--verde); }
+html body .resultado-pago.fallo .resultado-icono { background: rgba(255, 90, 90, .12); color: #ff8080; }
+html body .resultado-pago h1 { font-size: clamp(24px, 3.4vw, 34px); margin: 0 0 10px; }
+html body .resultado-pago > p { color: #c7d2e6; font-size: 16px; line-height: 1.5; margin: 0 0 8px; }
+html body .pr-botones .btn { width: auto; display: inline-flex; align-items: center; padding: 13px 24px; border-radius: 999px; text-decoration: none; }

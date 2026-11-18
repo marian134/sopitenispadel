@@ -1,0 +1,21 @@
+{% if motivo == "pagado" %}¡Hola {{ pedido.nombre_cliente }}! Confirmamos el pago de tu pedido #{{ pedido.id }}.
+Ya lo estamos preparando.{% else %}¡Hola {{ pedido.nombre_cliente }}! Recibimos tu pedido #{{ pedido.id }}.
+Para confirmarlo, transferí {{ pedido.total|pesos }} a:
+  Titular: {{ transferencia.titular }}
+  CBU/CVU: {{ transferencia.cbu }}
+  Alias: {{ transferencia.alias }}
+y mandanos el comprobante por WhatsApp{% if whatsapp %} (+{{ whatsapp }}){% endif %} o respondiendo este mail.{% endif %}
+
+Tu pedido:
+{% for l in pedido.lineas %}  {{ l.cantidad }} x {{ nombre_con_talle(l.nombre_producto, l.talle) }}: {{ (l.precio_unitario * l.cantidad)|pesos }}
+{% endfor %}{% if resumen.envio %}  Envío: {{ resumen.envio|pesos }}
+{% endif %}{% if resumen.descuento %}  Descuento: -{{ resumen.descuento|pesos }}
+{% endif %}  Total: {{ pedido.total|pesos }}
+
+Entrega: {{ entrega }}
+
+Podés ver tu pedido cuando quieras en:
+{{ link }}
+
+Cualquier duda, respondé este mail o escribinos por WhatsApp.
+SOPI Sports · sopitenispadel.com.ar

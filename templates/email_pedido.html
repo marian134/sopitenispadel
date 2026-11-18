@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#eef1f6;font-family:Arial,Helvetica,sans-serif;color:#0f2a55;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f6;padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;">
+
+  <tr><td style="background:#060d1c;padding:18px 24px;">
+    <div style="height:4px;width:70px;background:#E57E3C;border-radius:2px;margin-bottom:8px;"></div>
+    <span style="color:#ffffff;font-size:24px;font-weight:900;font-style:italic;letter-spacing:-1px;">SOPI</span>
+    <span style="color:#E57E3C;font-size:11px;font-weight:700;letter-spacing:1px;margin-left:6px;">TENIS | PÁDEL</span>
+  </td></tr>
+
+  <tr><td style="padding:26px 24px 8px;">
+    {% if motivo == "pagado" %}
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#2e7d32;letter-spacing:.5px;">✔ PAGO CONFIRMADO</p>
+      <h1 style="margin:0 0 10px;font-size:22px;">¡Gracias, {{ pedido.nombre_cliente }}!</h1>
+      <p style="margin:0;font-size:15px;line-height:1.5;color:#3a4a66;">
+        Confirmamos el pago de tu pedido <strong>#{{ pedido.id }}</strong> y ya lo estamos preparando.
+      </p>
+    {% else %}
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#E57E3C;letter-spacing:.5px;">PEDIDO RECIBIDO</p>
+      <h1 style="margin:0 0 10px;font-size:22px;">¡Hola, {{ pedido.nombre_cliente }}!</h1>
+      <p style="margin:0;font-size:15px;line-height:1.5;color:#3a4a66;">
+        Recibimos tu pedido <strong>#{{ pedido.id }}</strong>. Para confirmarlo, transferí el total
+        y mandanos el comprobante.
+      </p>
+    {% endif %}
+  </td></tr>
+
+  {% if motivo != "pagado" and pedido.medio_pago == "transferencia" %}
+  <tr><td style="padding:16px 24px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff6ef;border:1px solid #f3cfb4;border-radius:10px;">
+      <tr><td style="padding:14px 16px;font-size:14px;line-height:1.7;">
+        <strong style="font-size:15px;">Transferí {{ pedido.total|pesos }}</strong><br>
+        Titular: <strong>{{ transferencia.titular }}</strong><br>
+        CBU/CVU: <strong>{{ transferencia.cbu }}</strong><br>
+        Alias: <strong>{{ transferencia.alias }}</strong>
+      </td></tr>
+    </table>
+  </td></tr>
+  {% endif %}
+
+  <tr><td style="padding:20px 24px 0;">
+    <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.5px;color:#55657f;">TU PEDIDO</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+      {% for l in pedido.lineas %}
+      <tr>
+        <td style="padding:7px 0;border-bottom:1px solid #e6eaf1;">{{ l.cantidad }} × {{ nombre_con_talle(l.nombre_producto, l.talle) }}</td>
+        <td align="right" style="padding:7px 0;border-bottom:1px solid #e6eaf1;white-space:nowrap;">{{ (l.precio_unitario * l.cantidad)|pesos }}</td>
+      </tr>
+      {% endfor %}
+      {% if resumen.envio %}
+      <tr><td style="padding:7px 0;color:#55657f;">Envío</td><td align="right" style="padding:7px 0;color:#55657f;">{{ resumen.envio|pesos }}</td></tr>
+      {% endif %}
+      {% if resumen.descuento %}
+      <tr><td style="padding:7px 0;color:#2e7d32;">Descuento</td><td align="right" style="padding:7px 0;color:#2e7d32;">-{{ resumen.descuento|pesos }}</td></tr>
+      {% endif %}
+      <tr><td style="padding:10px 0;font-size:17px;font-weight:700;">Total</td><td align="right" style="padding:10px 0;font-size:17px;font-weight:700;">{{ pedido.total|pesos }}</td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:8px 24px 0;">
+    <p style="margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.5px;color:#55657f;">ENTREGA</p>
+    <p style="margin:0;font-size:14px;line-height:1.5;">{{ entrega }}</p>
+  </td></tr>
+
+  <tr><td align="center" style="padding:24px;">
+    <a href="{{ link }}" style="display:inline-block;background:#E57E3C;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:999px;">Ver mi pedido</a>
+    {% if whatsapp %}
+    <p style="margin:14px 0 0;font-size:13px;color:#55657f;">
+      ¿Dudas? <a href="https://wa.me/{{ whatsapp }}?text={{ ('Hola! Te escribo por el pedido #' ~ pedido.id)|urlencode }}" style="color:#144280;font-weight:700;">Escribinos por WhatsApp</a> o respondé este mail.
+    </p>
+    {% endif %}
+  </td></tr>
+
+  <tr><td style="background:#f5f7fb;padding:14px 24px;font-size:12px;color:#7a879c;text-align:center;">
+    SOPI Sports · Tienda de tenis y pádel · sopitenispadel.com.ar
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
