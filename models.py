@@ -104,6 +104,10 @@ class Pedido(db.Model):
     mp_preference_id = db.Column(db.String(50), nullable=True)
     # Código secreto del link que recibe el cliente por mail para ver su pedido
     token = db.Column(db.String(40), nullable=True)
+    # Entrega (solo para pedidos pagados): None, 'preparando', 'enviado',
+    # 'listo' (para retirar) o 'entregado'. El pago sigue en `estado`.
+    entrega_estado = db.Column(db.String(20), nullable=True)
+    seguimiento = db.Column(db.String(60), nullable=True)  # código de Correo Argentino
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     actualizado_en = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow

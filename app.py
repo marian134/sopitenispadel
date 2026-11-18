@@ -262,6 +262,10 @@ def avisar_cliente(pedido, motivo):
 
     if motivo == "pagado":
         asunto = f"SOPI Sports: confirmamos el pago de tu pedido #{pedido.id}"
+    elif motivo == "enviado":
+        asunto = f"SOPI Sports: tu pedido #{pedido.id} está en camino"
+    elif motivo == "listo":
+        asunto = f"SOPI Sports: tu pedido #{pedido.id} está listo para retirar"
     else:
         asunto = f"SOPI Sports: recibimos tu pedido #{pedido.id}"
 
@@ -273,6 +277,7 @@ def avisar_cliente(pedido, motivo):
         link=link_pedido(pedido),
         transferencia=DATOS_TRANSFERENCIA,
         whatsapp=WHATSAPP_VENDEDOR,
+        url_seguimiento=URL_SEGUIMIENTO_CORREO,
     )
     try:
         mensaje = Message(
@@ -374,6 +379,8 @@ with app.app_context():
         "costo_envio": "INTEGER",
         "servicio_envio": "VARCHAR(80)",
         "token": "VARCHAR(40)",
+        "entrega_estado": "VARCHAR(20)",
+        "seguimiento": "VARCHAR(60)",
     }
 
     for nombre_columna, tipo_columna in nuevas_columnas_pedidos.items():
@@ -2338,6 +2345,8 @@ def pedido_detalle(pedido_id):
 
         "entrega": texto_entrega(pedido),
 
+        "url_seguimiento": URL_SEGUIMIENTO_CORREO,
+
     })
 
     return render_template(
@@ -2387,6 +2396,7 @@ def resultado_pago(estado):
         pedido=pedido,
         resumen=resumen_pedido(pedido) if pedido else None,
         entrega=texto_entrega(pedido) if pedido else None,
+        url_seguimiento=URL_SEGUIMIENTO_CORREO,
         payment_id=request.args.get("payment_id"),
         status=request.args.get("status"),
     )
@@ -2616,21 +2626,97 @@ def admin_logout():
     return redirect(url_for("portada"))
 
 
+# Un pedido sin pagar se cancela solo después de este tiempo (Mercado Pago
+# puede tardar hasta 3 días con pagos en efectivo; la transferencia, lo mismo).
+HORAS_VENCIMIENTO = 72
+
+# Página de seguimiento de Correo Argentino (el cliente pega ahí su código)
+URL_SEGUIMIENTO_CORREO = "https://www.correoargentino.com.ar/formularios/e-commerce"
+
+
+def vencer_pedidos_viejos():
+    """Cancela los pedidos pendientes de pago más viejos que HORAS_VENCIMIENTO."""
+    limite = datetime.utcnow() - timedelta(hours=HORAS_VENCIMIENTO)
+    viejos = Pedido.query.filter(Pedido.estado == ESTADO_PENDIENTE, Pedido.creado_en < limite).all()
+    for p in viejos:
+        p.estado = ESTADO_FALLIDO
+    if viejos:
+        db.session.commit()
+    return len(viejos)
+
+
+@app.template_filter("vence_en")
+def filtro_vence_en(creado_en):
+    """Horas que le quedan a un pedido pendiente antes de cancelarse solo."""
+    resto = creado_en + timedelta(hours=HORAS_VENCIMIENTO) - datetime.utcnow()
+    return max(0, int(resto.total_seconds() // 3600))
+
+
+# Filtros del panel: nombre -> (título, condición)
+FILTROS_PEDIDOS = {
+    "preparar": "Para preparar",
+    "pendiente": "Esperando pago",
+    "enviados": "Enviados / para retirar",
+    "entregados": "Entregados",
+    "fallido": "Cancelados",
+    "todos": "Todos",
+}
+
+
 @app.route("/admin/pedidos")
 @admin_requerido
 def admin_pedidos():
 
-    estado = request.args.get("estado", "")
+    vencidos = vencer_pedidos_viejos()
+    filtro = request.args.get("estado", "preparar")
+    if filtro not in FILTROS_PEDIDOS:
+        filtro = "todos"
+
+    pagado = Pedido.estado == ESTADO_PAGADO
+    condiciones = {
+        "preparar": pagado & (db.func.coalesce(Pedido.entrega_estado, "").in_(["", "preparando"])),
+        "pendiente": Pedido.estado == ESTADO_PENDIENTE,
+        "enviados": pagado & Pedido.entrega_estado.in_(["enviado", "listo"]),
+        "entregados": pagado & (Pedido.entrega_estado == "entregado"),
+        "fallido": Pedido.estado == ESTADO_FALLIDO,
+    }
+    cantidades = {k: Pedido.query.filter(c).count() for k, c in condiciones.items()}
 
     query = Pedido.query
-    if estado in (ESTADO_PENDIENTE, ESTADO_PAGADO, ESTADO_FALLIDO):
-        query = query.filter_by(estado=estado)
-
+    if filtro in condiciones:
+        query = query.filter(condiciones[filtro])
     pedidos = query.order_by(Pedido.creado_en.desc()).limit(200).all()
 
     contexto = obtener_contexto_base()
 
-    return render_template("admin_pedidos.html", **contexto, pedidos=pedidos, estado=estado)
+    return render_template(
+        "admin_pedidos.html", **contexto,
+        pedidos=pedidos, estado=filtro, filtros=FILTROS_PEDIDOS,
+        cantidades=cantidades, vencidos=vencidos, horas_vencimiento=HORAS_VENCIMIENTO,
+        resumen_pedido=resumen_pedido, url_seguimiento=URL_SEGUIMIENTO_CORREO,
+    )
+
+
+@app.route("/admin/pedidos/<int:pedido_id>/entrega", methods=["POST"])
+@admin_requerido
+def admin_pedido_entrega(pedido_id):
+    """Avanza la entrega de un pedido pagado y le avisa al cliente cuando
+    sale el envío o queda listo para retirar."""
+    pedido = db.get_or_404(Pedido, pedido_id)
+    paso = request.form.get("paso")
+    if pedido.estado != ESTADO_PAGADO or paso not in ("preparando", "enviado", "listo", "entregado"):
+        return redirect(url_for("admin_pedidos", estado=request.form.get("volver", "")))
+
+    if paso == "enviado":
+        codigo = re.sub(r"\s+", "", request.form.get("seguimiento") or "").upper()[:60]
+        pedido.seguimiento = codigo or pedido.seguimiento
+    anterior = pedido.entrega_estado
+    pedido.entrega_estado = paso
+    db.session.commit()
+
+    if paso in ("enviado", "listo") and anterior != paso:
+        avisar_cliente(pedido, paso)
+    return redirect(url_for("admin_pedidos", estado=request.form.get("volver", "")))
 
 
 @app.route("/admin/pedidos/<int:pedido_id>/pagado", methods=["POST"])

@@ -1,4 +1,7 @@
-{% if motivo == "pagado" %}¡Hola {{ pedido.nombre_cliente }}! Confirmamos el pago de tu pedido #{{ pedido.id }}.
+{% if motivo == "enviado" %}¡Hola {{ pedido.nombre_cliente }}! Tu pedido #{{ pedido.id }} ya salió por Correo Argentino.
+{% if pedido.seguimiento %}Número de seguimiento: {{ pedido.seguimiento }}
+Seguilo en: {{ url_seguimiento }}{% endif %}{% elif motivo == "listo" %}¡Hola {{ pedido.nombre_cliente }}! Tu pedido #{{ pedido.id }} está listo para retirar en Quilmes.
+Escribinos por WhatsApp para coordinar día y horario.{% elif motivo == "pagado" %}¡Hola {{ pedido.nombre_cliente }}! Confirmamos el pago de tu pedido #{{ pedido.id }}.
 Ya lo estamos preparando.{% else %}¡Hola {{ pedido.nombre_cliente }}! Recibimos tu pedido #{{ pedido.id }}.
 Para confirmarlo, transferí {{ pedido.total|pesos }} a:
   Titular: {{ transferencia.titular }}

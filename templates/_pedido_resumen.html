@@ -29,6 +29,17 @@
 
   <div class="pr-bloque">
     <h3>Entrega</h3>
+    {% if pedido.estado == "pagado" and pedido.entrega_estado %}
+    <p class="pr-entrega">
+      {% if pedido.entrega_estado == "preparando" %}📦 Estamos preparando tu pedido.
+      {% elif pedido.entrega_estado == "enviado" %}🚚 Tu pedido está en camino.
+        {% if pedido.seguimiento %}Número de seguimiento: <strong>{{ pedido.seguimiento }}</strong>
+        (<a href="{{ url_seguimiento }}" target="_blank" rel="noopener">seguilo en Correo Argentino</a>).{% endif %}
+      {% elif pedido.entrega_estado == "listo" %}✅ Tu pedido está listo para retirar. Escribinos para coordinar.
+      {% elif pedido.entrega_estado == "entregado" %}✔ Pedido entregado. ¡Gracias por tu compra!
+      {% endif %}
+    </p>
+    {% endif %}
     <p>{{ entrega }}</p>
   </div>
 
@@ -58,4 +69,6 @@
   .pr-bloque { margin-top: 12px; }
   .pr-bloque h3 { margin: 0 0 4px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #64748b); }
   .pr-bloque p { margin: 0; font-size: 15px; line-height: 1.5; }
+  .pr-entrega { margin-bottom: 6px !important; font-weight: 700; }
+  .pr-entrega a { color: var(--padel-claro, #4f8fe0); }
 </style>
