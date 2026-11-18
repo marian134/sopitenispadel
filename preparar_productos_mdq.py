@@ -34,8 +34,10 @@ def main():
         destino = os.path.join(base, "static", "img", imagen)
         if not os.path.exists(destino):  # no pisar una foto que ya está en la tienda
             convertir_foto(origen, destino)
-        filas.append([d["nombre"], d["marca"], "Pádel", categoria, d["costo"], "",
-                      STOCK[d["estado"]], imagen, plantilla.format(nombre=d["nombre"])])
+        # cada item puede traer su propia categoría y descripción en el datos.json
+        filas.append([d["nombre"], d["marca"], "Pádel", d.get("categoria") or categoria, d["costo"], "",
+                      STOCK[d["estado"]], imagen,
+                      d.get("descripcion") or plantilla.format(nombre=d["nombre"])])
 
     with open(os.path.join(base, salida), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
