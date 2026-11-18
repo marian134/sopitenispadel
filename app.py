@@ -597,6 +597,98 @@ def productos_destacados(deporte=None, cantidad=4):
     return query.order_by(Producto.id.desc()).limit(cantidad).all()
 
 
+# Productos que se muestran en "Lo más vendido" del inicio mientras la tienda
+# tiene pocas ventas propias. Elegidos por lo que más se vende en Mercado Libre
+# (nov. 2026). Se buscan por nombre exacto; si alguno no está o no tiene stock,
+# se saltea.
+MAS_VENDIDOS_BASE = {
+    "Pádel": [
+        "Nox AT10 Genius 18k Alum 2026",
+        "Adidas Metalbone HRD 3.5",
+        "Bullpadel Vertex 05 2026",
+        "Nox AT10 Pro Cup Soft 2026",
+        "Bullpadel Next x3",
+        "Head Padel Pro+ Tubo x3",
+    ],
+    "Tenis": [
+        "Pelotas Head Pro - Tubo x3",
+        "Pelotas Penn Premiere - Tubo x3",
+        "Head Speed Pro 2026",
+        "Raqueta Wilson Ultra 100 V5",
+        "Overgrip Tourna Grip XL x3",
+        "Raqueta Babolat Pure Drive 98 Gen11",
+    ],
+}
+
+
+def _visibles(deporte):
+    return Producto.query.filter(
+        Producto.deporte == deporte, Producto.stock > 0, con_foto()
+    )
+
+
+def mas_vendidos(deporte, cantidad=4):
+    """Lo más vendido de un deporte: primero lo que más unidades se vendió en
+    pedidos pagos de los últimos 90 días; si no alcanza, se completa con
+    MAS_VENDIDOS_BASE."""
+    desde = datetime.utcnow() - timedelta(days=90)
+    filas = (
+        db.session.query(LineaPedido.producto_id, db.func.sum(LineaPedido.cantidad))
+        .join(Pedido, Pedido.id == LineaPedido.pedido_id)
+        .filter(Pedido.estado == ESTADO_PAGADO, Pedido.creado_en >= desde,
+                LineaPedido.producto_id != None)   # noqa: E711
+        .group_by(LineaPedido.producto_id)
+        .order_by(db.func.sum(LineaPedido.cantidad).desc())
+        .limit(cantidad * 3)
+        .all()
+    )
+    visibles = {p.id: p for p in _visibles(deporte).filter(
+        Producto.id.in_([pid for pid, _ in filas] or [0])
+    )}
+    elegidos = [visibles[pid] for pid, _ in filas if pid in visibles][:cantidad]
+
+    for nombre in MAS_VENDIDOS_BASE.get(deporte, []):
+        if len(elegidos) >= cantidad:
+            break
+        p = _visibles(deporte).filter(db.func.lower(Producto.nombre) == nombre.lower()).first()
+        if p and p not in elegidos:
+            elegidos.append(p)
+    return elegidos
+
+
+def recien_llegados(deporte, cantidad=4, excluir=()):
+    """Lo último que entró de un deporte, con stock y foto: el producto más nuevo
+    de cada categoría, en el orden del menú (paletas y raquetas primero), para
+    que no salgan 4 gorras seguidas. Si hay menos categorías que lugares, se
+    completa con los siguientes más nuevos."""
+    nuevos = [p for p in _visibles(deporte).order_by(Producto.id.desc()).limit(400)
+              if p not in excluir]
+    primero_de_cada = {}
+    for p in nuevos:
+        primero_de_cada.setdefault(p.categoria, p)
+    elegidos = sorted(primero_de_cada.values(), key=lambda p: clave_categoria(p.categoria))[:cantidad]
+    for p in nuevos:
+        if len(elegidos) >= cantidad:
+            break
+        if p not in elegidos:
+            elegidos.append(p)
+    return elegidos
+
+
+def bloques_portada():
+    """Un bloque por deporte para el inicio: lo más vendido y lo recién llegado."""
+    bloques = []
+    for slug, deporte in NAV_DEPORTES.items():
+        top = mas_vendidos(deporte)
+        bloques.append({
+            "slug": slug,
+            "deporte": deporte,
+            "mas_vendidos": top,
+            "nuevos": recien_llegados(deporte, excluir=top),
+        })
+    return bloques
+
+
 def obtener_contexto_base(
     deporte_slug=None
 ):
@@ -1032,6 +1124,7 @@ def portada():
         popup=POPUP,
         banners=BANNERS,
         tiles=TILES,
+        bloques=bloques_portada(),
         **contexto
     )
 

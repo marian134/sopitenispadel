@@ -6,526 +6,164 @@
 
 {% block content %}
 
+{#
+   Inicio: carrusel, título corto, beneficios y un bloque por deporte
+   (pádel primero, que es lo que más se busca). Cada bloque muestra sus
+   categorías, lo más vendido y lo recién llegado. Los productos salen de
+   bloques_portada() en app.py.
+#}
+
+<style>
+    .home-hero.home-hero-corto { min-height: 0; padding: 56px 0 44px; }
+    .home-hero-corto .home-hero-content { display: block; }
+    .home-hero-corto h1 { margin: 12px 0 14px; }
+    .home-hero-corto p { max-width: 560px; margin: 0; }
+
+    .hb { width: min(1180px, 92%); margin: 64px auto 0; }
+    .hb + .hb { margin-top: 80px; }
+    .hb-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .hb-eyebrow { display: block; font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--accent); }
+    .hb-head h2 { margin: 6px 0 0; font-size: clamp(30px, 4vw, 48px); }
+    .hb-todo {
+        display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px;
+        border-radius: 999px; background: var(--accent); color: #fff;
+        font-weight: 800; font-size: 14px; letter-spacing: .04em; text-decoration: none;
+    }
+    .hb-todo:hover { filter: brightness(1.1); }
+    .hb-cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+    .hb-cats a {
+        padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-2, rgba(128,128,128,.35));
+        color: inherit; text-decoration: none; font-size: 14px; font-weight: 600;
+    }
+    .hb-cats a:hover { border-color: var(--accent); color: var(--accent); }
+    .hb-fila { margin-top: 30px; }
+    .hb-fila h3 {
+        margin: 0 0 14px; font-size: 18px; letter-spacing: .02em;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .hb-fila h3 span {
+        font-family: var(--f-texto, inherit); font-size: 11px; font-weight: 800; letter-spacing: .08em;
+        padding: 3px 9px; border-radius: 999px; background: var(--amarillo, #EAE339); color: var(--on-amarillo, #0b1530);
+    }
+    .hb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .hb-grid .shop-product-image { height: auto; aspect-ratio: 1 / 1; }
+    .hb-grid .shop-product-image img { width: 100%; height: 100%; object-fit: contain; }
+    @media (max-width: 900px) {
+        .hb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .hb { margin-top: 44px; }
+        .hb + .hb { margin-top: 56px; }
+        .home-hero.home-hero-corto { padding: 32px 0 24px; min-height: 0; }
+        /* beneficios en 2 x 2 para no ocupar media pantalla */
+        .home-sopi .home-benefits { grid-template-columns: 1fr 1fr; padding: 18px 0; }
+        .home-sopi .home-benefit { padding: 12px 8px; gap: 10px; border: 0; }
+        .home-sopi .home-benefit strong { font-size: 14px; }
+        .home-sopi .home-benefit span { font-size: 12px; }
+    }
+</style>
+
 <div class="home-sopi">
 {% include "_banner.html" %}
 
-<!-- HERO PRINCIPAL -->
+<!-- TÍTULO -->
 
-<section class="home-hero">
-
+<section class="home-hero home-hero-corto">
     <div class="home-hero-content">
-
         <div class="home-hero-copy">
-
-            <span class="home-eyebrow">
-                TIENDA ONLINE DE TENIS Y PÁDEL EN ARGENTINA
-            </span>
-
-            <h1>
-                TU JUEGO.
-                <br>
-                TU <span>DEPORTE.</span>
-            </h1>
-
+            <span class="home-eyebrow">TIENDA ONLINE DE TENIS Y PÁDEL EN ARGENTINA</span>
+            <h1>TU JUEGO. <br>TU <span>DEPORTE.</span></h1>
             <p>
                 Paletas, raquetas, pelotas y accesorios de tenis y pádel
                 para jugar, entrenar y competir. Envíos a todo el país.
             </p>
-
-            <div class="home-hero-buttons">
-
-                <a href="{{ url_for('catalogo_tenis') }}"
-                   class="home-btn home-btn-tenis">
-                    VER TENIS
-                    <span>→</span>
-                </a>
-
-                <a href="{{ url_for('catalogo_padel') }}"
-                   class="home-btn home-btn-padel">
-                    VER PÁDEL
-                    <span>→</span>
-                </a>
-
-            </div>
-
         </div>
-
-        <div class="home-hero-side">
-
-            <span class="home-hero-side-number">
-                01
-            </span>
-
-            <div>
-                <strong>TENIS</strong>
-                <span>RAQUETAS · PELOTAS · ACCESORIOS</span>
-            </div>
-
-            <div>
-                <strong>PÁDEL</strong>
-                <span>PALAS · PELOTAS · ACCESORIOS</span>
-            </div>
-
-        </div>
-
     </div>
-
 </section>
 
 
 <!-- BENEFICIOS -->
 
 <section class="home-benefits">
-
     <div class="home-benefit">
-
-        <div class="home-benefit-icon">
-            <i class="fas fa-credit-card"></i>
-        </div>
-
-        <div>
-            <strong>MERCADO PAGO</strong>
-            <span>Pagá de forma segura.</span>
-        </div>
-
+        <div class="home-benefit-icon"><i class="fas fa-credit-card"></i></div>
+        <div><strong>MERCADO PAGO</strong><span>Pagá de forma segura.</span></div>
     </div>
-
-
     <div class="home-benefit">
-
-        <div class="home-benefit-icon">
-            <i class="fas fa-university"></i>
-        </div>
-
-        <div>
-            <strong>TRANSFERENCIA</strong>
-            <span>5% de descuento.</span>
-        </div>
-
+        <div class="home-benefit-icon"><i class="fas fa-university"></i></div>
+        <div><strong>TRANSFERENCIA</strong><span>5% de descuento.</span></div>
     </div>
-
-
     <div class="home-benefit">
-
-        <div class="home-benefit-icon">
-            <i class="fas fa-truck"></i>
-        </div>
-
-        <div>
-            <strong>ENVÍOS</strong>
-            <span>Enviamos a todo el país.</span>
-        </div>
-
+        <div class="home-benefit-icon"><i class="fas fa-truck"></i></div>
+        <div><strong>ENVÍOS</strong><span>Enviamos a todo el país.</span></div>
     </div>
-
-
     <div class="home-benefit">
-
-        <div class="home-benefit-icon">
-            <i class="fab fa-whatsapp"></i>
-        </div>
-
-        <div>
-            <strong>ATENCIÓN</strong>
-            <span>Consultanos por WhatsApp.</span>
-        </div>
-
+        <div class="home-benefit-icon"><i class="fab fa-whatsapp"></i></div>
+        <div><strong>ATENCIÓN</strong><span>Consultanos por WhatsApp.</span></div>
     </div>
-
 </section>
 
 
-<!-- ELEGÍ TU DEPORTE -->
+<!-- UN BLOQUE POR DEPORTE (pádel primero) -->
 
-<section class="home-sports">
+{% for b in bloques|sort(attribute='slug') if b.mas_vendidos or b.nuevos %}
+<section class="hb" data-deporte="{{ b.slug }}" style="--accent: var(--{{ b.slug }}-claro, var(--{{ b.slug }}))">
 
-    <div class="home-section-heading">
-
-        <span>
-            DESCUBRÍ SOPI
-        </span>
-
-        <h2>
-            Elegí tu deporte
-        </h2>
-
-        <p>
-            Equipamiento seleccionado para entrenar,
-            competir y disfrutar.
-        </p>
-
+    <div class="hb-head">
+        <div>
+            <span class="hb-eyebrow">{{ b.deporte|upper }}</span>
+            <h2>{{ 'Todo para tu pádel' if b.slug == 'padel' else 'Todo para tu tenis' }}</h2>
+        </div>
+        <a class="hb-todo" href="{{ url_for('catalogo', deporte_slug=b.slug) }}">Ver todo {{ b.deporte|lower }} →</a>
     </div>
 
-
-    <div class="home-sports-grid">
-
-        <a href="{{ url_for('catalogo_tenis') }}"
-           class="home-sport-card home-sport-tenis">
-
-            <div class="home-sport-top">
-
-                <span class="home-sport-number">
-                    01
-                </span>
-
-                <span class="home-sport-arrow">
-                    ↗
-                </span>
-
-            </div>
-
-            <div class="home-sport-content">
-
-                <span class="home-sport-label">
-                    EQUIPAMIENTO
-                </span>
-
-                <h3>
-                    TENIS
-                </h3>
-
-                <p>
-                    Raquetas, pelotas, bolsos,
-                    grips y accesorios para tu juego.
-                </p>
-
-                <strong>
-                    EXPLORAR TENIS
-                    <span>→</span>
-                </strong>
-
-            </div>
-
-        </a>
-
-
-        <a href="{{ url_for('catalogo_padel') }}"
-           class="home-sport-card home-sport-padel">
-
-            <div class="home-sport-top">
-
-                <span class="home-sport-number">
-                    02
-                </span>
-
-                <span class="home-sport-arrow">
-                    ↗
-                </span>
-
-            </div>
-
-            <div class="home-sport-content">
-
-                <span class="home-sport-label">
-                    EQUIPAMIENTO
-                </span>
-
-                <h3>
-                    PÁDEL
-                </h3>
-
-                <p>
-                    Palas, pelotas, bolsos,
-                    grips y accesorios para todos los niveles.
-                </p>
-
-                <strong>
-                    EXPLORAR PÁDEL
-                    <span>→</span>
-                </strong>
-
-            </div>
-
-        </a>
-
-    </div>
-
-</section>
-
-
-<!-- COMPRÁ POR CATEGORÍA (enlaces directos a cada categoría) -->
-
-{% if nav_grupos %}
-
-<style>
-    .home-cats { max-width: 1200px; margin: 40px auto; padding: 0 16px; }
-    .home-cats-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
-    .home-cats-grid a {
-        padding: 10px 18px;
-        border: 1px solid rgba(128, 128, 128, .35);
-        border-radius: 999px;
-        text-decoration: none;
-        color: inherit;
-        font-weight: 600;
-        font-size: .95rem;
-        transition: border-color .15s;
-    }
-    .home-cats-grid a:hover { border-color: currentColor; }
-</style>
-
-<section class="home-cats">
-
-    <div class="home-section-heading">
-
-        <span>
-            COMPRÁ POR CATEGORÍA
-        </span>
-
-        <h2>
-            Todo para tu juego
-        </h2>
-
-    </div>
-
-    <div class="home-cats-grid">
-        {% for slug, nombre_deporte in nav_deportes.items() %}
-            {% for g in nav_grupos.get(slug, []) %}
-            <a href="{{ url_for('catalogo', deporte_slug=slug, categoria=g.valor) }}">
-                {{ g.nombre }} de {{ nombre_deporte|lower }}
-            </a>
-            {% endfor %}
+    {% if nav_grupos and nav_grupos.get(b.slug) %}
+    <nav class="hb-cats" aria-label="Categorías de {{ b.deporte|lower }}">
+        {% for g in nav_grupos.get(b.slug, []) %}
+        <a href="{{ url_for('catalogo', deporte_slug=b.slug, categoria=g.valor) }}">{{ g.nombre }}</a>
         {% endfor %}
-    </div>
+    </nav>
+    {% endif %}
 
-</section>
-
-{% endif %}
-
-
-<!-- PRODUCTOS DESTACADOS -->
-
-{% if destacados %}
-
-<section class="home-products">
-
-    <div class="home-section-heading">
-
-        <span class="home-new-tag">
-            ★ RECIÉN LLEGADAS
-        </span>
-
-        <h2>
-            Nuevos ingresos
-        </h2>
-
-        <div class="home-new-perks">
-            <span>✔ EN STOCK</span>
-            <span>🚚 ENVÍO GRATIS DESDE $150.000</span>
-            <span>💸 5% OFF POR TRANSFERENCIA</span>
+    {% if b.mas_vendidos %}
+    <div class="hb-fila">
+        <h3>Lo más vendido</h3>
+        <div class="hb-grid">
+            {% for p in b.mas_vendidos %}{% include '_tarjeta.html' %}{% endfor %}
         </div>
-
     </div>
+    {% endif %}
 
-
-    <div class="home-products-grid">
-
-        {% for p in destacados[:4] %}
-
-        <article class="home-product-card">
-
-            <a
-                href="{{ url_producto(p) }}"
-                class="home-product-image"
-            >
-
-                <span class="home-product-badge">NUEVA</span>
-
-                {% if p.imagen %}
-
-                <img
-                    src="{{ url_for('static', filename='img/' ~ p.imagen|lower) }}"
-                    alt="{{ p.nombre }}{% if p.marca and p.marca not in p.nombre %} {{ p.marca }}{% endif %}"
-                    width="700"
-                    height="700"
-                    loading="lazy"
-                    decoding="async"
-                >
-
-                {% else %}
-
-                <div class="home-product-placeholder">
-                    SIN IMAGEN
-                </div>
-
-                {% endif %}
-
-            </a>
-
-
-            <div class="home-product-info">
-
-                <div class="home-product-meta">
-
-                    <small>
-                        {{ p.deporte }}
-                    </small>
-
-                    {% if p.marca %}
-                    <span>
-                        {{ p.marca }}
-                    </span>
-                    {% endif %}
-
-                </div>
-
-
-                <h3>
-                    <a href="{{ url_producto(p) }}">
-                        {{ p.nombre }}
-                    </a>
-                </h3>
-
-
-                <div class="home-product-bottom">
-
-                    <strong>
-                        $ {{ "{:,.0f}".format(p.precio).replace(",", ".") }}
-                    </strong>
-
-
-                    {% if p.stock > 0 %}
-
-                    <form
-                        method="post"
-                        action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
-                    >
-
-                        <button
-                            type="submit"
-                            class="home-product-cart"
-                            title="Agregar al carrito"
-                            aria-label="Agregar {{ p.nombre }} al carrito"
-                        >
-                            <i class="fas fa-plus"></i>
-                        </button>
-
-                    </form>
-
-                    {% else %}
-
-                    <span class="home-product-out">
-                        SIN STOCK
-                    </span>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-        </article>
-
-        {% endfor %}
-
+    {% if b.nuevos %}
+    <div class="hb-fila">
+        <h3>Recién llegados <span>NUEVO</span></h3>
+        <div class="hb-grid">
+            {% for p in b.nuevos %}{% include '_tarjeta.html' %}{% endfor %}
+        </div>
     </div>
-
-
-    <div class="home-products-link">
-
-        <a href="{{ url_for('catalogo_tenis') }}" class="link-tenis">
-            <small>COLECCIÓN</small>
-            <strong>Catálogo de Tenis</strong>
-            <em>Raquetas, pelotas y accesorios</em>
-            <span>VER TODO →</span>
-        </a>
-
-        <a href="{{ url_for('catalogo_padel') }}" class="link-padel">
-            <small>COLECCIÓN</small>
-            <strong>Catálogo de Pádel</strong>
-            <em>Paletas, pelotas y accesorios</em>
-            <span>VER TODO →</span>
-        </a>
-
-    </div>
+    {% endif %}
 
 </section>
+{% endfor %}
 
-{% endif %}
 
-
-<!-- SOBRE SOPI -->
+<!-- SOBRE SOPI (ayuda a Google a entender qué vendemos) -->
 
 <section class="home-brand">
-
     <div class="home-brand-inner">
-
-        <div class="home-brand-number">
-            SOPI
-        </div>
-
+        <div class="home-brand-number">SOPI</div>
         <div class="home-brand-content">
-
-            <span>
-                SOBRE SOPI SPORTS
-            </span>
-
-            <h2>
-                Equipamiento para quienes
-                <em>viven el deporte.</em>
-            </h2>
-
-            <p>
-                Seleccionamos productos de tenis y pádel
-                pensando en jugadores que entrenan,
-                compiten y disfrutan cada partido.
-            </p>
-
+            <span>SOBRE SOPI SPORTS</span>
+            <h2>Equipamiento para quienes <em>viven el deporte.</em></h2>
             <p>
                 Trabajamos con clubes, profes y jugadores de todo el país:
-                paletas de pádel Adidas, Bullpadel, Nox y Siux, y pelotas,
-                raquetas y accesorios de tenis Head, Penn y Wilson.
+                paletas de pádel Adidas, Bullpadel, Nox, Head, Lok, Drop Shot y más,
+                y pelotas, raquetas y accesorios de tenis Head, Penn y Wilson.
                 Pagás con Mercado Pago o por transferencia con 5% de descuento,
                 y te lo enviamos a donde estés.
                 <a href="{{ url_for('quienes_somos') }}">Conocé más sobre SOPI</a>.
             </p>
-
         </div>
-
     </div>
-
 </section>
-
-
-<!-- CTA FINAL -->
-
-<section class="home-cta">
-
-    <div class="home-cta-content">
-
-        <span>
-            SOPI SPORTS
-        </span>
-
-        <h2>
-            Tu próximo partido
-            empieza acá.
-        </h2>
-
-        <p>
-            Encontrá el equipamiento que necesitás
-            para llevar tu juego al siguiente nivel.
-        </p>
-
-        <div class="home-cta-buttons">
-
-            <a href="{{ url_for('catalogo_tenis') }}"
-               class="home-cta-btn">
-                VER TENIS
-                <span>→</span>
-            </a>
-
-            <a href="{{ url_for('catalogo_padel') }}"
-               class="home-cta-btn">
-                VER PÁDEL
-                <span>→</span>
-            </a>
-
-        </div>
-
-    </div>
-
-</section>
-
 
 </div>
 {% include "_popup.html" %}
