@@ -63,8 +63,10 @@
       <!-- STOCK -->
       {% if producto.stock <= 0 %}
         <span class="stock-badge sin">Sin stock por el momento</span>
-      {% elif producto.stock <= 3 %}
-        <span class="stock-badge bajo">Últimas {{ producto.stock }} unidades</span>
+      {% elif producto.stock == 1 %}
+        <span class="stock-badge bajo">¡Última unidad!</span>
+      {% elif producto.stock == 2 %}
+        <span class="stock-badge bajo">Últimas 2 unidades</span>
       {% else %}
         <span class="stock-badge ok">✅ Disponible</span>
       {% endif %}

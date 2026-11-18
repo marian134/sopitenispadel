@@ -34,8 +34,10 @@
         </button>
 
         <!-- ETIQUETA -->
-        {% if p.stock <= 3 and p.stock > 0 %}
-        <span class="shop-badge shop-badge-low">ÚLTIMAS {{ p.stock }}</span>
+        {% if p.stock == 1 %}
+        <span class="shop-badge shop-badge-low">ÚLTIMA</span>
+        {% elif p.stock == 2 %}
+        <span class="shop-badge shop-badge-low">ÚLTIMAS 2</span>
         {% elif p.stock <= 0 %}
         <span class="shop-badge shop-badge-out">SIN STOCK</span>
         {% endif %}
