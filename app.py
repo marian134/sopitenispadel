@@ -530,7 +530,7 @@ def inyectar_nav_categorias():
         nav, nav_grupos = {}, {}
         for slug, nombre in NAV_DEPORTES.items():
             filas = (db.session.query(Producto.categoria)
-                     .filter(Producto.deporte == nombre)
+                     .filter(Producto.deporte == nombre, con_foto())
                      .distinct()
                      .all())
             nav[slug] = sorted({c for (c,) in filas if c}, key=clave_categoria)
@@ -548,7 +548,8 @@ def arbol_por_deporte():
      {'nombre': 'Indumentaria', 'hijos': [{'genero': 'Hombre', 'categoria': 'Indumentaria Hombre', 'subs': [...]},
                                           {'genero': 'Mujer', ...}]},
      {'nombre': 'Grips', 'hijos': [{'genero': None, 'categoria': 'Grips', 'subs': []}]}, ...]"""
-    filas = db.session.query(Producto.deporte, Producto.categoria, Producto.nombre, Producto.marca).all()
+    filas = (db.session.query(Producto.deporte, Producto.categoria, Producto.nombre, Producto.marca)
+             .filter(con_foto()).all())
     resultado = {}
     for slug, deporte in NAV_DEPORTES.items():
         productos = [
@@ -569,11 +570,27 @@ def arbol_por_deporte():
 # CONTEXTO BASE
 # =========================================================
 
+def fotos_disponibles():
+    """Nombres (en minúscula) de las fotos que hay en static/img."""
+    carpeta = os.path.join(app.static_folder, "img")
+    try:
+        return [f.lower() for f in os.listdir(carpeta)]
+    except OSError:
+        return []
+
+
+def con_foto():
+    """Condición para mostrar solo productos cuya foto existe de verdad.
+    Un producto sin foto, o con una foto que no está en static/img, no se
+    muestra en la tienda (catálogo, menú, inicio, ficha, sitemap y feed)."""
+    return db.func.lower(db.func.coalesce(Producto.imagen, "")).in_(fotos_disponibles())
+
+
 def productos_destacados(deporte=None, cantidad=4):
     """Últimos productos cargados, con stock y con foto."""
     query = Producto.query.filter(
         Producto.stock > 0,
-        db.func.coalesce(Producto.imagen, "") != "",
+        con_foto(),
     )
     if deporte:
         query = query.filter_by(deporte=deporte)
@@ -614,7 +631,7 @@ def obtener_productos_por_deporte(
 
     query = Producto.query.filter_by(
         deporte=NAV_DEPORTES[deporte_slug]
-    )
+    ).filter(con_foto())
 
     # Búsqueda
     if filtros.get("q"):
@@ -895,7 +912,7 @@ def obtener_categorias_y_marcas(
 
     productos = Producto.query.filter_by(
         deporte=NAV_DEPORTES[deporte_slug]
-    ).all()
+    ).filter(con_foto()).all()
 
     categorias = sorted(
         {p.categoria for p in productos if p.categoria},
@@ -1150,7 +1167,7 @@ def catalogo_padel():
 @app.route("/producto/<slug>")
 def producto_detalle(slug):
 
-    producto = Producto.query.filter_by(slug=slug).first_or_404()
+    producto = Producto.query.filter_by(slug=slug).filter(con_foto()).first_or_404()
 
     contexto = obtener_contexto_base()
 
@@ -2215,7 +2232,7 @@ def feed_google():
             Producto.stock > 0,
             Producto.precio > 0,
             Producto.slug != None,                      # noqa: E711
-            db.func.coalesce(Producto.imagen, "") != "",
+            con_foto(),
         )
         .order_by(Producto.id)
         .all()
@@ -2289,7 +2306,7 @@ def sitemap():
     slug_por_deporte = {nombre: slug for slug, nombre in NAV_DEPORTES.items()}
     filas = (
         db.session.query(Producto.deporte, Producto.categoria)
-        .filter(Producto.categoria != "")
+        .filter(Producto.categoria != "", con_foto())
         .distinct()
         .order_by(Producto.deporte, Producto.categoria)
     )
@@ -2301,7 +2318,7 @@ def sitemap():
     rutas += [
         url_for("producto_detalle", slug=slug)
         for (slug,) in db.session.query(Producto.slug)
-        .filter(Producto.slug != None)   # noqa: E711
+        .filter(Producto.slug != None, con_foto())   # noqa: E711
         .order_by(Producto.id)
     ]
 
