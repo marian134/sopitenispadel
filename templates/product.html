@@ -23,20 +23,27 @@
 </script>
 {% endblock %}
 
+
 {% block content %}
 
-<div class="container">
-<a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}" class="producto-volver">
-      ← Volver a {{ 'Pádel' if deporte_slug == 'padel' else 'Tenis' }}
-</a>
+{% set dep_nombre = 'Pádel' if deporte_slug == 'padel' else 'Tenis' %}
 
-  <div class="producto-detalle">
-    
-    <!-- IMAGEN IZQUIERDA -->
-    <div class="foto-grande">
+<div class="pf">
+
+  <nav class="pf-migas" aria-label="Estás en">
+    <a href="{{ url_for('portada') }}">Inicio</a> ›
+    <a href="{{ url_for('catalogo', deporte_slug=deporte_slug) }}">{{ dep_nombre }}</a> ›
+    <a href="{{ url_for('catalogo', deporte_slug=deporte_slug, categoria=producto.categoria) }}">{{ producto.categoria }}</a>
+  </nav>
+
+  <div class="pf-grid">
+
+    <!-- FOTO -->
+    <div class="pf-foto">
       {% if producto.imagen %}
         <img src="{{ url_for('static', filename='img/' + producto.imagen|lower) }}"
              alt="{{ producto.nombre }}{% if producto.marca and producto.marca not in producto.nombre %} {{ producto.marca }}{% endif %}"
+             width="700" height="700" fetchpriority="high"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
         <div class="placeholder" style="display:none;">{{ producto.marca }}</div>
       {% else %}
@@ -44,23 +51,16 @@
       {% endif %}
     </div>
 
-    <!-- DETALLES DERECHA -->
-    <div>
-      <!-- HEADER SOPI -->
-      <div class="header-sopi">
-        <h2>SOPI</h2>
-      </div>
-
-      <!-- MARCA -->
-      <span class="marca">{{ producto.marca }}</span>
-      
-      <!-- NOMBRE -->
+    <!-- COMPRA -->
+    <div class="pf-info">
+      {% if producto.marca %}<span class="pf-marca">{{ producto.marca }}</span>{% endif %}
       <h1>{{ producto.nombre }}</h1>
-      
-      <!-- PRECIO -->
-      <div class="precio">${{ "{:,}".format(producto.precio).replace(",", ".") }}</div>
 
-      <!-- STOCK -->
+      <div class="pf-precio">{{ producto.precio|pesos }}</div>
+      {% if precio_transferencia %}
+        <p class="pf-transfer">o <strong>{{ precio_transferencia|pesos }}</strong> pagando por transferencia (5% off)</p>
+      {% endif %}
+
       {% if producto.stock <= 0 %}
         <span class="stock-badge sin">Sin stock por el momento</span>
       {% elif producto.stock == 1 %}
@@ -68,33 +68,11 @@
       {% elif producto.stock == 2 %}
         <span class="stock-badge bajo">Últimas 2 unidades</span>
       {% else %}
-        <span class="stock-badge ok">✅ Disponible</span>
+        <span class="stock-badge ok">✅ En stock</span>
       {% endif %}
 
-      <!-- DESCRIPCIÓN -->
-      {% if producto.descripcion %}
-        {% set lineas = producto.descripcion.replace('|', '\n').splitlines() %}
-        {% for linea in lineas if linea.strip() and ':' not in linea %}
-          <p class="descripcion">{{ linea.strip() }}</p>
-        {% endfor %}
-
-        {% if producto.descripcion.count(':') %}
-        <table class="ficha-tecnica">
-          <caption>Características</caption>
-          {% for linea in lineas if ':' in linea %}
-            {% set par = linea.split(':', 1) %}
-            <tr>
-              <th>{{ par[0].strip() }}</th>
-              <td>{{ par[1].strip() }}</td>
-            </tr>
-          {% endfor %}
-        </table>
-        {% endif %}
-      {% endif %}
-
-      <!-- FORMULARIO -->
       {% if producto.stock > 0 %}
-        <form method="post" action="{{ url_for('carrito_agregar', producto_id=producto.id) }}">
+        <form method="post" action="{{ url_for('carrito_agregar', producto_id=producto.id) }}" class="pf-form">
           {% if producto.tiene_talles %}
           <fieldset class="selector-talles">
             <legend>{{ palabra_talle(producto=producto) }}</legend>
@@ -109,18 +87,107 @@
             <p class="talle-aviso" id="talle-aviso" data-palabra="{{ palabra_talle(producto=producto) }}">Elegí {{ 'un grip' if palabra_talle(producto=producto) == 'Grip' else 'un talle' }}</p>
           </fieldset>
           {% endif %}
-          <div class="form-cantidad">
-            <label for="cantidad">Cantidad</label>
-            <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="{{ producto.stock }}">
+          <div class="pf-comprar">
+            <div class="form-cantidad">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="{{ producto.stock }}">
+            </div>
+            <button type="submit" class="btn btn-primary">🛒 Agregar al carrito</button>
           </div>
-          <button type="submit" class="btn btn-primary">🛒 Agregar al carrito</button>
         </form>
       {% else %}
         <button class="btn btn-outline" disabled>Sin stock</button>
       {% endif %}
+
+      <a class="pf-wa" target="_blank" rel="noopener"
+         href="{{ negocio.whatsapp_url }}?text={{ ('Hola! Tengo una consulta sobre ' ~ producto.nombre ~ ': ' ~ url_abs(url_for('producto_detalle', slug=producto.slug)))|urlencode }}">
+        <i class="fab fa-whatsapp"></i> Consultar por WhatsApp
+      </a>
+
+      <ul class="pf-beneficios">
+        {% if producto.precio >= envio_gratis_desde %}
+          <li><i class="fas fa-truck"></i> <strong>Envío gratis</strong> a todo el país</li>
+        {% else %}
+          <li><i class="fas fa-truck"></i> Envío a todo el país · <strong>gratis desde {{ envio_gratis_desde|pesos }}</strong></li>
+        {% endif %}
+        <li><i class="fas fa-store"></i> Retiro sin cargo en Quilmes</li>
+        <li><i class="fas fa-credit-card"></i> Pagá con Mercado Pago o transferencia</li>
+        <li><i class="fas fa-undo"></i> <a href="{{ url_for('legales.devoluciones') }}">Cambios y devoluciones</a> · {{ negocio.dias_arrepentimiento }} días para arrepentirte</li>
+      </ul>
     </div>
   </div>
+
+  <!-- DESCRIPCIÓN -->
+  <section class="pf-desc">
+    <h2>Descripción</h2>
+    {% if descripcion_auto %}
+      {% for parrafo in descripcion_auto %}<p class="descripcion">{{ parrafo }}</p>{% endfor %}
+    {% elif producto.descripcion %}
+      {% set lineas = producto.descripcion.replace('|', '\n').splitlines() %}
+      {% for linea in lineas if linea.strip() and ':' not in linea %}
+        <p class="descripcion">{{ linea.strip() }}</p>
+      {% endfor %}
+      {% if producto.descripcion.count(':') %}
+      <table class="ficha-tecnica">
+        <caption>Características</caption>
+        {% for linea in lineas if ':' in linea %}
+          {% set par = linea.split(':', 1) %}
+          <tr><th>{{ par[0].strip() }}</th><td>{{ par[1].strip() }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  {% if relacionados %}
+  <section class="pf-rel">
+    <h2>También te puede interesar</h2>
+    <div class="hb-grid">
+      {% for p in relacionados %}{% include '_tarjeta.html' %}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
 </div>
+
+<style>
+  .pf { width: min(1180px, 92%); margin: 22px auto 64px; }
+  .pf-migas { font-size: 14px; color: var(--muted, #777); margin-bottom: 18px; }
+  .pf-migas a { color: inherit; text-decoration: none; }
+  .pf-migas a:hover { color: var(--lime, #E57E3C); }
+  .pf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  .pf-foto { background: #fff; border-radius: 16px; overflow: hidden; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+  .pf-foto img { width: 100%; height: 100%; object-fit: contain; transition: transform .3s ease; }
+  .pf-foto:hover img { transform: scale(1.06); }
+  .pf-marca { display: block; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted, #777); margin-bottom: 6px; }
+  .pf-info h1 { margin: 0 0 14px; }
+  .pf-precio { font-family: var(--f-texto, inherit); font-size: 40px; font-weight: 800; color: var(--amarillo, #111); line-height: 1; }
+  .pf-transfer { margin: 8px 0 14px; font-size: 15px; color: var(--muted, #555); }
+  .pf-transfer strong { color: var(--verde, #2e7d32); }
+  .pf-form { margin-top: 18px; gap: 14px; }
+  .pf-comprar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .pf-comprar .form-cantidad { margin: 0; }
+  .pf-comprar .form-cantidad input { width: 80px; }
+  .pf-comprar .btn { flex: 1; min-width: 200px; padding: 15px 20px; font-size: 16px; }
+  .pf-wa { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; padding: 13px; border-radius: 10px;
+           border: 1px solid #25d366; color: #25d366; font-weight: 700; text-decoration: none; }
+  .pf-wa:hover { background: rgba(37, 211, 102, .1); }
+  .pf-beneficios { list-style: none; padding: 16px 0 0; margin: 18px 0 0; border-top: 1px solid var(--line, #ddd); font-size: 15px; line-height: 2; }
+  .pf-beneficios i { width: 22px; color: var(--lime, #E57E3C); }
+  .pf-beneficios a { color: inherit; }
+  .pf-desc { margin-top: 44px; max-width: 820px; }
+  .pf-desc h2, .pf-rel h2 { font-size: clamp(22px, 2.6vw, 30px); margin: 0 0 14px; }
+  .pf-desc .descripcion { font-size: 16px; line-height: 1.65; margin: 0 0 10px; }
+  .pf-rel { margin-top: 48px; }
+  .pf .hb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .pf .hb-grid .shop-product-image { height: auto; aspect-ratio: 1 / 1; }
+  .pf .hb-grid .shop-product-image img { width: 100%; height: 100%; object-fit: contain; }
+  @media (max-width: 900px) {
+    .pf-grid { grid-template-columns: 1fr; gap: 20px; }
+    .pf-precio { font-size: 34px; }
+    .pf .hb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+</style>
 
 {% if producto.tiene_talles %}
 <style>
@@ -160,3 +227,4 @@
 {% endif %}
 
 {% endblock %}
+

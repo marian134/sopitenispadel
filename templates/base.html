@@ -77,7 +77,7 @@
   {% block head_extra %}{% endblock %}
 
   {# Tema oscuro: va último para pisar al resto #}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119b">
 </head>
 
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
@@ -148,10 +148,26 @@
            class="nav-sport-link{% if request.endpoint == 'quienes_somos' %} activo{% endif %}">
           Quiénes somos
         </a>
+        <a href="{{ url_for('legales.contacto') }}"
+           class="nav-sport-link{% if request.endpoint == 'legales.contacto' %} activo{% endif %}">
+          Contacto
+        </a>
 
       </nav>
 
       <div class="nav-actions">
+
+        <form class="nav-buscar" action="{{ url_for('buscar') }}" role="search">
+          <input type="search" name="q" placeholder="Buscar productos…" aria-label="Buscar productos"
+                 value="{{ consulta if consulta is defined else '' }}">
+          <button type="submit" aria-label="Buscar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+        </form>
+
+        <a href="{{ url_for('buscar') }}" class="nav-buscar-movil" aria-label="Buscar productos">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </a>
 
         <a href="{{ url_for('carrito_ver') }}" class="nav-cart" aria-label="Carrito">
 
@@ -252,6 +268,10 @@
     <a href="{{ url_for('quienes_somos') }}"
        class="{% if request.endpoint == 'quienes_somos' %}activo{% endif %}">
       Quiénes somos <span class="nav-chevron" aria-hidden="true">›</span>
+    </a>
+    <a href="{{ url_for('legales.contacto') }}"
+       class="{% if request.endpoint == 'legales.contacto' %}activo{% endif %}">
+      Contacto <span class="nav-chevron" aria-hidden="true">›</span>
     </a>
 
     <div class="nav-drawer-sub">
@@ -435,13 +455,7 @@
             <p>
               &copy; 2026 <strong>SOPI SPORTS</strong>. Todos los derechos reservados.
             </p>
-            {% if negocio and (negocio.razon_social or negocio.cuit or negocio.domicilio) %}
-            <p class="footer-legal-datos">
-              {% if negocio.razon_social %}{{ negocio.razon_social }}{% endif %}
-              {% if negocio.cuit %} · CUIT {{ negocio.cuit }}{% endif %}
-              {% if negocio.domicilio %} · {{ negocio.domicilio }}{% endif %}
-            </p>
-            {% endif %}
+            {# Titular, CUIT y domicilio se muestran solo en la página de Contacto #}
             <p>
               <a href="https://www.argentina.gob.ar/produccion/defensadelconsumidor/formulario"
                  target="_blank" rel="noopener">Defensa de las y los consumidores. Para reclamos ingresá acá.</a>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{% if consulta %}Resultados para "{{ consulta }}"{% else %}Buscar{% endif %} | SOPI Sports{% endblock %}
+{% block robots %}noindex,follow{% endblock %}
+
+{% block content %}
+<div class="busqueda">
+
+  <form class="busqueda-form" action="{{ url_for('buscar') }}" role="search">
+    <input type="search" name="q" value="{{ consulta }}" placeholder="Buscá paletas, pelotas, marcas…" aria-label="Buscar productos" autofocus>
+    <button type="submit">Buscar</button>
+  </form>
+
+  {% if consulta %}
+    {% if productos %}
+      <h1 class="busqueda-titulo">{{ productos|length }} resultado{{ 's' if productos|length != 1 }} para "{{ consulta }}"</h1>
+      <div class="hb-grid busqueda-grid">
+        {% for p in productos %}{% include '_tarjeta.html' %}{% endfor %}
+      </div>
+    {% else %}
+      <h1 class="busqueda-titulo">No encontramos "{{ consulta }}"</h1>
+      <p class="busqueda-ayuda">Probá con otra palabra (por ejemplo la marca o "paleta", "pelotas", "paletero"),
+        o escribinos y te lo conseguimos.</p>
+      <div class="busqueda-botones">
+        <a class="btn btn-primary" href="{{ url_for('catalogo', deporte_slug='padel') }}">Ver pádel</a>
+        <a class="btn btn-primary" href="{{ url_for('catalogo', deporte_slug='tenis') }}">Ver tenis</a>
+        <a class="btn btn-outline" href="{{ negocio.whatsapp_url }}?text={{ ('Hola! Estoy buscando: ' ~ consulta)|urlencode }}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>
+      </div>
+    {% endif %}
+  {% else %}
+    <h1 class="busqueda-titulo">¿Qué estás buscando?</h1>
+  {% endif %}
+
+</div>
+
+<style>
+  .busqueda { width: min(1180px, 92%); margin: 32px auto 64px; }
+  .busqueda-form { display: flex; flex-direction: row; gap: 8px; max-width: 640px; }
+  .busqueda-form input { flex: 1; min-width: 0; padding: 13px 16px; border-radius: 999px; font-size: 16px; border: 1px solid var(--line-2, #ccc); }
+  .busqueda-form button { padding: 0 22px; border: 0; border-radius: 999px; background: var(--lime, #E57E3C); color: #fff; font-weight: 800; cursor: pointer; }
+  .busqueda-titulo { font-size: clamp(22px, 3vw, 32px); margin: 26px 0 18px; }
+  .busqueda-ayuda { color: var(--muted, #777); max-width: 620px; line-height: 1.5; }
+  .busqueda-botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .busqueda-botones .btn { width: auto; border-radius: 999px; padding: 12px 22px; text-decoration: none; }
+  .hb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .hb-grid .shop-product-image { height: auto; aspect-ratio: 1 / 1; }
+  .hb-grid .shop-product-image img { width: 100%; height: 100%; object-fit: contain; }
+  @media (max-width: 900px) { .hb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+</style>
+{% endblock %}

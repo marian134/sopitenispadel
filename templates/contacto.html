@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Contacto | SOPI Sports{% endblock %}
+{% block meta_description %}¿Tenés una consulta? Escribinos por WhatsApp, Instagram, mail o dejanos tu mensaje. Despachamos desde Quilmes a todo el país.{% endblock %}
+
+{% block content %}
+<div class="ct">
+
+  <div class="ct-cabecera">
+    <span class="ct-eyebrow">CONTACTO</span>
+    <h1>¿Querés preguntarnos algo?</h1>
+    <p>Te ayudamos a elegir tu paleta o raqueta, con un pedido, un cambio o lo que necesites.
+       Respondemos rápido, sobre todo por WhatsApp.</p>
+  </div>
+
+  <div class="ct-grid">
+
+    <div class="ct-canales">
+      <a class="ct-canal ct-wa" href="{{ negocio.whatsapp_url }}?text={{ 'Hola SOPI! Quiero hacer una consulta'|urlencode }}" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i>
+        <div><strong>WhatsApp</strong><span>{{ negocio.whatsapp_texto }} · la forma más rápida</span></div>
+      </a>
+      <a class="ct-canal" href="{{ negocio.instagram_url }}" target="_blank" rel="noopener">
+        <i class="fab fa-instagram"></i>
+        <div><strong>Instagram</strong><span>@sopi.tenispadel</span></div>
+      </a>
+      <a class="ct-canal" href="mailto:{{ negocio.email }}">
+        <i class="fas fa-envelope"></i>
+        <div><strong>Mail</strong><span>{{ negocio.email }}</span></div>
+      </a>
+      <div class="ct-canal ct-sin-link">
+        <i class="fas fa-map-marker-alt"></i>
+        <div><strong>Despachamos desde</strong><span>{{ negocio.localidad }} · retiro sin cargo coordinando por WhatsApp</span></div>
+      </div>
+    </div>
+
+    <div class="ct-form-caja">
+      {% if enviado %}
+        <div class="ct-ok" role="status">
+          <div class="ct-ok-icono">✓</div>
+          <h2>¡Gracias! Recibimos tu consulta</h2>
+          <p>Te respondemos a la brevedad. Si es urgente, escribinos por WhatsApp.</p>
+          <a href="{{ url_for('portada') }}" class="btn btn-outline">Volver a la tienda</a>
+        </div>
+      {% else %}
+        <h2>Dejanos tu consulta</h2>
+        {% if error %}<div class="ct-error" role="alert">⚠️ {{ error }}</div>{% endif %}
+        <form method="post" action="{{ url_for('legales.contacto_enviar') }}" class="ct-form">
+          <label>Nombre
+            <input type="text" name="nombre" maxlength="120" required autocomplete="name" value="{{ datos.nombre or '' }}">
+          </label>
+          <div class="ct-doble">
+            <label>Mail
+              <input type="email" name="email" maxlength="120" autocomplete="email" value="{{ datos.email or '' }}">
+            </label>
+            <label>Teléfono / WhatsApp
+              <input type="tel" name="telefono" maxlength="40" autocomplete="tel" value="{{ datos.telefono or '' }}">
+            </label>
+          </div>
+          <label>Tu consulta
+            <textarea name="consulta" rows="5" maxlength="3000" required placeholder="Ej: ¿Qué paleta me recomiendan para empezar? / ¿Tienen la Bullpadel Vertex en stock?">{{ datos.consulta or request.args.get('producto', '') }}</textarea>
+          </label>
+          <label class="ct-trampa" aria-hidden="true">No completar
+            <input type="text" name="sitio_web" tabindex="-1" autocomplete="off">
+          </label>
+          <p class="ct-nota">Dejanos al menos un mail o un teléfono para poder responderte.</p>
+          <button type="submit" class="btn btn-primary">Enviar consulta</button>
+        </form>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {% if negocio.razon_social or negocio.cuit or negocio.domicilio %}
+  <p class="ct-legal">
+    Datos del vendedor:
+    {% if negocio.razon_social %}{{ negocio.razon_social }}{% endif %}
+    {% if negocio.cuit %} · CUIT {{ negocio.cuit }}{% endif %}
+    {% if negocio.domicilio %} · {{ negocio.domicilio }}{% endif %}.
+    ¿Querés arrepentirte de una compra? Usá el <a href="{{ url_for('legales.arrepentimiento') }}">botón de arrepentimiento</a>.
+  </p>
+  {% endif %}
+
+</div>
+
+<style>
+  .ct { width: min(1100px, 92%); margin: 36px auto 64px; }
+  .ct-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--lime, #E57E3C); }
+  .ct-cabecera h1 { margin: 8px 0 10px; font-size: clamp(28px, 4vw, 44px); }
+  .ct-cabecera p { max-width: 640px; color: var(--muted, #666); font-size: 16px; line-height: 1.55; margin: 0; }
+  .ct-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 28px; margin-top: 30px; align-items: start; }
+  .ct-canales { display: grid; gap: 12px; }
+  .ct-canal { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 14px; text-decoration: none; color: inherit;
+              background: var(--surface, #fff); border: 1px solid var(--line, #ddd); transition: border-color .2s; }
+  a.ct-canal:hover { border-color: var(--lime, #E57E3C); }
+  .ct-canal i { font-size: 24px; width: 30px; text-align: center; color: var(--lime, #E57E3C); }
+  .ct-canal strong { display: block; font-size: 16px; }
+  .ct-canal span { font-size: 14px; color: var(--muted, #666); }
+  .ct-wa { border-color: rgba(37, 211, 102, .6); }
+  .ct-wa i { color: #25d366; }
+  .ct-form-caja { background: var(--surface, #fff); border: 1px solid var(--line, #ddd); border-radius: 16px; padding: 22px; }
+  .ct-form-caja h2 { margin: 0 0 14px; font-size: 22px; }
+  .ct-form { display: flex; flex-direction: column; gap: 12px; }
+  .ct-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+  .ct-form input, .ct-form textarea { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line-2, #ccc); font-size: 16px; font-family: inherit; }
+  .ct-form input:focus, .ct-form textarea:focus { outline: none; border-color: var(--lime, #E57E3C); }
+  .ct-doble { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ct-trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .ct-nota { margin: 0; font-size: 13px; color: var(--muted, #777); }
+  .ct-form .btn { padding: 14px; font-size: 16px; }
+  .ct-error { margin-bottom: 12px; padding: 12px 14px; border-radius: 10px; font-weight: 700;
+              border: 1px solid rgba(255, 90, 90, .5); background: rgba(255, 90, 90, .1); color: #ff8080; }
+  .ct-ok { text-align: center; padding: 20px 6px; }
+  .ct-ok-icono { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                 font-size: 26px; font-weight: 800; background: rgba(143, 180, 135, .18); color: var(--verde, #2e7d32); }
+  .ct-ok p { color: var(--muted, #666); }
+  .ct-ok .btn { width: auto; display: inline-flex; padding: 12px 22px; border-radius: 999px; text-decoration: none; margin-top: 8px; }
+  .ct-legal { margin-top: 32px; font-size: 13px; color: var(--muted, #777); }
+  .ct-legal a { color: inherit; }
+  @media (max-width: 860px) { .ct-grid { grid-template-columns: 1fr; } .ct-doble { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

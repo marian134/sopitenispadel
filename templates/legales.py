@@ -8,9 +8,12 @@ import os
 from datetime import datetime
 from xml.sax.saxutils import escape
 
+import time
+
 from flask import (
-    Blueprint, render_template, request, session, redirect, url_for, Response,
+    Blueprint, render_template, request, session, redirect, url_for, Response, current_app,
 )
+from flask_mail import Message
 
 from models import db, Producto
 
@@ -25,7 +28,7 @@ URL_PUBLICA = os.environ.get("URL_BASE", "http://127.0.0.1:5000").rstrip("/")
 NEGOCIO = {
     "nombre": "SOPI Sports",
     "localidad": "Quilmes, Provincia de Buenos Aires",
-    "email": "mariano.d.vallejos@gmail.com",
+    "email": "sopisports@gmail.com",
     "whatsapp_texto": "+54 9 11 2832-1531",
     "whatsapp_url": "https://wa.me/5491128321531",
     "instagram_url": "https://www.instagram.com/sopi.tenispadel/",
@@ -106,9 +109,81 @@ def devoluciones():
 
 @bp.route("/contacto")
 def contacto():
-    return _render(
-        "contacto", "Contacto",
-        "Escribinos por WhatsApp, Instagram o mail. Despachamos desde Quilmes, Buenos Aires.",
+    return _render_contacto()
+
+
+@bp.route("/contacto", methods=["POST"])
+def contacto_enviar():
+    """Consulta del formulario de Contacto: le llega por mail a la tienda."""
+    datos = {
+        "nombre": (request.form.get("nombre") or "").strip()[:120],
+        "email": (request.form.get("email") or "").strip()[:120],
+        "telefono": (request.form.get("telefono") or "").strip()[:40],
+        "consulta": (request.form.get("consulta") or "").strip()[:3000],
+    }
+    # Campo trampa: las personas no lo ven; los robots de spam lo completan
+    if request.form.get("sitio_web"):
+        return redirect(url_for("legales.contacto", enviado=1))
+
+    if not datos["nombre"] or len(datos["consulta"]) < 5:
+        return _render_contacto(error="Completá tu nombre y tu consulta.", datos=datos), 400
+    if not datos["email"] and not datos["telefono"]:
+        return _render_contacto(error="Dejanos un mail o un teléfono para poder responderte.", datos=datos), 400
+    if datos["email"] and ("@" not in datos["email"] or "." not in datos["email"].rsplit("@", 1)[-1]):
+        return _render_contacto(error="Revisá tu mail: parece que tiene un error.", datos=datos), 400
+
+    # Máximo 5 consultas por hora desde el mismo navegador
+    ahora = time.time()
+    envios = [t for t in session.get("consultas", []) if ahora - t < 3600]
+    if len(envios) >= 5:
+        return _render_contacto(error="Ya recibimos tus consultas. Te respondemos a la brevedad.", datos=datos), 429
+
+    if not _mandar_consulta(datos):
+        return _render_contacto(
+            error="No pudimos enviar la consulta en este momento. Escribinos por WhatsApp y te respondemos.",
+            datos=datos,
+        ), 500
+    session["consultas"] = envios + [ahora]
+    return redirect(url_for("legales.contacto", enviado=1))
+
+
+def _mandar_consulta(datos):
+    destino = os.environ.get("VENTAS_EMAIL")
+    if not destino:
+        current_app.logger.warning("Falta configurar VENTAS_EMAIL")
+        return False
+    cuerpo = "\n".join([
+        "Nueva consulta desde la página de Contacto",
+        "",
+        f"Nombre: {datos['nombre']}",
+        f"Email: {datos['email'] or 'No informado'}",
+        f"Teléfono: {datos['telefono'] or 'No informado'}",
+        "",
+        "Consulta:",
+        datos["consulta"],
+        "",
+        "Respondé este mail para contestarle directamente." if datos["email"] else
+        "No dejó mail: respondele por teléfono o WhatsApp.",
+    ])
+    try:
+        mensaje = Message(
+            subject=f"SOPI: consulta de {datos['nombre']}",
+            recipients=[destino],
+            reply_to=datos["email"] or None,
+            body=cuerpo,
+        )
+        current_app.extensions["mail"].send(mensaje)
+        return True
+    except Exception:
+        current_app.logger.exception("Error enviando consulta de contacto")
+        return False
+
+
+def _render_contacto(error=None, datos=None):
+    contexto = _contexto_base()
+    return render_template(
+        "contacto.html", negocio=NEGOCIO, error=error, datos=datos or {},
+        enviado=request.args.get("enviado") == "1", **contexto,
     )
 
 

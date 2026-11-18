@@ -8,6 +8,7 @@ import secrets
 import unicodedata
 import mercadopago
 import correo_argentino as micorreo
+from descripciones import descripcion_producto, descripcion_corta
 from templates import legales
 from datetime import timedelta, datetime, date
 from functools import wraps
@@ -1172,7 +1173,7 @@ def seo_producto(p):
         "@type": "Product",
         "name": p.nombre,
         "image": [imagen],
-        "description": (p.descripcion or desc)[:300],
+        "description": (descripcion_corta(p) or desc)[:300],
         "url": url,
     }
     if p.marca:
@@ -1223,11 +1224,7 @@ def portada():
 def catalogo(deporte_slug):
 
     if deporte_slug not in NAV_DEPORTES:
-
-        return (
-            "Deporte no encontrado",
-            404
-        )
+        abort(404)
 
     filtros = {
 
@@ -1353,6 +1350,13 @@ def producto_detalle(slug):
 
     contexto["seo"] = seo_producto(producto)
 
+    contexto["descripcion_auto"] = descripcion_producto(producto)
+    contexto["relacionados"] = productos_relacionados(producto)
+    contexto["precio_transferencia"] = (
+        None if es_pack(producto) else round(producto.precio * (1 - DESCUENTO_TRANSFERENCIA))
+    )
+    contexto["envio_gratis_desde"] = ENVIO_GRATIS_DESDE
+
     if producto.deporte == "Pádel":
 
         contexto["deporte_slug"] = "padel"
@@ -1365,6 +1369,69 @@ def producto_detalle(slug):
         "product.html",
         **contexto
     )
+
+
+# =========================================================
+# BUSCADOR
+# =========================================================
+
+# Palabras que el cliente escribe distinto de como están cargadas
+SINONIMOS = {"pala": "paleta", "palas": "paleta", "paleta": "paleta", "raqueta": "raqueta",
+             "cubregrip": "overgrip", "cubregrips": "overgrip", "grip": "grip",
+             "zapatilla": "calzado", "zapatillas": "calzado", "padel": "padel", "tenis": "tenis"}
+
+
+def _normalizar(texto):
+    texto = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9+]+", " ", texto).strip()
+
+
+def _raiz(palabra):
+    """'paletas' -> 'paleta', 'pelotas' -> 'pelota' (para que plural y singular coincidan)."""
+    palabra = SINONIMOS.get(palabra, palabra)
+    return palabra[:-1] if len(palabra) > 3 and palabra.endswith("s") else palabra
+
+
+def buscar_productos(consulta, limite=120):
+    """Productos visibles que tienen todas las palabras buscadas en el nombre,
+    la marca, la categoría o el deporte (sin importar tildes ni plurales)."""
+    palabras = [_raiz(p) for p in _normalizar(consulta).split()][:8]
+    if not palabras:
+        return []
+    resultados = []
+    for p in Producto.query.filter(Producto.stock > 0, con_foto()).all():
+        nombre = _normalizar(p.nombre)
+        texto = f"{nombre} {_normalizar(p.marca)} {_normalizar(p.categoria)} {_normalizar(p.deporte)} {_normalizar(p.categoria).replace('paletas', 'paleta pala')}"
+        if all(w in texto for w in palabras):
+            en_nombre = sum(w in nombre for w in palabras)
+            resultados.append((-en_nombre, clave_categoria(p.categoria), -p.id, p))
+    resultados.sort(key=lambda r: r[:3])
+    return [r[3] for r in resultados[:limite]]
+
+
+@app.route("/buscar")
+def buscar():
+    consulta = (request.args.get("q") or "").strip()[:80]
+    productos = buscar_productos(consulta) if consulta else []
+    contexto = obtener_contexto_base()
+    return render_template("buscar.html", **contexto, consulta=consulta, productos=productos)
+
+
+def productos_relacionados(producto, cantidad=4):
+    """Otros productos de la misma categoría y deporte, primero de la misma marca."""
+    base = Producto.query.filter(
+        Producto.deporte == producto.deporte, Producto.categoria == producto.categoria,
+        Producto.id != producto.id, Producto.stock > 0, con_foto(),
+    )
+    misma_marca = base.filter(Producto.marca == producto.marca).order_by(Producto.id.desc()).limit(cantidad).all()
+    otras = base.filter(Producto.marca != producto.marca).order_by(Producto.id.desc()).limit(cantidad).all()
+    # mitad de la misma marca y mitad de otras, para dar opciones
+    elegidos = misma_marca[:cantidad // 2] + otras[:cantidad // 2]
+    for p in misma_marca[cantidad // 2:] + otras[cantidad // 2:]:
+        if len(elegidos) >= cantidad:
+            break
+        elegidos.append(p)
+    return elegidos[:cantidad]
 
 
 # URL vieja (/producto/10): redirige a la nueva con 301
@@ -2491,7 +2558,7 @@ def feed_google():
     for p in productos:
         titulo = feed_titulo(p)
         marca = (p.marca or "SOPI").strip()
-        descripcion = (p.descripcion or "").strip() or f"{titulo} - {marca}"
+        descripcion = descripcion_corta(p) or f"{titulo} - {marca}"
         imagen = (p.imagen or "").strip().lower()       # corrige el 404 por mayúsculas
 
         link = url_abs(url_for("producto_detalle", slug=p.slug))
