@@ -4,7 +4,10 @@ Costo = el menor entre precio Silver y Premium del importador (si está en dóla
 se pasa a pesos con la cotización de esa marca).
 Precio = lo calcula el admin con el margen (40%), porque la columna precio va vacía.
 Uso: python preparar_paletas_mdq.py MARCA [carpeta_fotos_webp]
+     python preparar_paletas_mdq.py datos.json carpeta_fotos   (varias marcas a la vez,
+     datos.json exportado del importador con codigo, marca, modelo, silver, premium, estado)
 """
+import json
 import csv
 import os
 import re
@@ -177,6 +180,18 @@ ADIDAS = [
     ("2084", "Cross It Light 3.2", 401050, 418500, "Disponible"),
 ]
 
+# Head: precios en pesos
+HEAD = [
+    ("2395", "Evo Challenge", 110484, 105881, "Disponible"),
+    ("2396", "Speed Pro 2023", 336276, 322265, "Disponible"),
+    ("2397", "Extreme One 2025", 372000, 356500, "Disponible"),
+    ("2398", "One Ultralight Black", 297000, 284625, "Disponible"),
+    ("2399", "Gravity Pro 2022", 240060, 230058, "Disponible"),
+    ("2400", "Radical Pro 2024", 326571, 312963, "Disponible"),
+    ("2401", "Vibe 2026", 192000, 184000, "Disponible"),
+    ("2402", "Vibe 2025", 192000, 184000, "Disponible"),
+]
+
 # dolar: cotización si los precios vienen en dólares.
 # ya_cargadas: modelos que ya están en la tienda con precio propio (no se tocan).
 MARCAS = {
@@ -186,6 +201,7 @@ MARCAS = {
             "ya_cargadas": {"AT10 Genius 18k Alum Bs.As 2026", "AT Attack 18k Alum 2026", "AT10 Pro Cup Soft 2026"}},
     "Adidas": {"paletas": ADIDAS, "dolar": None,
                "ya_cargadas": {"Cross It Light 3.5"}},
+    "Head": {"paletas": HEAD, "dolar": None, "ya_cargadas": set()},
 }
 
 
@@ -200,7 +216,7 @@ def descripcion(marca, modelo):
         partes.append("Pensada para chicos.")
     if "Woman" in modelo:
         partes.append("Línea femenina, más liviana y manejable.")
-    if "Comfort" in modelo or "Light" in modelo or "Lite" in modelo:
+    if "Comfort" in modelo or "Light" in modelo or "Lite" in modelo or "Ultralight" in modelo:
         partes.append("Pensada para mayor confort y salida de bola.")
     if "Ctrl" in modelo:
         partes.append("Versión control: más manejable y precisa.")
@@ -248,6 +264,8 @@ def main():
         else:
             sin_foto.append(nombre)
             continue  # sin foto no se muestra en la tienda, no tiene sentido cargarla
+        if any(f[0] == nombre for f in filas):
+            continue  # el importador repite algún modelo con otro código
         filas.append([nombre, marca, "Pádel", "Paletas", costo, "", STOCK[estado],
                       imagen, descripcion(marca, modelo)])
 
@@ -260,5 +278,27 @@ def main():
     print(f"Sin foto ({len(sin_foto)}): " + ", ".join(sin_foto))
 
 
+def cargar_json(ruta):
+    """Arma MARCAS desde el datos.json del importador (precios en pesos).
+    Saca el prefijo "Paleta ", descarta los genéricos ("varios modelos", "Otros modelos")
+    y deja un solo producto por nombre."""
+    marcas = {}
+    for d in json.load(open(ruta, encoding="utf-8")):
+        modelo = re.sub(r"^Paleta\s+", "", d["modelo"]).strip()
+        if re.search(r"varios modelos|otros modelos", modelo, re.I):
+            continue
+        marcas.setdefault(d["marca"], {"paletas": [], "dolar": None, "ya_cargadas": set()})
+        marcas[d["marca"]]["paletas"].append(
+            (d["codigo"], modelo, d["silver"] or 0, d["premium"] or 0, d["estado"]))
+    return marcas
+
+
 if __name__ == "__main__":
-    main()
+    if sys.argv[1].endswith(".json"):
+        MARCAS.update(cargar_json(sys.argv[1]))
+        nuevas = list(cargar_json(sys.argv[1]))
+        for m in nuevas:
+            sys.argv = [sys.argv[0], m] + sys.argv[2:3]
+            main()
+    else:
+        main()
