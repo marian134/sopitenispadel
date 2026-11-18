@@ -89,6 +89,94 @@ NOX = [
     ("2627", "AT10 Genius 18k 2023", 235, 225, "Disponible"),
 ]
 
+# Adidas: precios en pesos. "Metalbone Ctrl 2.2" del importador se corrige a 3.2.
+ADIDAS = [
+    ("2000", "Metalbone Pro EDT 3.5", 561480, 585900, "Pocas Unidades"),
+    ("2001", "Metalbone Reserve EDT 3.5", 525840, 548700, "Disponible"),
+    ("2002", "Metalbone HRD 3.5", 496800, 518400, "Disponible"),
+    ("2003", "Metalbone 3.5", 496800, 518400, "Disponible"),
+    ("2004", "Metalbone Ctrl 3.5", 529000, 552000, "Disponible"),
+    ("2005", "Metalbone Carbon 3.5", 348915, 364088, "Disponible"),
+    ("2006", "Metalbone Carbon Ctrl 3.5", 384400, 400500, "Disponible"),
+    ("2007", "Metalbone Team 3.5", 315500, 329250, "Pocas Unidades"),
+    ("2008", "Metalbone Team Light 3.5", 361850, 377550, "Disponible"),
+    ("2009", "Metalbone Superlight 3.5", 320850, 334800, "Disponible"),
+    ("2010", "Arrow Hit Pro EDT 3.5", 578150, 604500, "Disponible"),
+    ("2011", "Arrow Hit 3.5", 467195, 487500, "Disponible"),
+    ("2012", "Arrow Hit Ctrl 3.5", 467195, 487500, "Disponible"),
+    ("2013", "Arrow Hit Hexagon 3.5", 295690, 308550, "Disponible"),
+    ("2014", "Arrow Hit Light 3.5 Ari Sanchez", 454530, 474300, "Disponible"),
+    ("2015", "Arrow Hit Carbon 3.5", 331175, 345575, "Disponible"),
+    ("2016", "Arrow Hit Carbon Ctrl 3.5", 331750, 345575, "Disponible"),
+    ("2017", "Arrow Hit Junior Blue/Pink 3.5", 0, 0, "No Disponible"),
+    ("2018", "Cross It Pro EDT 3.5", 508000, 530100, "Disponible"),
+    ("2020", "Cross It Ctrl 3.5", 449450, 468990, "Disponible"),
+    ("2021", "Cross It Light 3.5", 445600, 465000, "Disponible"),
+    ("2022", "Cross It Carbon 3.5", 354830, 370260, "Disponible"),
+    ("2023", "Cross It Carbon Ctrl 3.5", 354830, 370260, "Disponible"),
+    ("2024", "Cross It Team Ctrl 3.5", 233420, 243570, "Disponible"),
+    ("2025", "Cross It Team Light 3.5", 347500, 362700, "Disponible"),
+    ("2026", "ARG WC 3.5", 235370, 245605, "Disponible"),
+    ("2027", "Drive Blue 3.5", 159670, 166615, "Disponible"),
+    ("2028", "Match Black/Orange 3.5", 147845, 154275, "Disponible"),
+    ("2029", "Match Black/Green 3.5", 147845, 154275, "Disponible"),
+    ("2030", "Metalbone 09", 235370, 245605, "Disponible"),
+    ("2031", "Adipower 10 Aniversary", 567700, 592400, "Disponible"),
+    ("2032", "Lasaigues Metalbone Series White", 285255, 297660, "Disponible"),
+    ("2033", "Lasaigues Metalbone Series Red", 285255, 297660, "No Disponible"),
+    ("2034", "Lasaigues Metalbone Series Blue", 285255, 297660, "Pocas Unidades"),
+    ("2035", "Metalbone Pro EDT 3.4", 545460, 569150, "Disponible"),
+    ("2036", "Metalbone HRD 3.4", 433100, 451930, "Disponible"),
+    ("2037", "Metalbone 3.4", 433100, 451930, "Disponible"),
+    ("2038", "Metalbone Ctrl 3.4", 472360, 492900, "Disponible"),
+    ("2039", "Metalbone Carbon 3.4", 383200, 399900, "Disponible"),
+    ("2040", "Metalbone Carbon Ctrl 3.4", 365400, 381300, "Disponible"),
+    ("2041", "Metalbone Team 3.4", 0, 0, "No Disponible"),
+    ("2042", "Adipower Ctrl Mtw Pro EDT 3.4", 477280, 498600, "Disponible"),
+    ("2043", "Adipower Multiweight Ctrl 3.4", 439700, 458800, "Pocas Unidades"),
+    ("2044", "Adipower Carbon Ctrl 3.4", 318300, 332250, "Pocas Unidades"),
+    ("2045", "Cross It Pro EDT 3.4", 379850, 396350, "Disponible"),
+    ("2046", "Cross It 3.4", 365260, 381150, "Disponible"),
+    ("2047", "Cross It Ctrl 3.4", 375000, 391200, "Disponible"),
+    ("2048", "Cross It Light 3.4", 401000, 418500, "Disponible"),
+    ("2049", "Cross It Carbon (Maxi Arce) 3.4", 374300, 390600, "No Disponible"),
+    ("2050", "Cross It Carbon Ctrl 3.4", 311695, 325240, "Disponible"),
+    ("2051", "Match Blue 3.4", 116890, 121970, "Disponible"),
+    ("2052", "Match Black 3.4", 116890, 121970, "Disponible"),
+    ("2053", "Adipower Ctrl Series Green", 140890, 147000, "Disponible"),
+    ("2054", "Adipower Ctrl Series Red", 140890, 147000, "Disponible"),
+    ("2055", "Adipower Ctrl Series Blue", 140890, 147000, "Disponible"),
+    ("2056", "Zukur Ctrl Green", 145100, 151370, "Disponible"),
+    ("2057", "Zukur Ctrl Orange", 145100, 151370, "Disponible"),
+    ("2058", "Zukur Ctrl Blue", 145100, 151370, "Disponible"),
+    ("2059", "Zukur Ctrl Red", 145100, 151370, "Disponible"),
+    ("2060", "Zukur Ctrl 2.0 LTD Orange", 140890, 147000, "Disponible"),
+    ("2061", "Zukur Ctrl 2.0 LTD Green", 140890, 147000, "Disponible"),
+    ("2062", "X-Treme Lime", 172550, 180100, "Disponible"),
+    ("2063", "X-Treme Orange", 172550, 180100, "Disponible"),
+    ("2064", "X-Treme Silver/Gold", 172550, 180100, "Disponible"),
+    ("2065", "Training Ctrl Tubular Reforzado", 122450, 127800, "Disponible"),
+    ("2066", "Precision Pro Tubular Reforzado", 122450, 127800, "Disponible"),
+    ("2067", "Elevation Tour Green", 114900, 120000, "Disponible"),
+    ("2068", "Elevation Tour Gold", 114900, 120000, "Disponible"),
+    ("2069", "Elevation Tour Orange", 114900, 120000, "Disponible"),
+    ("2070", "Faster Green", 114900, 120000, "Pocas Unidades"),
+    ("2071", "Adipower Multiweight 3.3", 349600, 364800, "Pocas Unidades"),
+    ("2072", "Adipower Multiweight Ctrl 3.3", 349600, 364800, "Pocas Unidades"),
+    ("2073", "Adipower Ctrl 3.3", 339200, 353270, "Pocas Unidades"),
+    ("2074", "Cross It 3.3", 349600, 364800, "Pocas Unidades"),
+    ("2075", "Cross It Ctrl 3.3", 349600, 364800, "Disponible"),
+    ("2076", "Metalbone HRD 3.2", 374300, 390600, "Disponible"),
+    ("2077", "Metalbone 3.2", 383200, 399900, "Disponible"),
+    ("2078", "Metalbone Ctrl 3.2", 365400, 381300, "Disponible"),
+    ("2079", "Multiweight Master LTD 3.2", 288500, 301070, "Disponible"),
+    ("2080", "Adipower Multiweight 3.2", 270440, 282200, "Disponible"),
+    ("2081", "Adipower Multiweight Ctrl 3.2", 270440, 282200, "Pocas Unidades"),
+    ("2082", "Adipower 3.2", 270440, 282200, "Pocas Unidades"),
+    ("2083", "Adipower Ctrl 3.2", 270440, 282200, "Disponible"),
+    ("2084", "Cross It Light 3.2", 401050, 418500, "Disponible"),
+]
+
 # dolar: cotización si los precios vienen en dólares.
 # ya_cargadas: modelos que ya están en la tienda con precio propio (no se tocan).
 MARCAS = {
@@ -96,6 +184,8 @@ MARCAS = {
                   "ya_cargadas": {"Hack 04 2026", "Ionic Power 2026", "Vertex 05 Woman 2026"}},
     "Nox": {"paletas": NOX, "dolar": 1450,
             "ya_cargadas": {"AT10 Genius 18k Alum Bs.As 2026", "AT Attack 18k Alum 2026", "AT10 Pro Cup Soft 2026"}},
+    "Adidas": {"paletas": ADIDAS, "dolar": None,
+               "ya_cargadas": {"Cross It Light 3.5"}},
 }
 
 
@@ -112,6 +202,10 @@ def descripcion(marca, modelo):
         partes.append("Línea femenina, más liviana y manejable.")
     if "Comfort" in modelo or "Light" in modelo or "Lite" in modelo:
         partes.append("Pensada para mayor confort y salida de bola.")
+    if "Ctrl" in modelo:
+        partes.append("Versión control: más manejable y precisa.")
+    if "Team" in modelo or "Match" in modelo or "Drive" in modelo or "Training" in modelo:
+        partes.append("Ideal para jugadores en progresión.")
     if "Advanced" in modelo or "Indiga" in modelo:
         partes.append("Ideal para jugadores en progresión.")
     return " ".join(partes)
@@ -139,14 +233,21 @@ def main():
         costo = min(silver, premium) * (datos["dolar"] or 1)
         nombre = f"{marca} {modelo}"
         imagen = ""
-        origen = carpeta_fotos and os.path.join(carpeta_fotos, f"{codigo}.webp")
-        if origen and os.path.exists(origen):
+        origen = None
+        if carpeta_fotos:  # la foto puede venir como .webp, .png, .jpeg o .gif
+            for ext in ("webp", "png", "jpeg", "jpg", "gif"):
+                ruta = os.path.join(carpeta_fotos, f"{codigo}.{ext}")
+                if os.path.exists(ruta):
+                    origen = ruta
+                    break
+        if origen:
             imagen = f"{slug(nombre)}.jpg"
             destino = os.path.join(base, "static", "img", imagen)
             if not os.path.exists(destino):  # no pisar una foto que ya está en la tienda
                 convertir_foto(origen, destino)
         else:
             sin_foto.append(nombre)
+            continue  # sin foto no se muestra en la tienda, no tiene sentido cargarla
         filas.append([nombre, marca, "Pádel", "Paletas", costo, "", STOCK[estado],
                       imagen, descripcion(marca, modelo)])
 
