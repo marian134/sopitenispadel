@@ -1,9 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Página no encontrada{% endblock %}
+{% block title %}Página no encontrada | SOPI Sports{% endblock %}
+{% block robots %}noindex,follow{% endblock %}
 {% block content %}
-<div class="container pagina-404">
-  <h1>404</h1>
-  <p>No encontramos esa página.</p>
-  <a href="{{ url_for('portada') }}" class="btn btn-primary">Volver a la tienda</a>
+<div class="resultado-pago">
+  <div class="resultado-icono">?</div>
+  <h1>No encontramos esa página</h1>
+  <p>Puede que el producto ya no esté o que el link tenga un error. Seguí buscando por acá:</p>
+  <div class="pr-botones" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px">
+    <a href="{{ url_for('catalogo', deporte_slug='padel') }}" class="btn btn-primary">Ver pádel</a>
+    <a href="{{ url_for('catalogo', deporte_slug='tenis') }}" class="btn btn-primary">Ver tenis</a>
+    <a href="{{ url_for('portada') }}" class="btn btn-outline">Ir al inicio</a>
+  </div>
 </div>
 {% endblock %}

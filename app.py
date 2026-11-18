@@ -39,7 +39,7 @@ BANNERS = [
         "titulo": "Ya trabajamos con HEAD",
         "cta": "Ver productos",
         "url": "/catalogo/tenis?marca=Head",
-        "imagen": "banner_head.png",
+        "imagen": "banner_head.jpg",
         "fondo": "#ffffff",
     },
     {
@@ -2526,6 +2526,38 @@ def feed_google():
 # =========================================================
 # SEO: ROBOTS.TXT Y SITEMAP.XML
 # =========================================================
+
+@app.after_request
+def encabezados_seguridad(respuesta):
+    """Encabezados de seguridad estándar para todas las páginas."""
+    respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+    respuesta.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    respuesta.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    respuesta.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    if ES_PRODUCCION:
+        respuesta.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return respuesta
+
+
+@app.route("/favicon.ico")
+def favicon():
+    # Google y los navegadores piden el ícono en la raíz del sitio
+    return app.send_static_file("favicon.ico")
+
+
+@app.errorhandler(404)
+def pagina_no_encontrada(error):
+    return render_template("404.html", **obtener_contexto_base()), 404
+
+
+@app.errorhandler(500)
+def error_interno(error):
+    app.logger.exception("Error 500")
+    try:
+        return render_template("500.html", **obtener_contexto_base()), 500
+    except Exception:
+        return "Tuvimos un problema. Probá de nuevo en un momento.", 500
+
 
 @app.route("/robots.txt")
 def robots():

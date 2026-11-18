@@ -29,7 +29,14 @@ NEGOCIO = {
     "whatsapp_texto": "+54 9 11 2832-1531",
     "whatsapp_url": "https://wa.me/5491128321531",
     "instagram_url": "https://www.instagram.com/sopi.tenispadel/",
-    "cuit": "",                       # si lo completás, se muestra en Contacto
+    # Datos legales del vendedor (Ley 24.240): se muestran en el pie y en Contacto.
+    "razon_social": "Mariano Vallejos",  # nombre del titular o razón social
+    "cuit": "20-28046135-1",          # ej: 20-12345678-9
+    "domicilio": "Urquiza 2939, Quilmes, Buenos Aires",  # domicilio comercial completo
+    # Data Fiscal de AFIP (formulario 960/D): pegá el link que te da AFIP y la
+    # imagen del QR (archivo en static/img). Si están vacíos no se muestran.
+    "data_fiscal_url": "",
+    "data_fiscal_img": "",
     "envio_gratis_desde": 150000,
     "plazo_envio": "3 días hábiles",
     "dias_arrepentimiento": 10,       # mínimo legal: 10 días corridos (Ley 24.240, art. 34)
@@ -43,6 +50,11 @@ def init_app(app, contexto_base):
     global _contexto_base
     _contexto_base = contexto_base
     app.register_blueprint(bp)
+
+    @app.context_processor
+    def _negocio():
+        # los datos del negocio quedan disponibles en todas las páginas (pie)
+        return {"negocio": NEGOCIO}
 
 
 # ---------------------------------------------------------
@@ -80,7 +92,7 @@ def _render(pagina, titulo, descripcion, **extra):
 def envios():
     return _render(
         "envios", "Envíos",
-        "Enviamos a todo el país por Andreani. Envío gratis en compras desde $150.000.",
+        "Enviamos a todo el país por Correo Argentino. Envío gratis en compras desde $150.000.",
     )
 
 

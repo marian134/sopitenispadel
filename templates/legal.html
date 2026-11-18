@@ -10,14 +10,15 @@
 
   {% if pagina == 'envios' %}
 
-    <p>Enviamos a todo el país desde {{ negocio.localidad }} a través de <strong>Andreani</strong>.</p>
+    <p>Enviamos a todo el país desde {{ negocio.localidad }} a través de <strong>Correo Argentino</strong>.</p>
 
     <h2>Plazo de entrega</h2>
     <p>El plazo de entrega es de <strong>{{ negocio.plazo_envio }}</strong> desde que se acredita el pago.</p>
 
     <h2>Costo de envío</h2>
-    <p>El envío tiene un costo que depende del destino, calculado con la tarifa de Andreani. Consultanos por
-       <a href="{{ negocio.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a> y te informamos el valor para tu domicilio.</p>
+    <p>El costo depende del destino y del tamaño del paquete. Lo ves al finalizar la compra, apenas escribís tu
+       código postal (tarifa de Correo Argentino). Si tenés dudas, consultanos por
+       <a href="{{ negocio.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a>.</p>
     <p><strong>Envío gratis</strong> en compras desde {{ negocio.envio_gratis_desde|pesos }}.</p>
 
     <h2>Seguimiento</h2>
@@ -51,7 +52,9 @@
       <li><strong>Email:</strong> <a href="mailto:{{ negocio.email }}">{{ negocio.email }}</a></li>
       <li><strong>Instagram:</strong> <a href="{{ negocio.instagram_url }}" target="_blank" rel="noopener">@sopi.tenispadel</a></li>
       <li><strong>Despachamos desde:</strong> {{ negocio.localidad }}</li>
+      {% if negocio.razon_social %}<li><strong>Titular:</strong> {{ negocio.razon_social }}</li>{% endif %}
       {% if negocio.cuit %}<li><strong>CUIT:</strong> {{ negocio.cuit }}</li>{% endif %}
+      {% if negocio.domicilio %}<li><strong>Domicilio comercial:</strong> {{ negocio.domicilio }}</li>{% endif %}
     </ul>
 
     <p>Si querés arrepentirte de una compra, usá el

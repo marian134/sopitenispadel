@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Tuvimos un problema | SOPI Sports{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block content %}
+<div class="resultado-pago fallo">
+  <div class="resultado-icono">!</div>
+  <h1>Tuvimos un problema</h1>
+  <p>Algo falló de nuestro lado. Probá de nuevo en un momento o escribinos por WhatsApp y te ayudamos.</p>
+  <div class="pr-botones" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px">
+    <a href="{{ url_for('portada') }}" class="btn btn-primary">Ir al inicio</a>
+  </div>
+</div>
+{% endblock %}
