@@ -1,0 +1,114 @@
+{# Bloque de la escalera en el panel del organizador #}
+{% set e = escalera %}
+<div class="tn-caja" id="partidos">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+    <h2 style="margin:0;">Escalera
+      <span class="tn-suave" style="font-size:14px; font-family:inherit;">
+        {% if not comp.fecha_inicio %}· sin fecha de inicio
+        {% elif not e.semana %}· arranca el {{ comp.fecha_inicio.strftime("%d/%m") }}
+        {% elif e.semana > e.total %}· terminó ({{ e.total }} semanas)
+        {% else %}· semana {{ e.semana }} de {{ e.total }}{% if e.especial %} · {{ e.especial }}{% endif %}{% endif %}
+      </span>
+    </h2>
+    <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.reglas_escalera', comp_id=comp.id) }}">Reglas de la escalera</a>
+  </div>
+  {% if not comp.fecha_inicio %}
+    <p class="tn-error" style="margin-bottom:0;">Poné la fecha de inicio en "Editar datos": desde ese día se cuentan las semanas.</p>
+  {% endif %}
+  <p class="tn-suave" style="margin-bottom:0;">Para desafiar, cada jugador necesita el pago confirmado y un nivel inicial (la división se pone sola según el nivel).</p>
+  {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+  {% if e.cambio_semana %}
+    <div class="tn-caja" style="margin:16px 0 0; background:var(--bg);">
+      <h3>Ascensos y descensos (cierre de la semana {{ e.cambio_semana }})</h3>
+      {% set hay = namespace(v=false) %}
+      {% for cat, cambios in e.propuesta %}
+        {% if cambios %}{% set hay.v = true %}
+          <p style="margin:6px 0; font-weight:600;">{{ cat.nombre }}</p>
+          <ul class="tn-dato" style="padding-left:18px; margin:0;">
+            {% for insc, de, a in cambios %}<li>{{ insc.jugador1.nombre_completo }}: {{ de }} → {{ a }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endfor %}
+      {% if not hay.v %}<p class="tn-dato">No hay jugadores para mover.</p>{% endif %}
+      <div class="tn-acciones" style="margin-top:10px;">
+        <form method="post" action="{{ url_for('torneos.divisiones_aplicar', comp_id=comp.id) }}">
+          <input type="hidden" name="semana" value="{{ e.cambio_semana }}">
+          <button class="tn-boton tn-boton-chico" name="accion" value="aplicar">Aplicar cambios</button>
+        </form>
+        <form method="post" action="{{ url_for('torneos.divisiones_aplicar', comp_id=comp.id) }}">
+          <input type="hidden" name="semana" value="{{ e.cambio_semana }}">
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="saltear">No mover a nadie</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if e.disputas %}
+    <h3 style="margin-top:20px;">Para resolver ({{ e.disputas|length }})</h3>
+    {% for p in e.disputas %}
+      <div class="tn-caja" style="margin:0 0 10px; background:var(--bg);">
+        <strong>{{ p.lado_a.jugador1.nombre_completo }} vs {{ p.lado_b.jugador1.nombre_completo }}</strong> <span class="tn-suave">· semana {{ p.semana }}</span>
+        <ul class="tn-dato" style="padding-left:18px;">
+          {% for r in p.resultados %}
+            {% set quien = p.lado_a if r.cargado_por_id == p.lado_a_id else p.lado_b %}
+            <li>{{ quien.jugador1.nombre }} cargó:
+              {% if r.ausente_id %}<strong>no se presentó {{ (p.lado_a if r.ausente_id == p.lado_a_id else p.lado_b).jugador1.nombre_completo }}</strong>
+              {% else %}<strong>{{ r.sets }}</strong> (games de {{ p.lado_a.jugador1.nombre }} primero){% endif %}
+              {% if r.selfie %} · <a href="{{ url_for('torneos.ver_selfie', res_id=r.id) }}" target="_blank" rel="noopener">selfie</a>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        {% include "torneos/_resolver_partido.html" %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if e.agendados %}
+    <details style="margin-top:16px;">
+      <summary style="cursor:pointer; font-weight:700;">Desafíos y partidos en curso ({{ e.agendados|length }})</summary>
+      {% for p in e.agendados %}
+        <div style="border-top:1px solid var(--line); padding:10px 0;">
+          <strong>{{ p.lado_a.jugador1.nombre_completo }} vs {{ p.lado_b.jugador1.nombre_completo }}</strong>
+          <span class="tn-suave">· semana {{ p.semana }} · {{ "esperando respuesta" if p.estado == "desafio" else "aceptado" }}</span>
+          {% include "torneos/_resolver_partido.html" %}
+        </div>
+      {% endfor %}
+    </details>
+  {% endif %}
+
+  {% for cat, grupos in e.rankings %}
+    {% if grupos %}
+      <h3 style="margin-top:20px;">Ranking · {{ cat.nombre }}</h3>
+      <div class="tn-grilla">
+        {% for nombre, grupo in grupos %}
+          <div>
+            <p style="margin:0 0 6px; font-weight:700;">{{ nombre }}</p>
+            <table class="tn-tabla">
+              <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>PJ</th></tr></thead>
+              <tbody>
+                {% for f in grupo %}
+                  <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ "%.1f"|format(f.puntos) }}</td><td>{{ f.jugados }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if e.jugados %}
+    <details style="margin-top:16px;">
+      <summary style="cursor:pointer; font-weight:700;">Últimos resultados</summary>
+      <ul class="tn-dato" style="padding-left:18px;">
+        {% for p in e.jugados %}
+          {% set g = p.lado_a if p.ganador_id == p.lado_a_id else p.lado_b %}
+          {% set r = (p.resultados|selectattr("ausente_id", "none")|list)|last if p.resultados else none %}
+          <li>Semana {{ p.semana }}: {{ p.lado_a.jugador1.nombre_completo }} vs {{ p.lado_b.jugador1.nombre_completo }} ·
+            {% if p.estado == "wo" %}W.O.{% elif r %}{{ r.sets }}{% endif %} · ganó {{ g.jugador1.nombre }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+</div>

@@ -38,6 +38,10 @@ PAR_AGENDADO = "agendado"
 PAR_JUGADO = "jugado"              # hay resultado confirmado
 PAR_EN_DISPUTA = "en_disputa"      # los resultados no coinciden
 PAR_WO = "wo"
+PAR_ANULADO = "anulado"            # lo anuló el organizador
+PAR_PENDIENTE = "pendiente"        # cuadro: todavía falta definir uno de los rivales
+PAR_BYE = "bye"                    # cuadro: pase libre (rival vacío)
+PARTIDOS_ABIERTOS = (PAR_DESAFIO, PAR_AGENDADO, PAR_EN_DISPUTA)
 
 # Valor por defecto del plan pago: $2.000 por inscripto (decidido el 19/11/2026)
 PRECIO_POR_INSCRIPTO = 2000
@@ -165,6 +169,9 @@ class Inscripcion(db.Model):
     comprobante = db.Column(db.String(255))      # URL en el servicio de imágenes
     estado_pago = db.Column(db.String(12), nullable=False, default=PAGO_PENDIENTE)
     nivel_inicial = db.Column(db.Float)          # escalera: lo asigna el organizador
+    division = db.Column(db.String(40))          # escalera: división actual (Oro, Plata...)
+    rechazos_seguidos = db.Column(db.Integer, nullable=False, default=0)  # escalera
+    siembra = db.Column(db.Integer)              # cuadro: número de cabeza de serie
     restricciones = db.Column(db.Text, default="")   # cuándo no puede jugar
     baja = db.Column(db.Boolean, nullable=False, default=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -180,7 +187,8 @@ class Partido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     competencia_id = db.Column(db.Integer, db.ForeignKey("torneo_competencia.id"), nullable=False)
     categoria_id = db.Column(db.Integer, db.ForeignKey("torneo_categoria.id"))
-    ronda = db.Column(db.String(20))             # cuadro: "octavos", "final"... / escalera: vacío
+    ronda = db.Column(db.String(20))             # cuadro: número de ronda ("1" = primera) / escalera: vacío
+    cuadro = db.Column(db.String(12))            # cuadro: principal | consuelo | tercer
     semana = db.Column(db.Integer)               # escalera: número de semana de la etapa
     posicion = db.Column(db.Integer)             # cuadro: lugar en la llave
     # Lado A y lado B: una inscripción cada uno (singles o pareja fija)
@@ -212,6 +220,7 @@ class Resultado(db.Model):
     cargado_por_id = db.Column(db.Integer)
     sets = db.Column(db.String(60), nullable=False)          # ej. "6-4 3-6 10-8"
     selfie = db.Column(db.String(255))                       # obligatoria si carga un jugador
+    ausente_id = db.Column(db.Integer)                       # W.O.: inscripción que no se presentó
     confirmado = db.Column(db.Boolean, nullable=False, default=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -224,6 +233,7 @@ class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     competencia_id = db.Column(db.Integer, db.ForeignKey("torneo_competencia.id"), nullable=False)
     jugador_id = db.Column(db.Integer, db.ForeignKey("torneo_jugador.id"), nullable=False)
+    inscripcion_id = db.Column(db.Integer, db.ForeignKey("torneo_inscripcion.id"))
     partido_id = db.Column(db.Integer, db.ForeignKey("torneo_partido.id"))
     semana = db.Column(db.Integer)
     puntos = db.Column(db.Float, nullable=False)
@@ -239,6 +249,7 @@ class RankingSemana(db.Model):
     competencia_id = db.Column(db.Integer, db.ForeignKey("torneo_competencia.id"), nullable=False)
     semana = db.Column(db.Integer, nullable=False)
     jugador_id = db.Column(db.Integer, db.ForeignKey("torneo_jugador.id"), nullable=False)
+    inscripcion_id = db.Column(db.Integer, db.ForeignKey("torneo_inscripcion.id"))
     puntos = db.Column(db.Float, nullable=False)
     posicion = db.Column(db.Integer, nullable=False)
     division = db.Column(db.String(40))
@@ -260,3 +271,16 @@ class Cobro(db.Model):
     @property
     def monto(self):
         return self.inscriptos * self.precio_unitario
+
+
+# Columnas agregadas después de crear las tablas: (tabla, columna, tipo SQL).
+# init_app las agrega si faltan (db.create_all no modifica tablas existentes).
+COLUMNAS_NUEVAS = [
+    ("torneo_inscripcion", "division", "VARCHAR(40)"),
+    ("torneo_inscripcion", "rechazos_seguidos", "INTEGER NOT NULL DEFAULT 0"),
+    ("torneo_resultado", "ausente_id", "INTEGER"),
+    ("torneo_movimiento", "inscripcion_id", "INTEGER"),
+    ("torneo_ranking_semana", "inscripcion_id", "INTEGER"),
+    ("torneo_inscripcion", "siembra", "INTEGER"),
+    ("torneo_partido", "cuadro", "VARCHAR(12)"),
+]

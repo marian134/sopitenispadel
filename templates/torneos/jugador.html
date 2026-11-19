@@ -6,6 +6,12 @@
 {% block content %}
 {% set nombres_pago = {"pendiente": "Pago a revisar", "confirmado": "Inscripción confirmada", "rechazado": "Pago rechazado: escribile al organizador"} %}
 {% include "torneos/_estilos.html" %}
+<style>
+  .tn-ranking td.tn-yo { color: var(--lime, #E57E3C); font-weight: 700; }
+  .tn-sets { display: grid; grid-template-columns: auto 64px 64px; gap: 6px 10px; align-items: center; max-width: 260px; }
+  .tn-sets input { padding: 8px; text-align: center; }
+  .tn-partido { border-top: 1px solid var(--line, #1c2b4a); padding-top: 14px; margin-top: 14px; }
+</style>
 <section class="tn-wrap tn-angosto tn-seccion">
   <div class="tn-hero">
     <span class="tn-etiqueta">Tu panel</span>
@@ -13,10 +19,14 @@
     <p>Este es tu enlace personal: no lo compartas.</p>
   </div>
 
+  {% if mensaje %}<p class="tn-ok">{{ mensaje }}</p>{% endif %}
+  {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
   {% if inscripciones %}
     {% for i in inscripciones %}
       {% set comp = i.categoria.competencia %}
-      <div class="tn-caja">
+      {% set b = bloques.get(i.id) %}
+      <div class="tn-caja" id="insc-{{ i.id }}">
         <span class="tn-tipo">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }}</span>
         <h2 style="margin:6px 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}" style="color:inherit;">{{ comp.nombre }}</a></h2>
         <p class="tn-dato">{{ i.categoria.nombre }}{% if i.jugador2 %} · con {{ (i.jugador2 if i.jugador1_id == j.id else i.jugador1).nombre_completo }}{% endif %}</p>
@@ -25,12 +35,117 @@
         {% else %}
           <span class="tn-estado tn-est-{{ i.estado_pago }}">{{ nombres_pago.get(i.estado_pago) }}</span>
         {% endif %}
-        {% if comp.tipo == "escalera" and i.nivel_inicial is not none %}
-          <p class="tn-dato">Nivel inicial: {{ i.nivel_inicial|round(1) }}</p>
+
+        {% if b %}
+          {% if b.sin_fecha %}
+            <p class="tn-dato">La escalera arranca cuando el organizador fije la fecha de inicio.</p>
+          {% elif not b.participa %}
+            <p class="tn-dato">Vas a poder desafiar cuando el organizador confirme tu pago y te asigne el nivel inicial.</p>
+          {% elif not b.semana %}
+            <p class="tn-dato">La escalera arranca el {{ comp.fecha_inicio.strftime("%d/%m") }}.</p>
+          {% elif b.mia %}
+            <div class="tn-dos" style="margin-top:14px;">
+              <div>
+                <p class="tn-dato" style="margin:0;">Semana {{ b.semana if b.semana <= b.total else b.total }} de {{ b.total }}{% if b.especial %} · <strong style="color:var(--amarillo);">{{ b.especial }}</strong>{% endif %}</p>
+                <p style="margin:4px 0; font-size:22px; font-weight:800;">Nivel {{ "%.1f"|format(b.mia.puntos) }}</p>
+                <p class="tn-dato" style="margin:0;">Puesto {{ b.mia.posicion }} en {{ b.division }}{% if b.puntos_semana %} · esta semana {{ "%+.1f"|format(b.puntos_semana) }} (suma el lunes){% endif %}</p>
+              </div>
+              <div>
+                {% if b.libre_actual %}<p class="tn-dato" style="margin:0;">Esta semana la tenés libre.</p>{% endif %}
+                <p class="tn-dato" style="margin:0;">Semanas libres que te quedan: {{ b.libres_restantes }}</p>
+                {% if b.en_juego and b.libres_restantes > 0 and not b.libre_proxima and b.semana < b.total %}
+                  <form method="post" action="{{ url_for('torneos.semana_libre', enlace=j.enlace) }}" style="margin-top:6px;"
+                        onsubmit="return confirm('¿Pedir la semana que viene libre?');">
+                    <input type="hidden" name="insc" value="{{ i.id }}">
+                    <button class="tn-boton tn-boton-sec tn-boton-chico">Pedir la semana que viene libre</button>
+                  </form>
+                {% elif b.libre_proxima %}
+                  <p class="tn-dato" style="margin:0;">La semana que viene la tenés libre.</p>
+                {% endif %}
+              </div>
+            </div>
+
+            {# PARTIDOS ABIERTOS #}
+            {% for f in b.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}
+
+            {# DESAFIAR #}
+            {% if b.en_juego %}
+              <div class="tn-partido">
+                <strong>Desafiar</strong>
+                {% if b.desafiables %}
+                  <p class="tn-dato">Podés desafiar hasta {{ b.max_puestos }} puestos más arriba en {{ b.division }}.</p>
+                  <div class="tn-acciones">
+                    {% for f in b.desafiables %}
+                      <form method="post" action="{{ url_for('torneos.desafiar', enlace=j.enlace) }}"
+                            onsubmit="return confirm('¿Desafiar a {{ f.insc.jugador1.nombre_completo|replace("'", "") }}?');">
+                        <input type="hidden" name="insc" value="{{ i.id }}">
+                        <input type="hidden" name="rival" value="{{ f.insc.id }}">
+                        <button class="tn-boton tn-boton-sec tn-boton-chico">#{{ f.posicion }} {{ f.insc.jugador1.nombre_completo }} ({{ "%.1f"|format(f.puntos) }})</button>
+                      </form>
+                    {% endfor %}
+                  </div>
+                {% elif b.mia.posicion == 1 %}
+                  <p class="tn-dato">Sos el primero de {{ b.division }}: esperá que te desafíen.</p>
+                {% else %}
+                  <p class="tn-dato">Esta semana ya tenés partidos con todos los que podés desafiar.</p>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {# RANKING DE SU DIVISIÓN #}
+            <details class="tn-partido">
+              <summary style="cursor:pointer; font-weight:700;">Ranking de {{ b.division }}</summary>
+              <table class="tn-tabla tn-ranking" style="margin-top:8px;">
+                <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>PJ</th></tr></thead>
+                <tbody>
+                {% for f in b.grupo %}
+                  {% set yo = f.insc.id == i.id %}
+                  <tr><td class="{{ 'tn-yo' if yo }}">{{ f.posicion }}</td><td class="{{ 'tn-yo' if yo }}">{{ f.insc.jugador1.nombre_completo }}</td>
+                      <td class="{{ 'tn-yo' if yo }}">{{ "%.1f"|format(f.puntos) }}</td><td>{{ f.jugados }}</td></tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </details>
+
+            {% if b.historial %}
+              <details class="tn-partido">
+                <summary style="cursor:pointer; font-weight:700;">Últimos partidos</summary>
+                <ul class="tn-dato" style="padding-left:18px;">
+                  {% for h in b.historial %}
+                    <li>{{ "Ganaste" if h.gane else "Perdiste" }} con {{ h.rival.jugador1.nombre_completo }} · {{ h.sets }} · semana {{ h.p.semana }}</li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% set bc = bloques_cuadro.get(i.id) %}
+        {% if bc %}
+          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}!</span></p>{% endif %}
+          {% for f in bc.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}
+          {% for x in bc.esperando %}
+            <div class="tn-partido"><strong>{{ x.ronda }}</strong>
+              <p class="tn-dato" style="margin:2px 0;">Tu rival sale de {{ x.de }}.{% if x.p.fecha_hora %} Juegan el {{ x.p.fecha_hora.strftime("%d/%m a las %H:%M") }}{% if x.p.cancha %}, cancha {{ x.p.cancha }}{% endif %}.{% endif %}</p>
+            </div>
+          {% endfor %}
+          {% if not bc.partidos and not bc.esperando and not bc.historial %}
+            <p class="tn-dato">{{ "El organizador todavía no armó el cuadro." if not bc.armado else "Ya no tenés partidos por jugar." }}</p>
+          {% endif %}
+          {% if bc.historial %}
+            <details class="tn-partido">
+              <summary style="cursor:pointer; font-weight:700;">Tus partidos</summary>
+              <ul class="tn-dato" style="padding-left:18px;">
+                {% for h in bc.historial %}
+                  <li>{{ h.ronda }}: {{ "ganaste" if h.gane else "perdiste" }}{% if h.rival %} con {{ h.rival.jugador1.nombre_completo }}{% endif %}{% if h.sets %} · {{ h.sets }}{% endif %}</li>
+                {% endfor %}
+              </ul>
+            </details>
+          {% endif %}
+          <p style="margin:12px 0 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}#cuadros">Ver el cuadro completo</a></p>
         {% endif %}
       </div>
     {% endfor %}
-    <p class="tn-suave">Los desafíos, partidos y resultados se van a ver acá cuando empiece cada torneo.</p>
   {% else %}
     <div class="tn-caja"><p style="margin:0;">Todavía no estás anotado en ningún torneo. <a href="{{ url_for('torneos.calendario') }}">Ver torneos</a></p></div>
   {% endif %}

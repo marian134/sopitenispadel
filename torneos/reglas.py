@@ -32,6 +32,17 @@ ESCALERA = {
         {"nombre": "Bronce", "niveles": [5, 3, 1]},
     ],
     "ascensos_cada_semanas": 4,
+    # Un elemento por cada límite entre divisiones, de arriba hacia abajo:
+    # Oro/Plata (Oro no tiene descensos) y Plata/Bronce.
+    "cambios_division": [
+        {"suben": 3, "bajan": 0},
+        {"suben": 6, "bajan": 3},
+    ],
+    # Semanas con modo especial: "doble" duplica los puntos de los partidos;
+    # el resto se muestra como aviso (ej. quién paga la cancha).
+    "semanas_especiales": {
+        "3": "doble", "7": "doble", "9": "paga_perdedor", "12": "1vs1",
+    },
     "selfie_obligatoria": True,
     "formato_partido": "mejor de 3 sets con súper tie-break",
     "dobles_ranking_individual": True,

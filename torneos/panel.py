@@ -5,10 +5,12 @@ from datetime import datetime
 from flask import abort, redirect, render_template, request, send_from_directory, url_for
 
 from models import db
+from . import escalera as esc
 from . import reglas as reglas_mod
 from .bp import bp, contexto
 from .models import (
-    Categoria, Competencia, Inscripcion,
+    Categoria, Competencia, Inscripcion, Partido, Resultado,
+    PAR_AGENDADO, PAR_ANULADO, PAR_DESAFIO, PAR_EN_DISPUTA, PAR_JUGADO, PAR_WO,
     EST_BORRADOR, EST_CANCELADA, EST_EN_CURSO, EST_INSCRIPCION,
     PAGO_CONFIRMADO, PAGO_PENDIENTE, PAGO_RECHAZADO, PLAN_GRATIS,
     TIPO_CUADRO, TIPO_ESCALERA,
@@ -204,6 +206,7 @@ def _hay_inscriptos(comp):
 @organizador_requerido
 def competencia_panel(comp_id):
     comp = _mi_competencia(comp_id)
+    esc.procesar(comp)
     url_publica = url_for("torneos.torneo", slug=comp.slug, _external=True)
     categorias = []
     for cat in sorted(comp.categorias, key=lambda c: c.orden):
@@ -221,11 +224,174 @@ def competencia_panel(comp_id):
             "cat": cat, "filas": filas, "activos": len(activos),
             "confirmados": sum(1 for i in activos if i.estado_pago == PAGO_CONFIRMADO),
         })
+    escalera = _datos_escalera(comp) if comp.tipo == TIPO_ESCALERA else None
+    from .panel_cuadro import datos_cuadro
+    cuadro = datos_cuadro(comp) if comp.tipo == TIPO_CUADRO else None
     return render_template(
         "torneos/competencia_panel.html",
         **contexto(
             comp=comp, categorias=categorias, url_publica=url_publica,
             niveles=comp.reglas.get("niveles_iniciales", []),
+            divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro,
+            error=request.args.get("error"),
+        ),
+    )
+
+
+def _datos_escalera(comp):
+    semana = esc.semana_actual(comp)
+    datos = {
+        "semana": semana, "total": esc.total_semanas(comp), "en_juego": esc.en_juego(comp),
+        "especial": esc.especial(comp, semana)[1] if semana else None,
+        "cerrada": comp.reglas.get("semana_cerrada") or 0,
+    }
+    partidos = Partido.query.filter_by(competencia_id=comp.id).order_by(Partido.creado_en.desc()).all()
+    datos["disputas"] = [p for p in partidos if p.estado == PAR_EN_DISPUTA]
+    datos["agendados"] = [p for p in partidos if p.estado in (PAR_AGENDADO, PAR_DESAFIO)]
+    datos["jugados"] = [p for p in partidos if p.estado in (PAR_JUGADO, PAR_WO)][:20]
+    datos["rankings"] = [
+        (cat, esc.ranking(cat, semana or 1)) for cat in sorted(comp.categorias, key=lambda c: c.orden)
+    ]
+    cambio = esc.semana_cambio_pendiente(comp)
+    datos["cambio_semana"] = cambio
+    datos["propuesta"] = (
+        [(cat, esc.propuesta_divisiones(cat, cambio)) for cat in comp.categorias] if cambio else []
+    )
+    return datos
+
+
+@bp.route("/panel/partido/<int:partido_id>", methods=["POST"])
+@organizador_requerido
+def partido_resolver(partido_id):
+    """El organizador define un partido: resultado, W.O. o anulado."""
+    p = db.session.get(Partido, partido_id)
+    if not p:
+        abort(404)
+    comp = _mi_competencia(p.competencia_id)
+    if p.estado not in (PAR_AGENDADO, PAR_EN_DISPUTA, PAR_DESAFIO):
+        return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
+    accion = request.form.get("accion")
+    if accion == "resultado":
+        try:
+            sets = esc.sets_texto(esc.leer_sets(request.form.get("sets"), un_set=comp.tipo != TIPO_ESCALERA))
+        except ValueError as e:
+            return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, error=str(e)) + "#partidos")
+        db.session.add(Resultado(partido_id=p.id, cargado_por="organizador",
+                                 cargado_por_id=comp.organizador_id, sets=sets, confirmado=True))
+        db.session.flush()
+        esc.aplicar_resultado(p, sets)
+    elif accion in ("wo_a", "wo_b"):
+        esc.aplicar_wo(p, p.lado_a_id if accion == "wo_a" else p.lado_b_id)
+    elif accion == "anular" and comp.tipo == TIPO_ESCALERA:   # en un cuadro no se anula: rompería la llave
+        p.estado = PAR_ANULADO
+    db.session.commit()
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + "#partidos")
+
+
+@bp.route("/panel/<int:comp_id>/divisiones", methods=["POST"])
+@organizador_requerido
+def divisiones_aplicar(comp_id):
+    comp = _mi_competencia(comp_id)
+    semana = esc.semana_cambio_pendiente(comp)
+    if semana and request.form.get("semana", type=int) == semana:
+        if request.form.get("accion") == "aplicar":
+            esc.aplicar_divisiones(comp, semana)
+        else:   # saltear este cambio
+            reglas = comp.reglas
+            reglas["divisiones_aplicadas"] = (reglas.get("divisiones_aplicadas") or []) + [semana]
+            comp.reglas = reglas
+            db.session.commit()
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
+
+
+# Reglas editables de la escalera: (clave, texto, tipo)
+REGLAS_NUMERICAS = [
+    ("semanas", "Duración de la etapa (semanas)", int),
+    ("desafio_max_puestos_arriba", "Hasta cuántos puestos arriba se puede desafiar", int),
+    ("plazo_respuesta_dias", "Días para responder un desafío", int),
+    ("rechazos_seguidos_max", "Rechazos seguidos permitidos", int),
+    ("minimo_partidos_semana", "Partidos mínimos por semana (0 = sin mínimo)", int),
+    ("semanas_libres", "Semanas libres por etapa", int),
+    ("piso_bajo_inicial", "Puntos máximos que se puede bajar del nivel inicial", float),
+    ("ascensos_cada_semanas", "Ascensos y descensos cada (semanas, 0 = nunca)", int),
+]
+PUNTOS = [
+    ("gana_2_sets", "Gana en 2 sets"), ("gana_super_tiebreak", "Gana en súper tie-break"),
+    ("gana_wo", "Gana por W.O."), ("pierde_super_tiebreak", "Pierde en súper tie-break"),
+    ("pierde_2_sets", "Pierde en 2 sets"), ("pierde_wo", "Pierde por W.O."),
+    ("inactividad_semanal", "Semana sin jugar"),
+]
+NOMBRES_ESPECIALES_FORM = {"doble": "doble", "paga_perdedor": "paga perdedor", "1vs1": "1vs1"}
+
+
+def _numero(n):
+    return str(int(n)) if float(n).is_integer() else str(n)
+
+
+def _texto_divisiones(reglas):
+    return "\n".join(
+        f"{d['nombre']}: {', '.join(_numero(n) for n in d.get('niveles', []))}"
+        for d in reglas.get("divisiones") or []
+    )
+
+
+def _texto_especiales(reglas):
+    items = sorted((reglas.get("semanas_especiales") or {}).items(), key=lambda x: int(x[0]))
+    return "\n".join(f"{k}: {NOMBRES_ESPECIALES_FORM.get(v, v)}" for k, v in items)
+
+
+def _lista_numeros(texto):
+    vals = [float(x) for x in (texto or "").replace(";", ",").split(",") if x.strip()]
+    return [int(n) if n.is_integer() else n for n in vals]
+
+
+@bp.route("/panel/<int:comp_id>/reglas", methods=["GET", "POST"])
+@organizador_requerido
+def reglas_escalera(comp_id):
+    comp = _mi_competencia(comp_id)
+    if comp.tipo != TIPO_ESCALERA:
+        abort(404)
+    reglas = comp.reglas
+    error, guardado = None, False
+    if request.method == "POST":
+        f = request.form
+        try:
+            for clave, _texto, tipo in REGLAS_NUMERICAS:
+                reglas[clave] = tipo((f.get(clave) or "0").replace(",", "."))
+            reglas["puntos"] = {k: float((f.get(f"p_{k}") or "0").replace(",", ".")) for k, _ in PUNTOS}
+            reglas["niveles_iniciales"] = _lista_numeros(f.get("niveles"))
+            divisiones = []
+            for linea in (f.get("divisiones") or "").splitlines():
+                if ":" in linea:
+                    nombre, nums = linea.split(":", 1)
+                    divisiones.append({"nombre": nombre.strip()[:40], "niveles": _lista_numeros(nums)})
+            reglas["divisiones"] = divisiones
+            reglas["cambios_division"] = [
+                {"suben": int(f.get(f"suben_{k}") or 0), "bajan": int(f.get(f"bajan_{k}") or 0)}
+                for k in range(max(0, len(divisiones) - 1))
+            ]
+            claves = {v: k for k, v in NOMBRES_ESPECIALES_FORM.items()}
+            especiales = {}
+            for linea in (f.get("especiales") or "").splitlines():
+                if ":" in linea:
+                    n, modo = linea.split(":", 1)
+                    if n.strip().isdigit():
+                        especiales[n.strip()] = claves.get(modo.strip().lower(), modo.strip()[:30])
+            reglas["semanas_especiales"] = especiales
+            reglas["selfie_obligatoria"] = bool(f.get("selfie_obligatoria"))
+            reglas["formato_partido"] = (f.get("formato_partido") or "").strip()[:100]
+        except ValueError:
+            error = "Revisá los números: usá solo números (con coma o punto para decimales)."
+        else:
+            comp.reglas = reglas
+            db.session.commit()
+            guardado = True
+    return render_template(
+        "torneos/reglas.html",
+        **contexto(
+            comp=comp, reglas=reglas, error=error, guardado=guardado,
+            numericas=REGLAS_NUMERICAS, puntos=PUNTOS,
+            texto_divisiones=_texto_divisiones(reglas), texto_especiales=_texto_especiales(reglas),
         ),
     )
 
@@ -254,6 +420,16 @@ def inscripcion_accion(insc_id):
             insc.nivel_inicial = float(valor) if valor else None
         except ValueError:
             pass
+        else:
+            # la división arranca según el nivel inicial (después la cambian los ascensos)
+            insc.division = esc.division_por_nivel(comp, insc.nivel_inicial)
+    elif accion == "siembra":
+        valor = (request.form.get("siembra") or "").strip()
+        insc.siembra = int(valor) if valor.isdigit() and int(valor) > 0 else None
+    elif accion == "division":
+        nombre = request.form.get("division") or None
+        if nombre is None or nombre in esc.nombres_divisiones(comp):
+            insc.division = nombre
     db.session.commit()
     return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + f"#cat-{insc.categoria_id}")
 

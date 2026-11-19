@@ -46,6 +46,9 @@
     {% endif %}
   </div>
 
+  {% if escalera %}{% include "torneos/_panel_escalera.html" %}{% endif %}
+  {% if cuadro %}{% include "torneos/_panel_cuadro.html" %}{% endif %}
+
   {% for c in categorias %}
     <div class="tn-caja" id="cat-{{ c.cat.id }}">
       <h2>{{ c.cat.nombre }} <span class="tn-suave" style="font-size:14px; font-family:inherit;">
@@ -55,7 +58,8 @@
           <table class="tn-tabla">
             <thead><tr>
               <th>Jugador</th><th>Celular</th><th>Estado</th>
-              {% if comp.tipo == "escalera" %}<th>Nivel inicial</th>{% endif %}
+              {% if comp.tipo == "escalera" %}<th>Nivel inicial</th><th>División</th>{% endif %}
+              {% if comp.tipo == "cuadro" %}<th>Cabeza de serie</th>{% endif %}
               <th>Acciones</th>
             </tr></thead>
             <tbody>
@@ -84,6 +88,26 @@
                           <option value="{{ n }}" {% if i.nivel_inicial == n %}selected{% endif %}>{{ n }}</option>
                         {% endfor %}
                       </select>
+                    </form>
+                  </td>
+                  <td>
+                    <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}">
+                      <input type="hidden" name="accion" value="division">
+                      <select name="division" onchange="this.form.submit()" aria-label="División de {{ i.jugador1.nombre_completo }}" style="padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+                        <option value="">Sin división</option>
+                        {% for d in divisiones %}
+                          <option value="{{ d }}" {% if i.division == d %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                      </select>
+                    </form>
+                  </td>
+                {% endif %}
+                {% if comp.tipo == "cuadro" %}
+                  <td>
+                    <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}" class="tn-acciones">
+                      <input type="hidden" name="accion" value="siembra">
+                      <input name="siembra" inputmode="numeric" value="{{ i.siembra or '' }}" placeholder="—" aria-label="Cabeza de serie de {{ i.jugador1.nombre_completo }}"
+                             onchange="this.form.submit()" style="width:56px; padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
                     </form>
                   </td>
                 {% endif %}

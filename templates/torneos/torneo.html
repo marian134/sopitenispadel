@@ -43,6 +43,80 @@
     </div>
   {% endif %}
 
+  {% if escalera and escalera.semana %}
+    <div class="tn-caja">
+      <h2 style="margin-bottom:6px;">Ranking</h2>
+      <p class="tn-suave" style="margin-top:0;">
+        {% if escalera.semana > escalera.total %}Etapa terminada · ranking final
+        {% else %}Semana {{ escalera.semana }} de {{ escalera.total }}{% if escalera.especial %} · {{ escalera.especial }}{% endif %} · se actualiza cada lunes{% endif %}
+      </p>
+      {% for c in categorias %}
+        {% if c.ranking %}
+          {% if categorias|length > 1 %}<h3>{{ c.cat.nombre }}</h3>{% endif %}
+          <div class="tn-grilla">
+            {% for nombre, grupo in c.ranking %}
+              <div>
+                <p style="margin:0 0 6px; font-weight:700; color:var(--amarillo);">{{ nombre }}</p>
+                <table class="tn-tabla">
+                  <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>PJ</th></tr></thead>
+                  <tbody>
+                    {% for f in grupo %}
+                      <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ "%.1f"|format(f.puntos) }}</td><td>{{ f.jugados }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if proximos %}
+    <div class="tn-caja">
+      <h2>Próximos partidos</h2>
+      {% set dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] %}
+      {% for dia, partidos in proximos %}
+        <p style="margin:12px 0 6px; font-weight:700; color:var(--amarillo);">{{ dias[dia.weekday()] }} {{ dia.strftime("%d/%m") }}</p>
+        <div class="tn-scroll">
+          <table class="tn-tabla">
+            <tbody>
+              {% for p in partidos %}
+                <tr><td style="white-space:nowrap;">{{ p.fecha_hora.strftime("%H:%M") }}</td><td>{{ p.cancha or "" }}</td>
+                    <td>{{ p.lado_a.jugador1.nombre_completo }} vs {{ p.lado_b.jugador1.nombre_completo }}</td>
+                    <td class="tn-suave">{{ p.lado_a.categoria.nombre }} · {{ nombre_ronda(p.lado_a.categoria, p.cuadro, p.ronda) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if comp.tipo == "cuadro" and categorias|selectattr("principal")|list %}
+    <div id="cuadros">
+      {% for c in categorias %}
+        {% if c.principal %}
+          <div class="tn-caja">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">Cuadro · {{ c.cat.nombre }}</h2>
+              {% if c.campeon %}<span class="tn-campeon">🏆 {{ c.campeon.jugador1.nombre_completo }}{% if c.campeon.jugador2 %} / {{ c.campeon.jugador2.nombre_completo }}{% endif %}</span>{% endif %}
+            </div>
+            <div style="margin-top:12px;">{% with rondas = c.principal %}{% include "torneos/_llave.html" %}{% endwith %}</div>
+            {% if c.tercer %}
+              {% with rondas = [{"numero": 1, "nombre": "Tercer puesto", "partidos": c.tercer}] %}<div style="margin-top:12px;">{% include "torneos/_llave.html" %}</div>{% endwith %}
+            {% endif %}
+            {% if c.consuelo %}
+              <p style="margin:16px 0 6px; font-weight:700;">Consuelo</p>
+              {% with rondas = c.consuelo %}{% include "torneos/_llave.html" %}{% endwith %}
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <h2>Categorías</h2>
   <div class="tn-grilla">
     {% for c in categorias %}

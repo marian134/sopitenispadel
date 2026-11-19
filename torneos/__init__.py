@@ -25,7 +25,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import models  # noqa: F401  (registra las tablas antes de db.create_all)
 from .bp import bp, contexto, _estado
-from . import publico, cuentas, panel  # noqa: F401  (registran sus rutas en bp)
+from . import publico, cuentas, panel, panel_cuadro, desafios  # noqa: F401  (registran sus rutas en bp)
 
 
 def torneos_visible():
@@ -36,10 +36,28 @@ def init_app(app, contexto_base):
     """Registra las rutas. contexto_base es obtener_contexto_base de app.py."""
     _estado["contexto_base"] = contexto_base
     app.register_blueprint(bp)
+    with app.app_context():
+        _agregar_columnas_nuevas()
 
     @app.context_processor
     def _torneos():
         return {"torneos_visible": torneos_visible()}
+
+
+def _agregar_columnas_nuevas():
+    """Migración liviana: agrega las columnas de models.COLUMNAS_NUEVAS que
+    falten (db.create_all crea tablas nuevas pero no toca las existentes)."""
+    from sqlalchemy import inspect, text
+    from models import db
+
+    inspector = inspect(db.engine)
+    tablas = set(inspector.get_table_names())
+    for tabla, columna, tipo in models.COLUMNAS_NUEVAS:
+        if tabla not in tablas:
+            continue
+        if columna not in {c["name"] for c in inspector.get_columns(tabla)}:
+            db.session.execute(text(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo}"))
+            db.session.commit()
 
 
 # ---------------------------------------------------------

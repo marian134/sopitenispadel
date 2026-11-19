@@ -1,0 +1,81 @@
+{# Un partido abierto del jugador (escalera o cuadro). Recibe f, j, comp, b. #}
+{% set p = f.p %}
+<div class="tn-partido" id="partido-{{ p.id }}">
+  {% if comp.tipo == "escalera" %}
+  <strong>{{ "Desafiaste a" if f.soy_desafiante else "Te desafió" }} {{ f.rival.jugador1.nombre_completo }}</strong>
+  <span class="tn-suave" style="font-size:13px;"> · semana {{ p.semana }}</span>
+  {% else %}
+  <strong>{{ f.ronda }}: vs {{ f.rival.jugador1.nombre_completo }}</strong>
+  {% if p.fecha_hora %}<p class="tn-dato" style="margin:2px 0;">{{ ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m a las %H:%M") }}{% if p.cancha %} · cancha {{ p.cancha }}{% endif %}</p>
+  {% else %}<p class="tn-dato" style="margin:2px 0;">El organizador todavía no fijó el horario.</p>{% endif %}
+  {% endif %}
+
+  {% if p.estado == "desafio" %}
+    {% if f.soy_desafiante %}
+      <p class="tn-dato">Esperando respuesta hasta el {{ p.vence_en.strftime("%d/%m %H:%M") }}.</p>
+      <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisarle</a>
+    {% else %}
+      <p class="tn-dato">Respondé antes del {{ p.vence_en.strftime("%d/%m %H:%M") }}.</p>
+      <div class="tn-acciones">
+        <form method="post" action="{{ url_for('torneos.responder', enlace=j.enlace) }}">
+          <input type="hidden" name="partido" value="{{ p.id }}">
+          <button class="tn-boton tn-boton-chico" name="accion" value="aceptar">Aceptar</button>
+        </form>
+        {% if b.puede_rechazar %}
+          <form method="post" action="{{ url_for('torneos.responder', enlace=j.enlace) }}">
+            <input type="hidden" name="partido" value="{{ p.id }}">
+            <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="rechazar">Rechazar</button>
+          </form>
+        {% else %}
+          <span class="tn-dato">Ya rechazaste uno: este lo tenés que aceptar.</span>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% elif p.estado == "en_disputa" %}
+    <p class="tn-dato">Lo está revisando el organizador{% if f.mio_txt %} · cargaste {{ f.mio_txt }}{% endif %}{% if f.suyo_txt %} · tu rival cargó {{ f.suyo_txt }}{% endif %}.</p>
+
+  {% elif p.estado == "agendado" %}
+    {% if f.mio %}
+      <p class="tn-dato">Cargaste {{ f.mio_txt }}. Falta que {{ f.rival.jugador1.nombre }} lo confirme.</p>
+    {% elif f.suyo %}
+      <p>{{ f.rival.jugador1.nombre }} cargó: <strong>{{ f.suyo_txt }}</strong> (tus games primero)
+        {% if f.suyo.selfie %} · <a href="{{ url_for('torneos.ver_selfie', res_id=f.suyo.id, e=j.enlace) }}" target="_blank" rel="noopener">ver selfie</a>{% endif %}</p>
+      <div class="tn-acciones">
+        <form method="post" action="{{ url_for('torneos.confirmar_resultado', enlace=j.enlace) }}">
+          <input type="hidden" name="partido" value="{{ p.id }}">
+          <button class="tn-boton tn-boton-chico" name="accion" value="confirmar">Es correcto</button>
+        </form>
+        <form method="post" action="{{ url_for('torneos.confirmar_resultado', enlace=j.enlace) }}" onsubmit="return confirm('Lo va a definir el organizador. ¿Seguro?');">
+          <input type="hidden" name="partido" value="{{ p.id }}">
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="no">No coincide</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="tn-dato">{% if comp.tipo == "escalera" %}Coordinen día y cancha. {% endif %}Cuando terminen, cualquiera de los dos carga el resultado.</p>
+      <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle</a>
+      <details style="margin-top:10px;">
+        <summary style="cursor:pointer; font-weight:700;">Cargar resultado</summary>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('torneos.cargar_resultado', enlace=j.enlace) }}" class="tn-form" style="margin-top:10px;">
+          <input type="hidden" name="partido" value="{{ p.id }}">
+          <div class="tn-sets">
+            <span></span><small>Vos</small><small>{{ f.rival.jugador1.nombre }}</small>
+            <span>Set 1</span><input name="s1a" inputmode="numeric" required><input name="s1b" inputmode="numeric" required>
+            <span>Set 2</span><input name="s2a" inputmode="numeric" required><input name="s2b" inputmode="numeric" required>
+            <span>Súper TB</span><input name="s3a" inputmode="numeric"><input name="s3b" inputmode="numeric">
+          </div>
+          <small>Si se definió en súper tie-break, cargá los puntos (ej. 10-7).</small>
+          <label>Selfie de los dos {% if comp.reglas.get('selfie_obligatoria', comp.tipo == 'escalera') %}<small>(obligatoria)</small>{% endif %}
+            <input type="file" name="selfie" accept="image/*" {% if comp.reglas.get('selfie_obligatoria', comp.tipo == 'escalera') %}required{% endif %}>
+          </label>
+          <button class="tn-boton tn-boton-chico" type="submit">Enviar resultado</button>
+        </form>
+        <form method="post" action="{{ url_for('torneos.reclamar_wo', enlace=j.enlace) }}" style="margin-top:10px;"
+              onsubmit="return confirm('¿Tu rival no se presentó? Le avisamos al organizador.');">
+          <input type="hidden" name="partido" value="{{ p.id }}">
+          <button class="tn-boton tn-boton-sec tn-boton-chico">Mi rival no se presentó</button>
+        </form>
+      </details>
+    {% endif %}
+  {% endif %}
+</div>

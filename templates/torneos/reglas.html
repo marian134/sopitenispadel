@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Reglas: {{ comp.nombre }} | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  {% include "torneos/_barra_org.html" %}
+  <div class="tn-angosto">
+    <p><a href="{{ url_for('torneos.competencia_panel', comp_id=comp.id) }}">← {{ comp.nombre }}</a></p>
+    <h1 class="tn-titulo">Reglas de la escalera</h1>
+    <p class="tn-suave">Vienen cargadas las de los Desafíos Nivel Prado. Cambiá lo que quieras: los cambios cuentan desde ahora (los puntos ya sumados no se recalculan).</p>
+    {% if guardado %}<p class="tn-ok">Reglas guardadas.</p>{% endif %}
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+    <form method="post" class="tn-form">
+      <div class="tn-caja tn-form">
+        <h2>Funcionamiento</h2>
+        {% for clave, texto, tipo in numericas %}
+          <label>{{ texto }} <input name="{{ clave }}" inputmode="decimal" value="{{ reglas.get(clave, 0) }}"></label>
+        {% endfor %}
+        <label>Formato del partido <input name="formato_partido" value="{{ reglas.get('formato_partido', '') }}"></label>
+        <label class="tn-check"><input type="checkbox" name="selfie_obligatoria" value="1" {% if reglas.get('selfie_obligatoria', True) %}checked{% endif %}>
+          <span>Selfie obligatoria al cargar un resultado</span></label>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Puntos por resultado</h2>
+        <div class="tn-dos">
+          {% for clave, texto in puntos %}
+            <label>{{ texto }} <input name="p_{{ clave }}" inputmode="decimal" value="{{ reglas.get('puntos', {}).get(clave, 0) }}"></label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Niveles y divisiones</h2>
+        <label>Niveles iniciales posibles <small>(separados por coma)</small>
+          <input name="niveles" value="{{ reglas.get('niveles_iniciales', [])|join(', ') }}">
+        </label>
+        <label>Divisiones <small>(una por línea, de la mejor a la peor: "Nombre: niveles iniciales")</small>
+          <textarea name="divisiones" rows="4">{{ texto_divisiones }}</textarea>
+        </label>
+        {% set divs = reglas.get('divisiones') or [] %}
+        {% set cambios = reglas.get('cambios_division') or [] %}
+        {% if divs|length > 1 %}
+          <p style="margin:0; font-weight:600;">Ascensos y descensos en cada cambio</p>
+          {% for k in range(divs|length - 1) %}
+            {% set c = cambios[k] if k < cambios|length else {} %}
+            <div class="tn-dos">
+              <label>Suben de {{ divs[k+1].nombre }} a {{ divs[k].nombre }} <input name="suben_{{ k }}" inputmode="numeric" value="{{ c.get('suben', 0) }}"></label>
+              <label>Bajan de {{ divs[k].nombre }} a {{ divs[k+1].nombre }} <input name="bajan_{{ k }}" inputmode="numeric" value="{{ c.get('bajan', 0) }}"></label>
+            </div>
+          {% endfor %}
+          <small>Si cambiás los nombres o la cantidad de divisiones, guardá y después ajustá estos números.</small>
+        {% endif %}
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Semanas especiales</h2>
+        <label>Una por línea: "número de semana: modo" <small>(modos: doble, paga perdedor, 1vs1; "doble" duplica los puntos)</small>
+          <textarea name="especiales" rows="4">{{ texto_especiales }}</textarea>
+        </label>
+      </div>
+
+      <button class="tn-boton" type="submit">Guardar reglas</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

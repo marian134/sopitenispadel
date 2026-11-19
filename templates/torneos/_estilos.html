@@ -52,4 +52,20 @@
   .tn-copiar { display: flex; gap: 8px; }
   .tn-copiar input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2, #2a3d63); background: var(--bg, #060d1c); color: var(--text, #fff); }
   .tn-vacio { text-align: center; padding: 32px 24px; }
+  /* Llave del cuadro */
+  .tn-llave { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+  .tn-ronda { display: flex; flex-direction: column; min-width: 210px; flex: 0 0 210px; }
+  .tn-ronda-nombre { margin: 0 0 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted, #9fb0cc); }
+  .tn-ronda-partidos { display: flex; flex-direction: column; justify-content: space-around; flex: 1; gap: 10px; }
+  .tn-llave-partido { background: var(--bg, #060d1c); border: 1px solid var(--line-2, #2a3d63); border-radius: 10px; overflow: hidden; font-size: 13px; }
+  .tn-llave-bye { opacity: .6; }
+  .tn-llave-lado { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; }
+  .tn-llave-lado + .tn-llave-lado { border-top: 1px solid var(--line, #1c2b4a); }
+  .tn-llave-lado span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tn-gano { font-weight: 800; color: var(--text, #fff); }
+  .tn-gano span:first-child::after { content: " ✓"; color: var(--verde, #8fb487); }
+  .tn-llave-sets { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted, #9fb0cc); }
+  .tn-gano .tn-llave-sets { color: var(--text, #fff); }
+  .tn-llave-hora { padding: 4px 10px; font-size: 11px; color: var(--amarillo, #EAE339); border-top: 1px solid var(--line, #1c2b4a); }
+  .tn-campeon { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 999px; background: rgba(234, 227, 57, .14); color: var(--amarillo, #EAE339); font-weight: 800; }
 </style>

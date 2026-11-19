@@ -1,0 +1,24 @@
+{# El organizador define un partido (p): resultado, W.O. o anularlo #}
+<details style="margin-top:6px;">
+  <summary style="cursor:pointer;">Definir este partido</summary>
+  <div class="tn-acciones" style="margin-top:8px; align-items:center;">
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-acciones" style="align-items:center;">
+      <input type="hidden" name="accion" value="resultado">
+      <input name="sets" placeholder="6-4 3-6 10-8" required aria-label="Resultado, games de {{ p.lado_a.jugador1.nombre }} primero"
+             style="width:150px; padding:6px 10px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+      <button class="tn-boton tn-boton-chico">Cargar resultado</button>
+    </form>
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_b">W.O. a favor de {{ p.lado_a.jugador1.nombre }}</button>
+    </form>
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_a">W.O. a favor de {{ p.lado_b.jugador1.nombre }}</button>
+    </form>
+    {% if comp.tipo == "escalera" %}
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" onsubmit="return confirm('¿Anular el partido? No suma puntos a nadie.');">
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="anular">Anular</button>
+    </form>
+    {% endif %}
+  </div>
+  <small class="tn-suave">El resultado va con los games de {{ p.lado_a.jugador1.nombre }} primero.</small>
+</details>

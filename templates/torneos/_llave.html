@@ -1,0 +1,33 @@
+{# Dibuja una llave. Recibe: rondas (cuadro.estructura). #}
+<div class="tn-llave">
+  {% for r in rondas %}
+    <div class="tn-ronda">
+      <p class="tn-ronda-nombre">{{ r.nombre }}</p>
+      <div class="tn-ronda-partidos">
+        {% for p in r.partidos %}
+          {% set res = (p.resultados|selectattr("confirmado")|rejectattr("ausente_id")|list)|last if p.resultados else none %}
+          <div class="tn-llave-partido{% if p.estado == 'bye' %} tn-llave-bye{% endif %}" id="llave-{{ p.id }}">
+            {% for lado in [p.lado_a, p.lado_b] %}
+              {% set gano = lado and p.ganador_id == lado.id %}
+              <div class="tn-llave-lado{% if gano %} tn-gano{% endif %}">
+                <span>
+                  {% if lado %}{% if lado.siembra and r.numero == 1 %}<small>({{ lado.siembra }})</small> {% endif %}{{ lado.jugador1.nombre_completo }}{% if lado.jugador2 %} / {{ lado.jugador2.apellido }}{% endif %}
+                  {% elif p.estado == 'bye' %}<em>Pase libre</em>
+                  {% else %}<em class="tn-suave">—</em>{% endif %}
+                </span>
+                {% if res and lado %}
+                  <span class="tn-llave-sets">
+                    {% for s in res.sets.split() %}{% set g = s.split('-') %}{{ g[0] if lado.id == p.lado_a_id else g[1] }} {% endfor %}
+                  </span>
+                {% elif p.estado == 'wo' and gano %}<span class="tn-llave-sets">W.O.</span>{% endif %}
+              </div>
+            {% endfor %}
+            {% if p.fecha_hora and p.estado in ('agendado', 'pendiente') %}
+              <div class="tn-llave-hora">{{ ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m %H:%M") }}{% if p.cancha %} · {{ p.cancha }}{% endif %}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
