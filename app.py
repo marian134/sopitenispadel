@@ -9,7 +9,8 @@ import unicodedata
 import mercadopago
 import correo_argentino as micorreo
 from descripciones import descripcion_producto, descripcion_corta
-from fichas import ficha_tecnica, ficha_rapida
+from fichas import (ficha_tecnica, ficha_rapida, filtros_de_pedido, filtrar_paletas,
+                    opciones_con_cantidad)
 from templates import legales
 from datetime import timedelta, datetime, date, timezone
 from functools import wraps
@@ -780,6 +781,21 @@ MEDICION = {
 @app.context_processor
 def medicion():
     return {"medicion": MEDICION}
+
+
+@app.template_global()
+def url_filtro(clave=None, valor=None, limpiar=()):
+    """URL de la página actual prendiendo/apagando un filtro y conservando el resto.
+    url_filtro('forma', 'Redonda') -> agrega o saca ?forma=Redonda."""
+    args = request.args.to_dict()
+    for k in limpiar:
+        args.pop(k, None)
+    if clave:
+        if args.get(clave) == valor:
+            args.pop(clave)
+        else:
+            args[clave] = valor
+    return request.path + (("?" + urlencode(args)) if args else "")
 
 
 @app.context_processor
@@ -1610,6 +1626,14 @@ def catalogo(deporte_slug):
     else:
         filtros["sub"] = ""
 
+    # Filtros por ficha técnica (forma, nivel, balance, juego): solo en paletas
+    filtros_ficha, opciones_ficha, total_paletas = {}, [], 0
+    if (filtros["categoria"] or "").lower() in ("paletas", "palas"):
+        filtros_ficha = filtros_de_pedido(request.args)
+        opciones_ficha = opciones_con_cantidad(productos, filtros_ficha)
+        total_paletas = len(productos)
+        productos = filtrar_paletas(productos, filtros_ficha)
+
     categorias, marcas = (
         obtener_categorias_y_marcas(
             deporte_slug
@@ -1639,6 +1663,10 @@ def catalogo(deporte_slug):
         "marcas": marcas,
 
         "filtros": filtros,
+
+        "filtros_ficha": filtros_ficha,
+        "opciones_ficha": opciones_ficha,
+        "total_paletas": total_paletas,
 
         "seo": seo_catalogo(
             deporte_slug,

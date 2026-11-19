@@ -66,6 +66,64 @@ def datos_ficha(producto):
     return FICHAS.get(_clave(producto.nombre), {})
 
 
+# Filtros del catálogo de paletas: (clave de la ficha, parámetro de la URL, título, opciones)
+FILTROS = [
+    ("forma", "Forma", ["Redonda", "Lágrima", "Diamante", "Híbrida"]),
+    ("nivel", "Nivel", ["Principiante", "Intermedio", "Avanzado", "Profesional"]),
+    ("balance", "Balance", ["Bajo", "Medio", "Alto"]),
+    ("juego", "Tipo de juego", ["Control", "Polivalente", "Potencia"]),
+]
+AYUDA_FILTROS = {
+    "Redonda": "más control y fácil de manejar",
+    "Lágrima": "equilibrio entre control y potencia",
+    "Diamante": "más potencia, para jugadores con técnica",
+    "Híbrida": "mezcla de formas, juego versátil",
+}
+
+
+def _contiene(valor_ficha, opcion):
+    """'Intermedio / Avanzado' contiene 'Avanzado'; compara sin tildes ni mayúsculas."""
+    partes = [_clave(x) for x in re.split(r"[/,]| y ", valor_ficha or "")]
+    return _clave(opcion) in partes
+
+
+def filtros_de_pedido(args):
+    """Los filtros de ficha que vienen en la URL, solo con valores válidos."""
+    elegidos = {}
+    for clave, _, opciones in FILTROS:
+        valor = (args.get(clave) or "").strip()
+        match = next((o for o in opciones if _clave(o) == _clave(valor)), None)
+        if match:
+            elegidos[clave] = match
+    return elegidos
+
+
+def filtrar_paletas(productos, elegidos):
+    """Deja las paletas cuya ficha cumple todos los filtros elegidos."""
+    if not elegidos:
+        return productos
+    return [p for p in productos
+            if (d := datos_ficha(p)) and all(_contiene(d.get(k), v) for k, v in elegidos.items())]
+
+
+def opciones_con_cantidad(productos, elegidos):
+    """Para cada filtro, sus opciones con cuántas paletas quedarían si se elige
+    (teniendo en cuenta los otros filtros ya elegidos)."""
+    resultado = []
+    for clave, titulo, opciones in FILTROS:
+        otros = {k: v for k, v in elegidos.items() if k != clave}
+        base = filtrar_paletas(productos, otros)
+        items = []
+        for o in opciones:
+            n = sum(1 for p in base if _contiene(datos_ficha(p).get(clave), o))
+            if n or elegidos.get(clave) == o:
+                items.append({"valor": o, "cantidad": n, "activo": elegidos.get(clave) == o,
+                              "ayuda": AYUDA_FILTROS.get(o) if clave == "forma" else None})
+        if items:
+            resultado.append({"clave": clave, "titulo": titulo, "opciones": items})
+    return resultado
+
+
 def ficha_tecnica(producto):
     """Lista de (etiqueta, valor) para la tabla de la página del producto."""
     d = datos_ficha(producto)
