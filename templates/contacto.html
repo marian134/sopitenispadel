@@ -120,3 +120,7 @@
   @media (max-width: 860px) { .ct-grid { grid-template-columns: 1fr; } .ct-doble { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
+
+{% block eventos %}
+{% if enviado %}<script>sopiEvento('generate_lead', {});</script>{% endif %}
+{% endblock %}

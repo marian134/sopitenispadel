@@ -585,3 +585,11 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 {% endblock %}
+
+{% block eventos %}
+<script>
+  sopiEvento('begin_checkout', {value: {{ total_final or total or 0 }}, items: [
+    {% for i in items %}{item_id: '{{ i.producto.id }}', item_name: {{ i.producto.nombre|tojson }}, price: {{ i.producto.precio }}, quantity: {{ i.cantidad }}}{{ ',' if not loop.last }}{% endfor %}
+  ]});
+</script>
+{% endblock %}

@@ -76,6 +76,45 @@
 
   {% block head_extra %}{% endblock %}
 
+  {# ---- Medición: solo se carga si los códigos están en Render ---- #}
+  {% if medicion.google_verificacion %}
+  <meta name="google-site-verification" content="{{ medicion.google_verificacion }}">
+  {% endif %}
+  {% if medicion.ga4 %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ medicion.ga4 }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ medicion.ga4 }}');
+  </script>
+  {% endif %}
+  {% if medicion.pixel %}
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '{{ medicion.pixel }}');
+    fbq('track', 'PageView');
+  </script>
+  {% endif %}
+  <script>
+    /* Un solo lugar para mandar eventos a Google Analytics y a Meta */
+    window.sopiEvento = function (nombre, datos) {
+      datos = datos || {};
+      var meta = {view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout',
+                  purchase: 'Purchase', search: 'Search', generate_lead: 'Contact'}[nombre];
+      try { if (window.gtag) gtag('event', nombre, Object.assign({currency: 'ARS'}, datos)); } catch (e) {}
+      try {
+        if (window.fbq && meta) fbq('track', meta, {currency: 'ARS', value: datos.value || 0,
+          content_ids: (datos.items || []).map(function (i) { return i.item_id; }),
+          content_type: 'product', search_string: datos.search_term});
+      } catch (e) {}
+    };
+  </script>
+
   {# Tema oscuro: va último para pisar al resto #}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119b">
 </head>
@@ -521,6 +560,8 @@
     window.addEventListener('resize', function () { if (window.innerWidth > 800) cerrar(); });
   })();
 </script>
+
+{% block eventos %}{% endblock %}
 
 </body>
 </html>

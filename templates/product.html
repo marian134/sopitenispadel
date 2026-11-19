@@ -228,3 +228,17 @@
 
 {% endblock %}
 
+{% block eventos %}
+<script>
+  (function () {
+    var item = {item_id: '{{ producto.id }}', item_name: {{ producto.nombre|tojson }}, item_brand: {{ (producto.marca or '')|tojson }},
+                item_category: {{ (producto.categoria or '')|tojson }}, price: {{ producto.precio }}};
+    sopiEvento('view_item', {value: {{ producto.precio }}, items: [item]});
+    var form = document.querySelector('.pf-form');
+    if (form) form.addEventListener('submit', function () {
+      var cant = parseInt((document.getElementById('cantidad') || {}).value, 10) || 1;
+      sopiEvento('add_to_cart', {value: {{ producto.precio }} * cant, items: [Object.assign({}, item, {quantity: cant})]});
+    });
+  })();
+</script>
+{% endblock %}

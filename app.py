@@ -586,6 +586,43 @@ def url_abs(ruta):
     return ruta if ruta.startswith("http") else f"{URL_PUBLICA}{ruta}"
 
 
+# Medición de visitas. Se activan solo si están cargadas en Render:
+#   GA4_ID          -> Google Analytics 4 (ej: G-ABC123XYZ)
+#   META_PIXEL_ID   -> píxel de Meta / Facebook-Instagram (ej: 123456789012345)
+#   GOOGLE_VERIFICACION -> código de verificación de Google Search Console
+MEDICION = {
+    "ga4": os.environ.get("GA4_ID", "").strip(),
+    "pixel": os.environ.get("META_PIXEL_ID", "").strip(),
+    "google_verificacion": os.environ.get("GOOGLE_VERIFICACION", "").strip(),
+}
+
+
+@app.context_processor
+def medicion():
+    return {"medicion": MEDICION}
+
+
+def compra_para_medir(pedido):
+    """Datos de la compra para Analytics y Meta, una sola vez por pedido
+    (si el cliente recarga la página no se cuenta dos veces)."""
+    if not pedido or pedido.estado == ESTADO_FALLIDO:
+        return None
+    medidos = session.get("compras_medidas", [])
+    if pedido.id in medidos:
+        return None
+    session["compras_medidas"] = (medidos + [pedido.id])[-20:]
+    return {
+        "id": pedido.id,
+        "total": pedido.total,
+        "envio": pedido.costo_envio or 0,
+        "items": [
+            {"item_id": str(l.producto_id or ""), "item_name": l.nombre_producto,
+             "price": l.precio_unitario, "quantity": l.cantidad}
+            for l in pedido.lineas
+        ],
+    }
+
+
 @app.context_processor
 def seo_helpers():
     """Helpers de SEO disponibles en todas las plantillas."""
@@ -2414,6 +2451,8 @@ def pedido_detalle(pedido_id):
 
         "url_seguimiento": URL_SEGUIMIENTO_CORREO,
 
+        "compra_medir": compra_para_medir(pedido) if (pedido.medio_pago == "transferencia" or pedido.estado == ESTADO_PAGADO) else None,
+
     })
 
     return render_template(
@@ -2464,6 +2503,7 @@ def resultado_pago(estado):
         resumen=resumen_pedido(pedido) if pedido else None,
         entrega=texto_entrega(pedido) if pedido else None,
         url_seguimiento=URL_SEGUIMIENTO_CORREO,
+        compra_medir=compra_para_medir(pedido) if (pedido and pedido.estado == ESTADO_PAGADO) else None,
         payment_id=request.args.get("payment_id"),
         status=request.args.get("status"),
     )
@@ -2610,6 +2650,13 @@ def encabezados_seguridad(respuesta):
 def favicon():
     # Google y los navegadores piden el ícono en la raíz del sitio
     return app.send_static_file("favicon.ico")
+
+
+@app.route("/googlef61a9eeb6356c771.html")
+def verificacion_search_console():
+    # Archivo que pide Google Search Console para confirmar que la web es nuestra
+    return Response("google-site-verification: googlef61a9eeb6356c771.html",
+                    mimetype="text/html")
 
 
 @app.errorhandler(404)

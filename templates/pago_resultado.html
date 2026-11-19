@@ -54,3 +54,12 @@
 </style>
 
 {% endblock %}
+
+{% block eventos %}
+{% if compra_medir %}
+<script>
+  sopiEvento('purchase', {transaction_id: '{{ compra_medir.id }}', value: {{ compra_medir.total }},
+                          shipping: {{ compra_medir.envio }}, items: {{ compra_medir['items']|tojson }}});
+</script>
+{% endif %}
+{% endblock %}

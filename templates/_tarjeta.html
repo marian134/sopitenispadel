@@ -62,7 +62,8 @@
                 method="post"
                 action="{{ url_for('carrito_agregar', producto_id=p.id) }}"
             >
-                <button type="submit" class="shop-add" title="Agregar al carrito" aria-label="Agregar {{ p.nombre }} al carrito">+</button>
+                <button type="submit" class="shop-add" title="Agregar al carrito" aria-label="Agregar {{ p.nombre }} al carrito"
+                    onclick="window.sopiEvento && sopiEvento('add_to_cart', {value: {{ p.precio }}, items: [{item_id: '{{ p.id }}', item_name: {{ p.nombre|tojson|forceescape }}, price: {{ p.precio }}, quantity: 1}]})">+</button>
             </form>
             {% endif %}
 
