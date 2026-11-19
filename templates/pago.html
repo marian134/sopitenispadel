@@ -228,9 +228,10 @@
                             <div class="co-opcion-texto">
                                 <strong>🏦 Transferencia bancaria</strong>
                                 <span>Al confirmar te mostramos los datos para transferir.</span>
-                                {% if hay_pack %}<span>El 5% no incluye los packs, que ya tienen su descuento.</span>{% endif %}
+                                {% if bf_en_carrito %}<span>Black Friday: 10% en paletas y 5% en el resto.</span>{% endif %}
+                                {% if hay_pack %}<span>El descuento no incluye los packs, que ya tienen el suyo.</span>{% endif %}
                             </div>
-                            <em class="co-etiqueta" style="font-style:normal">5% OFF</em>
+                            <em class="co-etiqueta" style="font-style:normal">{{ '10% OFF PALETAS' if bf_en_carrito else '5% OFF' }}</em>
                         </div>
                     </label>
                 </section>
@@ -307,7 +308,7 @@
             {% endif %}
 
             <div class="co-linea co-ahorro" id="linea-transferencia" hidden>
-                <span>Descuento transferencia (5%)</span>
+                <span>Descuento transferencia{% if not bf_en_carrito %} (5%){% endif %}</span>
                 <strong id="monto-transferencia"></strong>
             </div>
 
@@ -326,7 +327,7 @@
             </p>
             {% if cupon %}
             <p class="co-nota" id="nota-cupon-transferencia" hidden>
-                El cupón {{ cupon.codigo }} y el 5% de transferencia no se suman: aplicamos el que te deja el mejor precio.
+                El cupón {{ cupon.codigo }} y el descuento por transferencia no se suman: aplicamos el que te deja el mejor precio.
             </p>
             {% endif %}
 

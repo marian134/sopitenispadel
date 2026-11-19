@@ -601,3 +601,25 @@ html body .nav-buscar-movil { display: none; color: var(--text); }
     html body .nav-actions { gap: 0; }
     html body .nav-buscar-movil { width: 44px; height: 44px; align-items: center; justify-content: center; }
 }
+
+/* ---------- Black Friday (se muestra solo en las fechas de BLACK_FRIDAY, app.py) ---------- */
+html body .bf-barra {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px;
+    padding: 9px 16px; background: #000; color: #fff; text-decoration: none;
+    font-size: 13px; font-weight: 600; text-align: center; border-bottom: 2px solid var(--lime);
+}
+html body .bf-barra strong {
+    font-family: 'Krona One', sans-serif; font-weight: 400; letter-spacing: .06em;
+    background: var(--lime); color: #fff; padding: 3px 10px; border-radius: 4px;
+}
+html body .bf-barra .bf-reloj { font-variant-numeric: tabular-nums; color: var(--amarillo); font-weight: 800; }
+html body .bf-barra em { font-style: normal; text-decoration: underline; }
+html body .bf-barra:hover em { color: var(--amarillo); }
+html body .shop-badge-bf {
+    position: absolute; left: 10px; top: 10px; z-index: 2;
+    background: #000; color: #fff; border: 1px solid var(--lime);
+    font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 4px 8px; border-radius: 4px;
+}
+html body .shop-bf-precio { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.3; }
+html body .shop-bf-precio strong { color: var(--lime); font-size: 14px; }
+html body .pf-bf { color: var(--lime); font-weight: 800; letter-spacing: .04em; }

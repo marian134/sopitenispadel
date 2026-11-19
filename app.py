@@ -9,8 +9,9 @@ import unicodedata
 import mercadopago
 import correo_argentino as micorreo
 from descripciones import descripcion_producto, descripcion_corta
+from fichas import ficha_tecnica, ficha_rapida
 from templates import legales
-from datetime import timedelta, datetime, date
+from datetime import timedelta, datetime, date, timezone
 from functools import wraps
 from flask_mail import Mail, Message
 from sqlalchemy import inspect, text
@@ -45,17 +46,9 @@ BANNERS = [
         "ancho": 1600, "alto": 500,
         "fondo": "#060d1c",
     },
-    {
-        "etiqueta": "Para profes y clubes",
-        "titulo": "Cajas de pelotas x24",
-        "subtitulo": "Head Pro, Head Championship y Penn Premier con envío gratis.",
-        "cta": "Consultar",
-        "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
-        "imagen": "sopi-cajas.jpg",              # diseño en Figma: "SOPI · Banners del carrusel"
-        "imagen_movil": "sopi-cajas-movil.jpg",
-        "ancho": 1600, "alto": 500,
-        "fondo": "#060d1c",                      # color si no hay imagen
-    },
+    # El banner de cajas x24 (sopi-cajas.jpg / sopi-cajas-movil.jpg) se sacó del
+    # carrusel el 19/11/2026; las imágenes quedan en static/img/banners y en Figma
+    # ("SOPI · Banners del carrusel") por si se quiere volver a poner.
     {
         "etiqueta": "Pádel",
         "titulo": "Paletas 2026",
@@ -471,8 +464,50 @@ else:
 # En Render definir URL_BASE=https://sopitenispadel.com.ar (sin barra final)
 URL_PUBLICA = os.environ.get("URL_BASE", "http://127.0.0.1:5000").rstrip("/")
 
-# Único descuento de la tienda: 5% pagando por transferencia bancaria
+# Descuento de la tienda: 5% pagando por transferencia bancaria
+# (en Black Friday las paletas pasan a 10%, ver BLACK_FRIDAY)
 DESCUENTO_TRANSFERENCIA = 0.05
+
+# ---------------------------------------------------------
+# BLACK FRIDAY: se prende y se apaga solo según las fechas (hora argentina).
+# Desde "aviso_desde" se muestra el anuncio ("se viene") y entre "inicio" y
+# "fin" las paletas tienen 10% pagando por transferencia. Después del "fin"
+# todo vuelve a la normalidad sin tocar nada.
+# Para probar en la compu: BLACK_FRIDAY_FECHA=2026-11-28T10:00 simula esa fecha.
+# ---------------------------------------------------------
+HORA_ARGENTINA = timezone(timedelta(hours=-3))
+DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+BLACK_FRIDAY = {
+    "aviso_desde": datetime(2026, 11, 19, 0, 0, tzinfo=HORA_ARGENTINA),
+    "inicio": datetime(2026, 11, 23, 0, 0, tzinfo=HORA_ARGENTINA),  # lunes 23/11
+    "fin": datetime(2026, 12, 1, 0, 0, tzinfo=HORA_ARGENTINA),  # termina el lunes 30/11 a las 23:59
+    "descuento_paletas": 0.10,
+    "categoria": "Paletas",
+}
+
+
+def ahora_argentina():
+    simulada = os.environ.get("BLACK_FRIDAY_FECHA", "").strip()
+    if simulada and not ES_PRODUCCION:
+        try:
+            return datetime.fromisoformat(simulada).replace(tzinfo=HORA_ARGENTINA)
+        except ValueError:
+            pass
+    return datetime.now(HORA_ARGENTINA)
+
+
+def estado_black_friday():
+    """'activo' durante la promo, 'pronto' en los días de aviso, None el resto."""
+    ahora = ahora_argentina()
+    if BLACK_FRIDAY["inicio"] <= ahora < BLACK_FRIDAY["fin"]:
+        return "activo"
+    if BLACK_FRIDAY["aviso_desde"] <= ahora < BLACK_FRIDAY["inicio"]:
+        return "pronto"
+    return None
+
+
+def es_paleta(producto):
+    return (producto.categoria or "") == BLACK_FRIDAY["categoria"]
 
 
 def es_pack(producto):
@@ -480,11 +515,25 @@ def es_pack(producto):
     return "pack" in (producto.nombre or "").lower()
 
 
+def descuento_transferencia_de(producto):
+    """Qué parte se descuenta pagando por transferencia (0.05 = 5%)."""
+    if es_pack(producto):
+        return 0
+    if es_paleta(producto) and estado_black_friday() == "activo":
+        return BLACK_FRIDAY["descuento_paletas"]
+    return DESCUENTO_TRANSFERENCIA
+
+
+def precio_transferencia_de(producto):
+    d = descuento_transferencia_de(producto)
+    return round(producto.precio * (1 - d)) if d else None
+
+
 def total_con_transferencia(items):
-    """5% off por transferencia en todo menos en los packs."""
+    """Descuento por transferencia: 5% en todo (10% en paletas durante Black
+    Friday), menos en los packs."""
     return sum(
-        item["subtotal"] if es_pack(item["producto"])
-        else round(item["subtotal"] * (1 - DESCUENTO_TRANSFERENCIA))
+        round(item["subtotal"] * (1 - descuento_transferencia_de(item["producto"])))
         for item in items
     )
 
@@ -605,6 +654,28 @@ MEDICION = {
 @app.context_processor
 def medicion():
     return {"medicion": MEDICION}
+
+
+@app.context_processor
+def black_friday_ctx():
+    estado = estado_black_friday()
+    ultimo_dia = BLACK_FRIDAY["fin"] - timedelta(minutes=1)
+    return {
+        "black_friday": {
+            "estado": estado,
+            "inicio_iso": BLACK_FRIDAY["inicio"].isoformat(),
+            "fin_iso": BLACK_FRIDAY["fin"].isoformat(),
+            "pct": round(BLACK_FRIDAY["descuento_paletas"] * 100),
+            # textos de fechas armados desde la configuración (ej: "23 al 30/11")
+            "fechas": f"{BLACK_FRIDAY['inicio'].day} al {ultimo_dia.day}/{ultimo_dia.month}",
+            "dia_inicio": f"{DIAS_SEMANA[BLACK_FRIDAY['inicio'].weekday()]} {BLACK_FRIDAY['inicio'].day}",
+            "dia_fin": f"{DIAS_SEMANA[ultimo_dia.weekday()]} {ultimo_dia.day}",
+            "inicio_txt": BLACK_FRIDAY["inicio"].strftime("%d/%m/%Y"),
+            "fin_txt": ultimo_dia.strftime("%d/%m/%Y"),
+        } if estado else None,
+        "precio_transferencia_de": precio_transferencia_de,
+        "es_paleta": es_paleta,
+    }
 
 
 def compra_para_medir(pedido):
@@ -1220,6 +1291,11 @@ def seo_producto(p):
     }
     if p.marca:
         ld["brand"] = {"@type": "Brand", "name": p.marca}
+    ficha = ficha_tecnica(p)
+    if ficha:
+        ld["additionalProperty"] = [
+            {"@type": "PropertyValue", "name": etiqueta, "value": valor} for etiqueta, valor in ficha
+        ]
     if precio_visible:
         ld["offers"] = {
             "@type": "Offer",
@@ -1249,12 +1325,53 @@ def portada():
 
     return render_template(
         "portada.html",
-        popup=POPUP,
-        banners=BANNERS,
+        popup=None if estado_black_friday() else POPUP,  # en Black Friday no tapamos la promo
+        banners=([BANNER_BLACK_FRIDAY] + BANNERS) if estado_black_friday() else BANNERS,
         tiles=TILES,
         bloques=bloques_portada(),
+        paletas_bf=paletas_black_friday(8) if estado_black_friday() else [],
         **contexto
     )
+
+
+BANNER_BLACK_FRIDAY = {
+    "titulo": "Black Friday: 10% OFF en paletas pagando por transferencia",
+    "subtitulo": "Del 23 al 30 de noviembre",
+    "cta": "Ver paletas",
+    "url": "/black-friday",
+    "imagen": "sopi-black-friday.jpg",
+    "imagen_movil": "sopi-black-friday-movil.jpg",
+    "ancho": 1600, "alto": 500,
+    "fondo": "#000000",
+}
+
+
+def paletas_black_friday(cantidad=None):
+    """Paletas para la vidriera de Black Friday: primero las más buscadas
+    (MAS_VENDIDOS_BASE), después las 2026/2027 de mayor precio (donde más se
+    nota el 10%), y al final el resto."""
+    todas = (_visibles("Pádel").filter(Producto.categoria == BLACK_FRIDAY["categoria"])
+             .order_by(Producto.precio.desc()).all())
+    por_nombre = {p.nombre.lower(): p for p in todas}
+    elegidas = [por_nombre[n.lower()] for n in MAS_VENDIDOS_BASE["Pádel"] if n.lower() in por_nombre]
+    nuevas = [p for p in todas if re.search(r"202[67]", p.nombre) and p not in elegidas]
+    resto = [p for p in todas if p not in elegidas and p not in nuevas]
+    lista = elegidas + nuevas + resto
+    return lista[:cantidad] if cantidad else lista
+
+
+@app.route("/black-friday")
+def black_friday_pagina():
+    if not estado_black_friday():
+        return redirect(url_for("catalogo", deporte_slug="padel", categoria=BLACK_FRIDAY["categoria"]))
+    contexto = obtener_contexto_base()
+    paletas = paletas_black_friday()
+    marca = request.args.get("marca", "").strip()
+    marcas = sorted({p.marca for p in paletas if p.marca})
+    if marca:
+        paletas = [p for p in paletas if (p.marca or "").lower() == marca.lower()]
+    return render_template("black_friday.html", paletas=paletas, marcas=marcas,
+                           marca_elegida=marca, **contexto)
 
 # =========================================================
 # CATÁLOGO
@@ -1393,10 +1510,11 @@ def producto_detalle(slug):
     contexto["seo"] = seo_producto(producto)
 
     contexto["descripcion_auto"] = descripcion_producto(producto)
+    contexto["ficha"] = ficha_tecnica(producto)
+    contexto["ficha_rapida"] = ficha_rapida(producto)
     contexto["relacionados"] = productos_relacionados(producto)
-    contexto["precio_transferencia"] = (
-        None if es_pack(producto) else round(producto.precio * (1 - DESCUENTO_TRANSFERENCIA))
-    )
+    contexto["precio_transferencia"] = precio_transferencia_de(producto)
+    contexto["pct_transferencia"] = round(descuento_transferencia_de(producto) * 100)
     contexto["envio_gratis_desde"] = ENVIO_GRATIS_DESDE
 
     if producto.deporte == "Pádel":
@@ -2174,6 +2292,8 @@ def carrito_pagar():
             hay_pack=any(es_pack(i["producto"]) for i in items),
             error_cupon=error_cupon,
             descuento_transferencia=DESCUENTO_TRANSFERENCIA * 100,
+            bf_en_carrito=estado_black_friday() == "activo"
+                          and any(es_paleta(i["producto"]) for i in items),
         ), (400 if error_form else 200)
 
     if request.method == "GET":

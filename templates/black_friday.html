@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Black Friday: {{ black_friday.pct }}% OFF en paletas de pádel | SOPI Sports{% endblock %}
+{% block meta_description %}Black Friday en SOPI Sports del {{ black_friday.fechas }}: {{ black_friday.pct }}% de descuento en paletas de pádel pagando por transferencia. Bullpadel, Nox, Adidas, Head y más, con envío gratis desde $150.000.{% endblock %}
+
+{% block content %}
+<div class="bfp">
+
+  <section class="bfp-hero">
+    <span class="bf-chip">BLACK FRIDAY · {{ black_friday.fechas|upper }}</span>
+    <h1>{{ black_friday.pct }}% OFF en paletas</h1>
+    <p class="bfp-sub">Pagando por transferencia. Envío gratis desde $150.000 a todo el país.</p>
+    <p class="bfp-reloj">
+      {% if black_friday.estado == 'activo' %}
+        Termina en <span class="bf-reloj" data-hasta="{{ black_friday.fin_iso }}"></span>
+      {% else %}
+        Arranca en <span class="bf-reloj" data-hasta="{{ black_friday.inicio_iso }}"></span>
+        <small>Hasta el {{ black_friday.dia_inicio }} las paletas tienen el 5% de siempre por transferencia.</small>
+      {% endif %}
+    </p>
+    <ul class="bfp-pasos">
+      <li><strong>1</strong> Elegí tu paleta y agregala al carrito.</li>
+      <li><strong>2</strong> En el pago elegí <b>Transferencia bancaria</b>.</li>
+      <li><strong>3</strong> El {{ black_friday.pct }}% se descuenta solo. Mandás el comprobante y listo.</li>
+    </ul>
+  </section>
+
+  {% if marcas|length > 1 %}
+  <nav class="bfp-marcas" aria-label="Filtrar por marca">
+    <a href="{{ url_for('black_friday_pagina') }}" class="{{ 'on' if not marca_elegida }}">Todas</a>
+    {% for m in marcas %}
+    <a href="{{ url_for('black_friday_pagina', marca=m) }}" class="{{ 'on' if marca_elegida|lower == m|lower }}">{{ m }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <p class="bfp-cuenta">{{ paletas|length }} paletas{% if marca_elegida %} {{ marca_elegida }}{% endif %}</p>
+
+  <div class="bfp-grid">
+    {% for p in paletas %}{% include '_tarjeta.html' %}{% endfor %}
+  </div>
+
+  <p class="bfp-legal">
+    Promoción válida del {{ black_friday.inicio_txt }} a las 00:00 al {{ black_friday.fin_txt }} a las 23:59 (hora argentina), o hasta agotar stock.
+    {{ black_friday.pct }}% de descuento sobre el precio de lista de las paletas de pádel pagando por transferencia bancaria.
+    No se acumula con cupones ni aplica a packs. El resto de los productos mantiene el 5% por transferencia.
+  </p>
+</div>
+
+<style>
+  .bfp { width: min(1180px, 92%); margin: 28px auto 64px; }
+  .bfp-hero { padding: 34px 30px; border-radius: 22px; text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(229,126,60,.35), transparent 60%), #000;
+    border: 1px solid rgba(229,126,60,.55); }
+  .bfp .bf-chip { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .12em; padding: 5px 12px;
+    border-radius: 999px; background: var(--lime, #E57E3C); color: #fff; }
+  .bfp-hero h1 { margin: 14px 0 8px; font-size: clamp(34px, 6vw, 68px); }
+  .bfp-sub { margin: 0; font-size: 18px; color: var(--muted, #b7c0d1); }
+  .bfp-reloj { margin: 18px 0 0; font-size: 18px; font-weight: 700; }
+  .bfp-reloj .bf-reloj { color: var(--amarillo, #EAE339); font-variant-numeric: tabular-nums; font-size: 1.3em; }
+  .bfp-reloj small { display: block; margin-top: 6px; font-size: 13px; font-weight: 500; color: var(--muted, #b7c0d1); }
+  .bfp-pasos { list-style: none; padding: 0; margin: 24px auto 0; display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; max-width: 900px; text-align: left; }
+  .bfp-pasos li { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px;
+    background: rgba(255,255,255,.05); font-size: 14px; }
+  .bfp-pasos strong { flex: 0 0 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: var(--lime, #E57E3C); color: #fff; }
+  .bfp-marcas { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; }
+  .bfp-marcas a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-2, rgba(128,128,128,.35));
+    color: inherit; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .bfp-marcas a.on, .bfp-marcas a:hover { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+  .bfp-cuenta { margin: 18px 0 12px; color: var(--muted, #b7c0d1); font-size: 14px; }
+  .bfp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .bfp-grid .shop-product-image { height: auto; aspect-ratio: 1 / 1; }
+  .bfp-grid .shop-product-image img { width: 100%; height: 100%; object-fit: contain; }
+  .bfp-legal { margin-top: 36px; font-size: 12px; color: var(--muted, #8a93a6); line-height: 1.5; }
+  @media (max-width: 900px) {
+    .bfp-hero { padding: 24px 16px; }
+    .bfp-pasos { grid-template-columns: 1fr; }
+    .bfp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+</style>
+{% endblock %}

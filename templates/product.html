@@ -55,10 +55,16 @@
     <div class="pf-info">
       {% if producto.marca %}<span class="pf-marca">{{ producto.marca }}</span>{% endif %}
       <h1>{{ producto.nombre }}</h1>
+      {% if ficha_rapida %}
+      <ul class="pf-rapida" aria-label="Características principales">
+        {% for etiqueta, valor in ficha_rapida %}<li><span>{{ etiqueta }}:</span> {{ valor }}</li>{% endfor %}
+        <li style="border:0;padding:6px 0"><a href="#ficha-tecnica">Ver ficha técnica ↓</a></li>
+      </ul>
+      {% endif %}
 
       <div class="pf-precio">{{ producto.precio|pesos }}</div>
       {% if precio_transferencia %}
-        <p class="pf-transfer">o <strong>{{ precio_transferencia|pesos }}</strong> pagando por transferencia (5% off)</p>
+        <p class="pf-transfer">o <strong>{{ precio_transferencia|pesos }}</strong> pagando por transferencia ({{ pct_transferencia }}% off{% if black_friday and black_friday.estado == 'activo' and es_paleta(producto) %} · <span class="pf-bf">BLACK FRIDAY</span>{% endif %})</p>
       {% endif %}
 
       {% if producto.stock <= 0 %}
@@ -116,6 +122,19 @@
       </ul>
     </div>
   </div>
+
+  <!-- FICHA TÉCNICA (datos de data/fichas_paletas.json, ver fichas.py) -->
+  {% if ficha %}
+  <section class="pf-ficha" id="ficha-tecnica">
+    <h2>Ficha técnica</h2>
+    <dl class="pf-ficha-grid">
+      {% for etiqueta, valor in ficha %}
+      <div><dt>{{ etiqueta }}</dt><dd>{{ valor }}</dd></div>
+      {% endfor %}
+    </dl>
+    <p class="pf-ficha-nota">Datos del fabricante. El peso puede variar unos gramos entre unidades.</p>
+  </section>
+  {% endif %}
 
   <!-- DESCRIPCIÓN -->
   <section class="pf-desc">
@@ -175,6 +194,24 @@
   .pf-beneficios { list-style: none; padding: 16px 0 0; margin: 18px 0 0; border-top: 1px solid var(--line, #ddd); font-size: 15px; line-height: 2; }
   .pf-beneficios i { width: 22px; color: var(--lime, #E57E3C); }
   .pf-beneficios a { color: inherit; }
+  .pf-ficha { margin-top: 44px; max-width: 820px; }
+  .pf-ficha h2 { font-size: clamp(22px, 2.6vw, 30px); margin: 0 0 14px; }
+  .pf-ficha-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0;
+                   border: 1px solid var(--line, #ddd); border-radius: 14px; overflow: hidden; }
+  .pf-ficha-grid > div { display: flex; justify-content: space-between; gap: 14px; padding: 13px 16px;
+                         border-bottom: 1px solid var(--line, #ddd); }
+  .pf-ficha-grid > div:nth-child(odd) { border-right: 1px solid var(--line, #ddd); }
+  .pf-ficha-grid dt { font-size: 14px; color: var(--muted, #777); }
+  .pf-ficha-grid dd { margin: 0; font-weight: 700; text-align: right; }
+  .pf-ficha-nota { margin: 8px 0 0; font-size: 13px; color: var(--muted, #777); }
+  .pf-rapida { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+  .pf-rapida li { font-size: 13px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line-2, rgba(128,128,128,.35)); }
+  .pf-rapida li span { color: var(--muted, #777); }
+  .pf-rapida a { font-size: 13px; color: var(--lime, #E57E3C); align-self: center; }
+  @media (max-width: 640px) {
+    .pf-ficha-grid { grid-template-columns: 1fr; }
+    .pf-ficha-grid > div:nth-child(odd) { border-right: 0; }
+  }
   .pf-desc { margin-top: 44px; max-width: 820px; }
   .pf-desc h2, .pf-rel h2 { font-size: clamp(22px, 2.6vw, 30px); margin: 0 0 14px; }
   .pf-desc .descripcion { font-size: 16px; line-height: 1.65; margin: 0 0 10px; }

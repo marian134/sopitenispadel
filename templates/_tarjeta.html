@@ -41,6 +41,8 @@
         {% elif p.stock <= 0 %}
         <span class="shop-badge shop-badge-out">SIN STOCK</span>
         {% endif %}
+        {% set bf_tarjeta = black_friday and black_friday.estado == 'activo' and es_paleta(p) and p.stock > 0 %}
+        {% if bf_tarjeta %}<span class="shop-badge-bf">BLACK FRIDAY</span>{% endif %}
 
     </div>
 
@@ -68,6 +70,9 @@
             {% endif %}
 
         </div>
+        {% if bf_tarjeta %}
+        <p class="shop-bf-precio"><strong>{{ precio_transferencia_de(p)|pesos }}</strong> por transferencia · {{ black_friday.pct }}% off</p>
+        {% endif %}
     </div>
 
 </article>

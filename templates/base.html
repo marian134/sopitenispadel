@@ -116,7 +116,7 @@
   </script>
 
   {# Tema oscuro: va último para pisar al resto #}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119b">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119c">
 </head>
 
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
@@ -131,6 +131,34 @@
   <!-- =====================================================
        BARRA PROMOCIONAL
        ===================================================== -->
+
+  {% if black_friday %}
+  <a class="bf-barra" href="{{ url_for('black_friday_pagina') }}">
+    <strong>BLACK FRIDAY</strong>
+    {% if black_friday.estado == 'activo' %}
+      <span>{{ black_friday.pct }}% OFF en paletas pagando por transferencia · termina en</span>
+      <span class="bf-reloj" data-hasta="{{ black_friday.fin_iso }}"></span>
+    {% else %}
+      <span>Del {{ black_friday.fechas }}: {{ black_friday.pct }}% OFF en paletas por transferencia · arranca en</span>
+      <span class="bf-reloj" data-hasta="{{ black_friday.inicio_iso }}"></span>
+    {% endif %}
+    <em>Ver paletas →</em>
+  </a>
+  <script>
+  (function () {
+    function tic() {
+      document.querySelectorAll('.bf-reloj').forEach(function (el) {
+        var falta = Math.max(0, new Date(el.dataset.hasta) - new Date());
+        var d = Math.floor(falta / 864e5), h = Math.floor(falta / 36e5) % 24,
+            m = Math.floor(falta / 6e4) % 60, s = Math.floor(falta / 1e3) % 60;
+        function dos(n) { return (n < 10 ? '0' : '') + n; }
+        el.textContent = (d ? d + 'd ' : '') + dos(h) + 'h ' + dos(m) + 'm ' + dos(s) + 's';
+      });
+    }
+    tic(); setInterval(tic, 1000);
+  })();
+  </script>
+  {% endif %}
 
   <div class="sopi-promo-bar">
     <div class="sopi-promo-inner">

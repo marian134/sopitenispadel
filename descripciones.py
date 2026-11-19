@@ -9,6 +9,8 @@ letras o más, se usa esa.
 import re
 import unicodedata
 
+from fichas import frase_ficha
+
 MINIMO_PROPIA = 80
 
 
@@ -59,6 +61,10 @@ def _paleta(p):
         rasgos.append("Es un modelo de gama alta, pensado para competir.")
     elif _tiene(n, "team", "match", "drive", "training", "advanced"):
         rasgos.append("Es ideal para jugadores en progresión que buscan dar el salto de nivel.")
+    ficha = frase_ficha(p)
+    if ficha:
+        # con ficha técnica real no hace falta deducir rasgos del nombre
+        rasgos = [r for r in rasgos if r.startswith("Es un modelo de la colección")] + [ficha]
     if not rasgos:
         rasgos.append("Una paleta para disfrutar cada partido, de una marca reconocida en el pádel.")
     partes.append(" ".join(rasgos))
