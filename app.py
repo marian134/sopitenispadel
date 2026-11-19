@@ -2684,6 +2684,11 @@ def feed_titulo(p):
     cat = (p.categoria or "").lower()
     marca = (p.marca or "").strip()
 
+    # Google rechaza textos promocionales en el título ("Texto adicional
+    # encontrado"): se saca "(5% off)", "oferta", "promo", etc.
+    t = re.sub(r"\s*\((?=[^)]*(%|\boff\b|descuento|oferta|promo))[^)]*\)", "", t, flags=re.I)
+    t = re.sub(r"\s*[-–]\s*\d+\s*%\s*(off)?\s*$", "", t, flags=re.I).strip()
+
     # Títulos en MAYÚSCULAS (zapatillas Head): pasar a formato normal
     if t.isupper():
         t = t.title()
@@ -2692,7 +2697,22 @@ def feed_titulo(p):
     if cat.startswith("calzado") and "zapatilla" not in t.lower():
         t = f"Zapatillas {marca.title()} {t}".replace("  ", " ")
 
-    return t
+    # Google muestra mejor los productos cuyo título dice qué son
+    # (la gente busca "paleta de pádel Bullpadel", no solo "Bullpadel Vertex")
+    if cat in ("paletas", "palas") and not re.search(r"paleta|pala\b", t, re.I):
+        t = f"Paleta de pádel {t}"
+    elif cat == "raquetas" and "raqueta" not in t.lower():
+        t = f"Raqueta de tenis {t}"
+    elif cat == "pelotas" and "pelota" not in t.lower():
+        deporte = "pádel" if (p.deporte or "").lower().startswith("p") else "tenis"
+        t = f"Pelotas de {deporte} {t}"
+
+    return t[:150]
+
+
+def feed_tipo_producto(p):
+    """Categoría propia de la tienda, ej: 'Pádel > Paletas'."""
+    return " > ".join(x for x in (p.deporte, p.categoria) if x)
 
 
 def feed_categoria_google(p):
@@ -2728,6 +2748,13 @@ def feed_google():
 
         link = url_abs(url_for("producto_detalle", slug=p.slug))
         image_link = url_abs(url_for("static", filename=f"img/{imagen}"))
+        # Ficha técnica de las paletas como "detalles del producto" para Google
+        detalles = "".join(
+            "\n<g:product_detail><g:section_name>Ficha técnica</g:section_name>"
+            f"<g:attribute_name>{escape(etiqueta)}</g:attribute_name>"
+            f"<g:attribute_value>{escape(valor)}</g:attribute_value></g:product_detail>"
+            for etiqueta, valor in ficha_tecnica(p)
+        )
 
         items.append(f"""<item>
 <g:id>{p.id}</g:id>
@@ -2740,7 +2767,8 @@ def feed_google():
 <g:brand>{escape(marca)}</g:brand>
 <g:condition>new</g:condition>
 <g:google_product_category>{escape(feed_categoria_google(p))}</g:google_product_category>
-<g:identifier_exists>no</g:identifier_exists>
+<g:product_type>{escape(feed_tipo_producto(p))}</g:product_type>
+<g:identifier_exists>no</g:identifier_exists>{detalles}
 </item>""")
 
     xml = (
