@@ -1,0 +1,12 @@
+{# Barra del panel del organizador #}
+<div class="tn-barra">
+  <nav aria-label="Panel del organizador">
+    <a href="{{ url_for('torneos.panel') }}">Mis torneos</a>
+    <a href="{{ url_for('torneos.perfil') }}">Mis datos</a>
+    <a href="{{ url_for('torneos.calendario') }}">Ver calendario</a>
+  </nav>
+  <form method="post" action="{{ url_for('torneos.salir') }}">
+    <span class="tn-suave" style="font-size:14px;">{{ organizador.nombre }} · plan {{ organizador.plan }}</span>
+    <button type="submit" class="tn-boton tn-boton-sec tn-boton-chico">Salir</button>
+  </form>
+</div>

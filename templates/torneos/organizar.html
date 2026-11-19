@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Organizá torneos de tenis | SOPI Sports{% endblock %}
+{% block meta_description %}Sistema para organizar torneos y escaleras de tenis: inscripción online, cuadros, desafíos y ranking. Primer torneo gratis.{% endblock %}
+{% block robots %}{% if torneos_visible %}index,follow{% else %}noindex,nofollow{% endif %}{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-hero">
+  <div class="tn-wrap">
+    <span class="tn-etiqueta">Para clubes y profes</span>
+    <h1>Organizá tus torneos sin planillas ni formularios</h1>
+    <p>Tus jugadores se anotan desde el celular, el sistema arma el cuadro o la escalera y calcula el ranking solo.</p>
+  </div>
+</section>
+
+<section class="tn-wrap tn-seccion">
+  <div class="tn-grilla">
+    <div class="tn-tarjeta">
+      <span class="tn-tipo">Plan gratis</span>
+      <h3>$0</h3>
+      <p class="tn-dato">Un torneo o una escalera, con la marca SOPI visible.</p>
+    </div>
+    <div class="tn-tarjeta">
+      <span class="tn-tipo">Plan pago</span>
+      <h3>{{ pesos(precio) }} por inscripto</h3>
+      <p class="tn-dato">Torneos ilimitados, con tu logo y tus colores. Lo pagás vos o lo sumás a la inscripción del jugador.</p>
+    </div>
+  </div>
+
+  <div class="tn-caja tn-angosto" style="margin-top:28px;">
+    <h2>Creá tu cuenta</h2>
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+    <form method="post" class="tn-form">
+      <label>Nombre del club, profe o circuito
+        <input name="nombre" value="{{ datos.nombre or '' }}" required maxlength="120">
+      </label>
+      <div class="tn-dos">
+        <label>Mail
+          <input type="email" name="email" value="{{ datos.email or '' }}" required autocomplete="email">
+        </label>
+        <label>WhatsApp
+          <input name="whatsapp" value="{{ datos.whatsapp or '' }}" required placeholder="11 2345-6789" autocomplete="tel">
+        </label>
+      </div>
+      <div class="tn-dos">
+        <label>Contraseña <small>(mínimo 8 caracteres)</small>
+          <input type="password" name="clave" required minlength="8" autocomplete="new-password">
+        </label>
+        <label>Repetí la contraseña
+          <input type="password" name="clave2" required minlength="8" autocomplete="new-password">
+        </label>
+      </div>
+      <button class="tn-boton" type="submit">Crear cuenta gratis</button>
+      <p class="tn-suave" style="margin:0;">¿Ya tenés cuenta? <a href="{{ url_for('torneos.ingresar') }}">Ingresá</a></p>
+    </form>
+  </div>
+</section>
+{% endblock %}

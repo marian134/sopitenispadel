@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Mis torneos | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% set nombres_estado = {"borrador": "Borrador", "inscripcion": "Inscripción abierta", "en_curso": "En juego", "finalizada": "Finalizado", "cancelada": "Cancelado"} %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  {% include "torneos/_barra_org.html" %}
+  {% if bienvenida %}
+    <p class="tn-ok">¡Listo, {{ org.nombre }}! Ya tenés tu cuenta. Creá tu primer torneo o escalera.</p>
+  {% endif %}
+
+  <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
+    <h1 class="tn-titulo">Mis torneos</h1>
+    {% if puede_crear %}
+      <a class="tn-boton" href="{{ url_for('torneos.competencia_nueva') }}">+ Nuevo torneo o escalera</a>
+    {% endif %}
+  </div>
+
+  {% if not puede_crear %}
+    <p class="tn-caja tn-suave">El plan gratis incluye un torneo o una escalera. Para organizar más, pasate al plan pago ({{ pesos(org.precio_por_inscripto) }} por inscripto): escribinos por WhatsApp.</p>
+  {% endif %}
+
+  {% if not org.datos_bancarios %}
+    <p class="tn-caja">Cargá tus <a href="{{ url_for('torneos.perfil') }}">datos para transferir</a>: se los mostramos a los jugadores al inscribirse.</p>
+  {% endif %}
+
+  {% if competencias %}
+    <div class="tn-grilla">
+      {% for c in competencias %}
+        <a class="tn-tarjeta" href="{{ url_for('torneos.competencia_panel', comp_id=c.id) }}">
+          <span class="tn-tipo">{{ "Escalera de desafíos" if c.tipo == "escalera" else "Torneo con cuadro" }}</span>
+          <h3>{{ c.nombre }}</h3>
+          <p class="tn-dato">{{ nombres_estado.get(c.estado, c.estado) }}</p>
+          <p class="tn-dato">{{ c.categorias|length }} categoría{{ "s" if c.categorias|length != 1 }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="tn-caja tn-vacio">
+      <h2>Todavía no creaste ningún torneo</h2>
+      <p class="tn-suave">Elegí si es un torneo con cuadro (fin de semana o varias semanas) o una escalera de desafíos.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

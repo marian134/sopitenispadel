@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Ingresar | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero">
+    <span class="tn-etiqueta">Organizadores</span>
+    <h1>Ingresá a tu panel</h1>
+  </div>
+  <div class="tn-caja">
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+    <form method="post" class="tn-form">
+      <input type="hidden" name="siguiente" value="{{ siguiente }}">
+      <label>Mail <input type="email" name="email" required autocomplete="email"></label>
+      <label>Contraseña <input type="password" name="clave" required autocomplete="current-password"></label>
+      <button class="tn-boton" type="submit">Ingresar</button>
+    </form>
+  </div>
+  <p class="tn-suave">¿Todavía no tenés cuenta? <a href="{{ url_for('torneos.organizar') }}">Creala gratis</a>.</p>
+  <p class="tn-suave">¿Sos jugador? No necesitás cuenta: entrás con el enlace personal que te llegó por mail. <a href="{{ url_for('torneos.recuperar_enlace') }}">Pedir mi enlace de nuevo</a>.</p>
+</section>
+{% endblock %}

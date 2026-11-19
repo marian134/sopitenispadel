@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Mis datos | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  {% include "torneos/_barra_org.html" %}
+  <div class="tn-angosto">
+    <h1 class="tn-titulo">Mis datos</h1>
+    {% if guardado %}<p class="tn-ok">Guardado.</p>{% endif %}
+    <div class="tn-caja">
+      <form method="post" class="tn-form">
+        <label>Nombre del club, profe o circuito
+          <input name="nombre" value="{{ org.nombre }}" required maxlength="120">
+        </label>
+        <label>WhatsApp <small>(los jugadores te escriben acá)</small>
+          <input name="whatsapp" value="{{ org.whatsapp or '' }}">
+        </label>
+        <label>Datos para transferir la inscripción <small>(alias, CBU, titular; se muestran al inscribirse)</small>
+          <textarea name="datos_bancarios" maxlength="500">{{ org.datos_bancarios or '' }}</textarea>
+        </label>
+        <p class="tn-suave" style="margin:0;">Mail de ingreso: {{ org.email }}</p>
+        <button class="tn-boton" type="submit">Guardar</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -5,6 +5,7 @@
 {% block robots %}{% if torneos_visible %}index,follow{% else %}noindex,nofollow{% endif %}{% endblock %}
 
 {% block content %}
+{% include "torneos/_estilos.html" %}
 <section class="tn-hero">
   <div class="tn-wrap">
     <span class="tn-etiqueta">Torneos</span>
@@ -13,13 +14,13 @@
   </div>
 </section>
 
-<section class="tn-wrap tn-lista">
+<section class="tn-wrap tn-seccion">
   {% if grupos %}
     {% for titulo, competencias in grupos %}
       <h2>{{ titulo }}</h2>
       <div class="tn-grilla">
         {% for c in competencias %}
-          <article class="tn-tarjeta">
+          <a class="tn-tarjeta" href="{{ url_for('torneos.torneo', slug=c.slug) }}">
             <span class="tn-tipo">{{ "Escalera de desafíos" if c.tipo == "escalera" else "Torneo" }}</span>
             <h3>{{ c.nombre }}</h3>
             <p class="tn-dato">{{ c.organizador.nombre }}{% if c.localidad %} · {{ c.localidad }}{% endif %}</p>
@@ -28,39 +29,23 @@
                 {{ c.fecha_inicio.strftime("%d/%m") }}{% if c.fecha_fin %} al {{ c.fecha_fin.strftime("%d/%m") }}{% endif %}
               </p>
             {% endif %}
-            {% if c.precio %}<p class="tn-dato">Inscripción ${{ "{:,}".format(c.precio).replace(",", ".") }}</p>{% endif %}
-          </article>
+            {% if c.precio %}<p class="tn-dato">Inscripción {{ pesos(c.precio) }}</p>{% endif %}
+          </a>
         {% endfor %}
       </div>
     {% endfor %}
   {% else %}
-    <div class="tn-vacio">
+    <div class="tn-caja tn-vacio">
       <h2>Todavía no hay torneos publicados</h2>
-      <p>Muy pronto vas a poder anotarte acá a torneos y escaleras de tenis de tu zona.</p>
-      <p>¿Organizás torneos en tu club? Sumalos gratis.</p>
-      <a class="tn-boton" href="{{ whatsapp_organizar }}" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> Quiero organizar un torneo
-      </a>
+      <p class="tn-suave">Muy pronto vas a poder anotarte acá a torneos y escaleras de tenis de tu zona.</p>
     </div>
   {% endif %}
-</section>
 
-<style>
-  .tn-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
-  .tn-hero { padding: 48px 0 24px; }
-  .tn-etiqueta { color: var(--lime, #E57E3C); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
-  .tn-hero h1 { font-family: var(--f-titulo, inherit); font-size: clamp(24px, 4vw, 38px); margin: 8px 0 12px; }
-  .tn-hero p { color: var(--muted, #9fb0cc); max-width: 640px; }
-  .tn-lista { padding-bottom: 64px; }
-  .tn-lista h2 { font-family: var(--f-titulo, inherit); font-size: 18px; margin: 32px 0 16px; }
-  .tn-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-  .tn-tarjeta { background: var(--surface, #0d1830); border: 1px solid var(--line, #1c2b4a); border-radius: var(--radio, 14px); padding: 20px; }
-  .tn-tipo { font-size: 12px; color: var(--amarillo, #EAE339); text-transform: uppercase; letter-spacing: .06em; }
-  .tn-tarjeta h3 { margin: 8px 0; font-size: 18px; }
-  .tn-dato { color: var(--muted, #9fb0cc); margin: 4px 0; font-size: 14px; }
-  .tn-vacio { background: var(--surface, #0d1830); border: 1px solid var(--line, #1c2b4a); border-radius: var(--radio, 14px); padding: 32px 24px; text-align: center; }
-  .tn-vacio h2 { margin-top: 0; }
-  .tn-vacio p { color: var(--muted, #9fb0cc); }
-  .tn-boton { display: inline-flex; gap: 8px; align-items: center; margin-top: 12px; padding: 12px 20px; border-radius: 999px; background: var(--lime, #E57E3C); color: var(--on-lime, #fff); font-weight: 700; text-decoration: none; }
-</style>
+  <div class="tn-caja" style="margin-top:32px;">
+    <h2>¿Organizás torneos en tu club?</h2>
+    <p class="tn-suave">Inscripción online, cuadros, escaleras de desafíos y ranking automático. Tu primer torneo es gratis.</p>
+    <a class="tn-boton" href="{{ url_for('torneos.organizar') }}">Organizar un torneo</a>
+    <a class="tn-boton tn-boton-sec" href="{{ url_for('torneos.ingresar') }}">Ya tengo cuenta</a>
+  </div>
+</section>
 {% endblock %}

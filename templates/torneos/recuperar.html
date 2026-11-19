@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Recuperar mi enlace | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero">
+    <span class="tn-etiqueta">Jugadores</span>
+    <h1>Pedir mi enlace personal</h1>
+    <p>Te lo mandamos al mail que dejaste cuando te inscribiste.</p>
+  </div>
+  <div class="tn-caja">
+    {% if enviado %}
+      <p class="tn-ok" style="margin:0;">Si los datos coinciden con un jugador inscripto, en unos minutos te llega el mail. Revisá también la carpeta de spam.</p>
+    {% else %}
+      <form method="post" class="tn-form">
+        <label>DNI <input name="dni" inputmode="numeric" required></label>
+        <label>Mail <input type="email" name="email" required autocomplete="email"></label>
+        <button class="tn-boton" type="submit">Enviarme el enlace</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

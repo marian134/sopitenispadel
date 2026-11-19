@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ comp.nombre }} | Torneos SOPI{% endblock %}
+{% block meta_description %}{{ comp.nombre }}{% if comp.localidad %} en {{ comp.localidad }}{% endif %}. Organiza {{ comp.organizador.nombre }}. Inscripción online y resultados en SOPI Torneos.{% endblock %}
+{% block robots %}{% if torneos_visible %}index,follow{% else %}noindex,nofollow{% endif %}{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-hero">
+  <div class="tn-wrap">
+    <span class="tn-etiqueta">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }} · {{ comp.organizador.nombre }}</span>
+    <h1>{{ comp.nombre }}</h1>
+    <p>
+      {% if comp.sede %}{{ comp.sede }}{% endif %}{% if comp.localidad %}{% if comp.sede %} · {% endif %}{{ comp.localidad }}{% endif %}
+      {% if comp.fecha_inicio %}<br>{{ comp.fecha_inicio.strftime("%d/%m/%Y") }}{% if comp.fecha_fin %} al {{ comp.fecha_fin.strftime("%d/%m/%Y") }}{% endif %}{% endif %}
+    </p>
+  </div>
+</section>
+
+<section class="tn-wrap tn-seccion">
+  <div class="tn-caja">
+    {% if comp.precio %}
+      <p style="margin-top:0;"><strong>Inscripción {{ pesos(comp.precio) }}</strong>{% if comp.incluye %} · Incluye {{ comp.incluye }}{% endif %}</p>
+    {% else %}
+      <p style="margin-top:0;"><strong>Inscripción gratis</strong></p>
+    {% endif %}
+    {% if abierta %}
+      {% if comp.cierre_inscripcion %}<p class="tn-suave">Cierra el {{ comp.cierre_inscripcion.strftime("%d/%m a las %H:%M") }}.</p>{% endif %}
+      <a class="tn-boton" href="{{ url_for('torneos.inscripcion', slug=comp.slug) }}">Inscribirme</a>
+    {% elif comp.estado == "inscripcion" %}
+      <p class="tn-suave" style="margin-bottom:0;">La inscripción ya cerró.</p>
+    {% elif comp.estado == "en_curso" %}
+      <p class="tn-suave" style="margin-bottom:0;">El torneo está en juego.</p>
+    {% else %}
+      <p class="tn-suave" style="margin-bottom:0;">El torneo terminó.</p>
+    {% endif %}
+  </div>
+
+  {% if comp.descripcion %}
+    <div class="tn-caja">
+      <h2>Información</h2>
+      <div style="white-space:pre-line;">{{ comp.descripcion }}</div>
+    </div>
+  {% endif %}
+
+  <h2>Categorías</h2>
+  <div class="tn-grilla">
+    {% for c in categorias %}
+      <div class="tn-tarjeta">
+        <h3>{{ c.cat.nombre }}</h3>
+        <p class="tn-dato">{{ c.cat.modalidad|capitalize }} · {{ c.inscriptos|length }} anotado{{ "s" if c.inscriptos|length != 1 }}{% if c.libres is not none %} · {{ c.libres }} lugar{{ "es" if c.libres != 1 }} libre{{ "s" if c.libres != 1 }}{% endif %}</p>
+        {% if c.inscriptos %}
+          <ul class="tn-dato" style="padding-left:18px; margin:8px 0 0;">
+            {% for i in c.inscriptos %}
+              <li>{{ i.jugador1.nombre_completo }}{% if i.jugador2 %} y {{ i.jugador2.nombre_completo }}{% endif %}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <p class="tn-suave" style="margin-top:32px;">¿Ya estás anotado? Seguí todo desde el enlace personal que te llegó por mail. <a href="{{ url_for('torneos.recuperar_enlace') }}">Pedirlo de nuevo</a>.</p>
+</section>
+{% endblock %}

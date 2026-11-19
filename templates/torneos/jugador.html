@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Mis torneos | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% set nombres_pago = {"pendiente": "Pago a revisar", "confirmado": "Inscripción confirmada", "rechazado": "Pago rechazado: escribile al organizador"} %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero">
+    <span class="tn-etiqueta">Tu panel</span>
+    <h1>Hola, {{ j.nombre }}</h1>
+    <p>Este es tu enlace personal: no lo compartas.</p>
+  </div>
+
+  {% if inscripciones %}
+    {% for i in inscripciones %}
+      {% set comp = i.categoria.competencia %}
+      <div class="tn-caja">
+        <span class="tn-tipo">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }}</span>
+        <h2 style="margin:6px 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}" style="color:inherit;">{{ comp.nombre }}</a></h2>
+        <p class="tn-dato">{{ i.categoria.nombre }}{% if i.jugador2 %} · con {{ (i.jugador2 if i.jugador1_id == j.id else i.jugador1).nombre_completo }}{% endif %}</p>
+        {% if i.baja %}
+          <span class="tn-estado tn-est-baja">De baja</span>
+        {% else %}
+          <span class="tn-estado tn-est-{{ i.estado_pago }}">{{ nombres_pago.get(i.estado_pago) }}</span>
+        {% endif %}
+        {% if comp.tipo == "escalera" and i.nivel_inicial is not none %}
+          <p class="tn-dato">Nivel inicial: {{ i.nivel_inicial|round(1) }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <p class="tn-suave">Los desafíos, partidos y resultados se van a ver acá cuando empiece cada torneo.</p>
+  {% else %}
+    <div class="tn-caja"><p style="margin:0;">Todavía no estás anotado en ningún torneo. <a href="{{ url_for('torneos.calendario') }}">Ver torneos</a></p></div>
+  {% endif %}
+</section>
+{% endblock %}

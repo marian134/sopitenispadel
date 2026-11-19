@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Inscripción: {{ comp.nombre }} | Torneos SOPI{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero">
+    <span class="tn-etiqueta">Inscripción</span>
+    <h1>{{ comp.nombre }}</h1>
+    <p>{{ comp.organizador.nombre }}{% if comp.precio %} · {{ pesos(comp.precio) }}{% if comp.incluye %} (incluye {{ comp.incluye }}){% endif %}{% endif %}</p>
+  </div>
+
+  {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="tn-form" id="form-inscripcion">
+    <div class="tn-caja tn-form">
+      <h2>1. Categoría</h2>
+      <label>Elegí la categoría
+        <select name="categoria" id="categoria" required>
+          <option value="">Elegí…</option>
+          {% for c in categorias %}
+            {% set lib = libres[c.id] %}
+            <option value="{{ c.id }}" data-modalidad="{{ c.modalidad }}"
+                    {% if form.get('categoria') == c.id|string %}selected{% endif %}
+                    {% if lib == 0 %}disabled{% endif %}>
+              {{ c.nombre }} ({{ c.modalidad }}){% if lib == 0 %} · completa{% elif lib is not none %} · quedan {{ lib }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <div class="tn-caja tn-form">
+      <h2>2. Tus datos</h2>
+      <div class="tn-dos">
+        <label>DNI <input name="dni" inputmode="numeric" value="{{ form.get('dni', '') }}" required></label>
+        <label>Celular <input name="celular" inputmode="tel" value="{{ form.get('celular', '') }}" required placeholder="11 2345-6789"></label>
+      </div>
+      <div class="tn-dos">
+        <label>Nombre <input name="nombre" value="{{ form.get('nombre', '') }}" required autocomplete="given-name"></label>
+        <label>Apellido <input name="apellido" value="{{ form.get('apellido', '') }}" required autocomplete="family-name"></label>
+      </div>
+      <label>Mail <small>(te mandamos tu enlace personal para seguir el torneo)</small>
+        <input type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email">
+      </label>
+    </div>
+
+    <div class="tn-caja tn-form" id="bloque-companero" hidden>
+      <h2>3. Tu compañero/a</h2>
+      <div class="tn-dos">
+        <label>DNI <input name="dni2" inputmode="numeric" value="{{ form.get('dni2', '') }}"></label>
+        <label>Celular <input name="celular2" inputmode="tel" value="{{ form.get('celular2', '') }}"></label>
+      </div>
+      <div class="tn-dos">
+        <label>Nombre <input name="nombre2" value="{{ form.get('nombre2', '') }}"></label>
+        <label>Apellido <input name="apellido2" value="{{ form.get('apellido2', '') }}"></label>
+      </div>
+      <label>Mail <small>(opcional)</small> <input type="email" name="email2" value="{{ form.get('email2', '') }}"></label>
+    </div>
+
+    {% if comp.tipo == "cuadro" %}
+      <div class="tn-caja tn-form">
+        <h2>Horarios</h2>
+        <label>¿Hay días u horarios en que no podés jugar? <small>(opcional)</small>
+          <textarea name="restricciones" rows="3" placeholder="Ej. sábados antes de las 14">{{ form.get('restricciones', '') }}</textarea>
+        </label>
+      </div>
+    {% endif %}
+
+    {% if comp.precio %}
+      <div class="tn-caja tn-form">
+        <h2>Pago</h2>
+        <p style="margin:0;">Transferí <strong>{{ pesos(comp.precio) }}</strong> a {{ comp.organizador.nombre }}:</p>
+        {% if comp.organizador.datos_bancarios %}
+          <div class="tn-caja" style="white-space:pre-line; margin:0; background:var(--bg);">{{ comp.organizador.datos_bancarios }}</div>
+        {% else %}
+          <p class="tn-suave" style="margin:0;">Pedile los datos para transferir al organizador.</p>
+        {% endif %}
+        <label>Comprobante de la transferencia <small>(foto o PDF)</small>
+          <input type="file" name="comprobante" accept="image/*,.pdf" required>
+        </label>
+      </div>
+    {% endif %}
+
+    <label class="tn-check">
+      <input type="checkbox" name="acepto" value="1" required {% if form.get('acepto') %}checked{% endif %}>
+      <span>Leí la información y el reglamento del torneo, y acepto que mi nombre aparezca en las listas y resultados.</span>
+    </label>
+
+    <button class="tn-boton" type="submit">Confirmar inscripción</button>
+  </form>
+</section>
+
+<script>
+  (function () {
+    var sel = document.getElementById('categoria');
+    var bloque = document.getElementById('bloque-companero');
+    var campos = ['dni2', 'nombre2', 'apellido2', 'celular2'];
+    function actualizar() {
+      var op = sel.options[sel.selectedIndex];
+      var dobles = op && op.dataset.modalidad === 'dobles';
+      bloque.hidden = !dobles;
+      campos.forEach(function (n) {
+        var el = document.querySelector('[name="' + n + '"]');
+        if (el) el.required = dobles;
+      });
+    }
+    sel.addEventListener('change', actualizar);
+    actualizar();
+  })();
+</script>
+{% endblock %}

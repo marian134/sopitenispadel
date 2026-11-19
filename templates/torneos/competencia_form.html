@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Nuevo torneo" if comp.id is none else "Editar " ~ comp.nombre }} | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% set nuevo = comp.id is none %}
+{# Si hubo un error, se vuelve a mostrar lo que escribió; si no, lo guardado #}
+{% macro valor(campo, guardado) -%}
+  {%- if form %}{{ form.get(campo, '') }}{% else %}{{ guardado if guardado is not none else '' }}{% endif -%}
+{%- endmacro %}
+
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  {% include "torneos/_barra_org.html" %}
+  <div class="tn-angosto">
+    <h1 class="tn-titulo">{{ "Nuevo torneo o escalera" if nuevo else "Editar " ~ comp.nombre }}</h1>
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+    <form method="post" class="tn-form">
+      {% if nuevo %}
+        <div class="tn-caja">
+          <h2>¿Qué vas a organizar?</h2>
+          <label class="tn-check">
+            <input type="radio" name="tipo" value="cuadro" required {% if form and form.get('tipo') == 'cuadro' %}checked{% endif %}>
+            <span><strong>Torneo con cuadro</strong><br><small>Llave de eliminación, de un fin de semana o de varias semanas.</small></span>
+          </label>
+          <label class="tn-check">
+            <input type="radio" name="tipo" value="escalera" {% if form and form.get('tipo') == 'escalera' %}checked{% endif %}>
+            <span><strong>Escalera de desafíos</strong><br><small>Ranking que dura semanas: los jugadores se desafían y suman puntos. Arranca con las reglas de los Desafíos Nivel Prado y después las podés cambiar.</small></span>
+          </label>
+        </div>
+      {% else %}
+        <p class="tn-suave">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo con cuadro" }}</p>
+      {% endif %}
+
+      <div class="tn-caja tn-form">
+        <h2>Datos</h2>
+        <label>Nombre <input name="nombre" value="{{ valor('nombre', comp.nombre) }}" required maxlength="150" placeholder="Ej. Abierto de Verano 2026"></label>
+        <div class="tn-dos">
+          <label>Sede <input name="sede" value="{{ valor('sede', comp.sede) }}" placeholder="Club, dirección"></label>
+          <label>Localidad <input name="localidad" value="{{ valor('localidad', comp.localidad) }}" placeholder="Quilmes"></label>
+        </div>
+        <div class="tn-dos">
+          <label>Empieza <input type="date" name="fecha_inicio" value="{{ valor('fecha_inicio', comp.fecha_inicio.isoformat() if comp.fecha_inicio else '') }}"></label>
+          <label>Termina <input type="date" name="fecha_fin" value="{{ valor('fecha_fin', comp.fecha_fin.isoformat() if comp.fecha_fin else '') }}"></label>
+        </div>
+        <label>Cierre de inscripción <small>(opcional)</small>
+          <input type="datetime-local" name="cierre_inscripcion" value="{{ valor('cierre_inscripcion', comp.cierre_inscripcion.strftime('%Y-%m-%dT%H:%M') if comp.cierre_inscripcion else '') }}">
+        </label>
+        <div class="tn-dos">
+          <label>Precio de la inscripción <small>($, 0 si es gratis)</small>
+            <input name="precio" inputmode="numeric" value="{{ valor('precio', comp.precio) }}" placeholder="40000">
+          </label>
+          <label>Incluye <small>(opcional)</small>
+            <input name="incluye" value="{{ valor('incluye', comp.incluye) }}" placeholder="Un tubo de pelotas">
+          </label>
+        </div>
+        <label>Información y reglamento <small>(formato de partido, horarios, premios)</small>
+          <textarea name="descripcion" rows="6">{{ valor('descripcion', comp.descripcion) }}</textarea>
+        </label>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Categorías</h2>
+        <p class="tn-suave" style="margin:0;">Ej. "Caballeros B", "Damas", o las divisiones de la escalera. Dejá el nombre vacío para borrar una categoría (solo si no tiene inscriptos).</p>
+        {% set existentes = comp.categorias|sort(attribute='orden') if not nuevo else [] %}
+        {% for cat in existentes %}
+          {% set n = loop.index0 %}
+          <div class="tn-dos" style="grid-template-columns: 2fr 1fr 1fr;">
+            <input type="hidden" name="cat_id_{{ n }}" value="{{ cat.id }}">
+            <label>Nombre <input name="cat_nombre_{{ n }}" value="{{ valor('cat_nombre_' ~ n, cat.nombre) }}"></label>
+            <label>Modalidad
+              {% set mod = form.get('cat_modalidad_' ~ n) if form else cat.modalidad %}
+              <select name="cat_modalidad_{{ n }}">
+                <option value="singles" {% if mod != 'dobles' %}selected{% endif %}>Singles</option>
+                <option value="dobles" {% if mod == 'dobles' %}selected{% endif %}>Dobles</option>
+              </select>
+            </label>
+            <label>Cupo <input name="cat_cupo_{{ n }}" inputmode="numeric" value="{{ valor('cat_cupo_' ~ n, cat.cupo) }}" placeholder="Sin límite"></label>
+          </div>
+        {% endfor %}
+        {% for k in range(filas_nuevas) %}
+          {% set n = existentes|length + k %}
+          <div class="tn-dos" style="grid-template-columns: 2fr 1fr 1fr;">
+            <label>Nombre <input name="cat_nombre_{{ n }}" value="{{ form.get('cat_nombre_' ~ n, '') if form else '' }}" placeholder="{{ 'Ej. Caballeros B' if n == 0 else '' }}"></label>
+            <label>Modalidad
+              <select name="cat_modalidad_{{ n }}">
+                <option value="singles">Singles</option>
+                <option value="dobles" {% if form and form.get('cat_modalidad_' ~ n) == 'dobles' %}selected{% endif %}>Dobles</option>
+              </select>
+            </label>
+            <label>Cupo <input name="cat_cupo_{{ n }}" inputmode="numeric" value="{{ form.get('cat_cupo_' ~ n, '') if form else '' }}" placeholder="Sin límite"></label>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="tn-boton" type="submit">{{ "Crear" if nuevo else "Guardar cambios" }}</button>
+        <a class="tn-boton tn-boton-sec" href="{{ url_for('torneos.panel') if nuevo else url_for('torneos.competencia_panel', comp_id=comp.id) }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

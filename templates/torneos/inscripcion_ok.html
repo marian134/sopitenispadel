@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}¡Inscripción recibida! | Torneos SOPI{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero">
+    <span class="tn-etiqueta">Inscripción recibida</span>
+    <h1>¡Listo, {{ jugador.nombre }}!</h1>
+    <p>Te anotaste en <strong>{{ comp.nombre }}</strong> ({{ insc.categoria.nombre }}).
+      {% if comp.precio %}{{ comp.organizador.nombre }} va a revisar tu comprobante y te confirma.{% endif %}</p>
+  </div>
+
+  {% if enlace_jugador %}
+    <div class="tn-caja">
+      <h2>Tu enlace personal</h2>
+      <p class="tn-suave">Desde acá seguís tus torneos, partidos y ranking. Guardalo: es tuyo y no necesita contraseña.</p>
+      <div class="tn-copiar">
+        <input id="enlace" value="{{ enlace_jugador }}" readonly>
+        <button type="button" class="tn-boton tn-boton-chico" onclick="navigator.clipboard.writeText(document.getElementById('enlace').value); this.textContent='¡Copiado!';">Copiar</button>
+      </div>
+      {% if jugador.email %}<p class="tn-suave" style="margin-bottom:0;">También te lo mandamos a {{ jugador.email }}.</p>{% endif %}
+    </div>
+  {% else %}
+    <div class="tn-caja">
+      <p style="margin:0;">Ya tenías un perfil en SOPI Torneos: seguí todo desde tu enlace personal{% if jugador.email %}, que te mandamos de nuevo por mail{% endif %}.
+        <a href="{{ url_for('torneos.recuperar_enlace') }}">¿No lo encontrás?</a></p>
+    </div>
+  {% endif %}
+
+  {% if wa_organizador %}
+    <a class="tn-boton tn-wa" href="{{ wa_organizador }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle al organizador</a>
+  {% endif %}
+  <a class="tn-boton tn-boton-sec" href="{{ url_for('torneos.torneo', slug=comp.slug) }}">Volver al torneo</a>
+</section>
+{% endblock %}
