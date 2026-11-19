@@ -657,6 +657,41 @@ def medicion():
 
 
 @app.context_processor
+def whatsapp_ctx():
+    """Mensaje del botón flotante de WhatsApp según la página en la que está el
+    cliente (así ya sabemos de qué producto habla), y el texto de la burbujita
+    de invitación (None = no se muestra, por ejemplo en el carrito o el pago)."""
+    endpoint = request.endpoint or ""
+    args = request.view_args or {}
+    mensaje = "Hola SOPI! Quiero hacer una consulta."
+    burbuja = "¿Te ayudamos a elegir tu paleta? Escribinos por WhatsApp."
+    if endpoint == "producto_detalle" and args.get("slug"):
+        p = Producto.query.filter_by(slug=args["slug"]).first()
+        if p:
+            mensaje = f"Hola SOPI! Quiero consultar por {p.nombre}: {url_abs(url_for('producto_detalle', slug=p.slug))}"
+            burbuja = ("¿Dudas con esta paleta? Te ayudamos a elegir según tu nivel."
+                       if es_paleta(p) else "¿Tenés dudas con este producto? Escribinos.")
+    elif endpoint in ("carrito_ver", "carrito_pagar"):
+        mensaje, burbuja = "Hola SOPI! Tengo una duda con mi compra.", None
+    elif endpoint.startswith("pedido") or endpoint == "resultado_pago":
+        mensaje, burbuja = "Hola SOPI! Tengo una consulta sobre mi pedido.", None
+    elif endpoint == "black_friday_pagina":
+        mensaje = "Hola SOPI! Quiero consultar por la promo de Black Friday."
+        burbuja = "¿No sabés qué paleta elegir? Te ayudamos por WhatsApp."
+    elif endpoint in ("catalogo", "catalogo_tenis", "catalogo_padel"):
+        slug = args.get("deporte_slug") or endpoint.replace("catalogo_", "")
+        deporte = NAV_DEPORTES.get(slug, "")
+        categoria = request.args.get("categoria") or ""
+        que = f"{categoria.lower()} de {deporte.lower()}" if categoria else f"algo de {deporte.lower()}"
+        mensaje = f"Hola SOPI! Estoy buscando {que}.".replace("  ", " ")
+        if deporte == "Tenis":
+            burbuja = "¿Buscás raqueta, pelotas o grips? Te ayudamos por WhatsApp."
+    elif endpoint.startswith("admin") or endpoint.startswith("legales.admin"):
+        burbuja = None
+    return {"wa_mensaje": mensaje, "wa_burbuja": burbuja}
+
+
+@app.context_processor
 def black_friday_ctx():
     estado = estado_black_friday()
     ultimo_dia = BLACK_FRIDAY["fin"] - timedelta(minutes=1)

@@ -50,6 +50,18 @@
       transition: transform .2s;
     }
     .wa-float:hover { transform: scale(1.08); }
+    .wa-burbuja {
+      position: fixed; right: 18px; bottom: 88px; z-index: 1000; max-width: 250px;
+      background: #fff; color: #0b1530; border-radius: 14px 14px 4px 14px; padding: 13px 34px 13px 15px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35); font: 600 14px/1.35 "Archivo", Arial, sans-serif;
+      animation: wa-entra .35s ease-out;
+    }
+    .wa-burbuja[hidden] { display: none; }
+    .wa-burbuja a { color: inherit; text-decoration: none; }
+    .wa-burbuja-x { position: absolute; top: 4px; right: 6px; border: 0; background: none; font-size: 20px;
+                    line-height: 1; color: #6b7a93; cursor: pointer; padding: 4px; }
+    @keyframes wa-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .wa-burbuja { animation: none; } }
   </style>
 
   <!-- Datos estructurados: organización (en todas las páginas) -->
@@ -105,7 +117,8 @@
     window.sopiEvento = function (nombre, datos) {
       datos = datos || {};
       var meta = {view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout',
-                  purchase: 'Purchase', search: 'Search', generate_lead: 'Contact'}[nombre];
+                  purchase: 'Purchase', search: 'Search', generate_lead: 'Contact',
+                  contacto_whatsapp: 'Contact'}[nombre];
       try { if (window.gtag) gtag('event', nombre, Object.assign({currency: 'ARS'}, datos)); } catch (e) {}
       try {
         if (window.fbq && meta) fbq('track', meta, {currency: 'ARS', value: datos.value || 0,
@@ -121,11 +134,43 @@
 
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>
 
-<a class="wa-float"
-   href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20hacer%20una%20consulta"
+<a class="wa-float" data-wa-origen="boton flotante"
+   href="https://wa.me/5491128321531?text={{ wa_mensaje|urlencode }}"
    target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp">
   <i class="fa-brands fa-whatsapp"></i>
 </a>
+{% if wa_burbuja %}
+<div class="wa-burbuja" id="wa-burbuja" hidden role="status">
+  <button type="button" class="wa-burbuja-x" aria-label="Cerrar">&times;</button>
+  <a href="https://wa.me/5491128321531?text={{ wa_mensaje|urlencode }}" target="_blank" rel="noopener"
+     data-wa-origen="burbuja">{{ wa_burbuja }}</a>
+</div>
+{% endif %}
+<script>
+(function () {
+  /* Burbujita de invitación: aparece a los 20 s, una sola vez por visita */
+  var b = document.getElementById('wa-burbuja');
+  if (b) {
+    var vista = false;
+    try { vista = sessionStorage.getItem('sopi_wa_burbuja') === '1'; } catch (e) {}
+    if (!vista) {
+      setTimeout(function () {
+        b.hidden = false;
+        try { sessionStorage.setItem('sopi_wa_burbuja', '1'); } catch (e) {}
+      }, 20000);
+    }
+    b.querySelector('.wa-burbuja-x').addEventListener('click', function () { b.hidden = true; });
+  }
+  /* Medición: cada clic a WhatsApp (botón flotante, burbuja, ficha, contacto...) */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+    if (!a || !window.sopiEvento) return;
+    sopiEvento('contacto_whatsapp', {origen: a.dataset.waOrigen || 'enlace en la página',
+                                     pagina: location.pathname});
+    if (b) b.hidden = true;
+  });
+})();
+</script>
 
 
   <!-- =====================================================

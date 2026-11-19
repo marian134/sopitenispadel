@@ -105,7 +105,7 @@
         <button class="btn btn-outline" disabled>Sin stock</button>
       {% endif %}
 
-      <a class="pf-wa" target="_blank" rel="noopener"
+      <a class="pf-wa" target="_blank" rel="noopener" data-wa-origen="ficha del producto"
          href="{{ negocio.whatsapp_url }}?text={{ ('Hola! Tengo una consulta sobre ' ~ producto.nombre ~ ': ' ~ url_abs(url_for('producto_detalle', slug=producto.slug)))|urlencode }}">
         <i class="fab fa-whatsapp"></i> Consultar por WhatsApp
       </a>
