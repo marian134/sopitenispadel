@@ -531,11 +531,137 @@ def precio_transferencia_de(producto):
 
 def total_con_transferencia(items):
     """Descuento por transferencia: 5% en todo (10% en paletas durante Black
-    Friday), menos en los packs."""
-    return sum(
-        round(item["subtotal"] * (1 - descuento_transferencia_de(item["producto"])))
-        for item in items
-    )
+    Friday), menos en los packs y en las unidades que ya van en un combo."""
+    total = 0
+    for item in items:
+        en_combo = item.get("combo_cant", 0)
+        normales = item["cantidad"] - en_combo
+        d = descuento_transferencia_de(item["producto"])
+        total += round(normales * item["producto"].precio * (1 - d)) + en_combo * item.get("precio_combo", 0)
+    return total
+
+
+# ---------------------------------------------------------
+# COMBOS: descuento automático en el carrito cuando el cliente lleva todos los
+# productos del combo. Cada parte tiene su precio dentro del combo, así el
+# total cierra exacto y el stock se descuenta de cada producto como siempre.
+# Los productos se buscan por nombre (sin mayúsculas). El combo no se suma al
+# descuento por transferencia ni a los cupones: se aplica el mejor precio.
+# Para apagarlo: "activo": False (o poner una fecha en "hasta").
+# ---------------------------------------------------------
+COMBOS = [
+    {
+        "id": "head-pro-wilson",
+        "activo": True,
+        "hasta": None,   # ej: date(2026, 12, 31)
+        "titulo": "Combo 2 tubos Head Pro + 2 overgrips Wilson",
+        "precio": 34900,
+        "partes": [
+            # (nombres que cuentan, cantidad por combo, precio de cada unidad en el combo)
+            {"nombres": ["pelotas head pro - tubo x3", "head pro tubo x3"], "cantidad": 2, "precio": 10900},
+            {"nombres": ["overgrip wilson"], "cantidad": 2, "precio": 6550},
+        ],
+    },
+]
+
+
+def combos_activos():
+    hoy = hoy_argentina()
+    return [c for c in COMBOS if c["activo"] and (not c["hasta"] or hoy <= c["hasta"])]
+
+
+def _parte_de(combo, producto):
+    nombre = (producto.nombre or "").strip().lower()
+    return next((parte for parte in combo["partes"] if nombre in parte["nombres"]), None)
+
+
+def combo_de_producto(producto):
+    """El combo activo en el que entra este producto (para mostrarlo en su página)."""
+    for combo in combos_activos():
+        if _parte_de(combo, producto):
+            return combo
+    return None
+
+
+def precio_normal_combo(combo):
+    """Lo que salen las partes del combo compradas por separado."""
+    total = 0
+    for parte in combo["partes"]:
+        p = (Producto.query.filter(db.func.lower(Producto.nombre).in_(parte["nombres"]), Producto.stock > 0)
+             .order_by(Producto.stock.desc()).first())
+        if not p:
+            return None
+        total += p.precio * parte["cantidad"]
+    return total
+
+
+def aplicar_combos(items):
+    """Marca en los ítems del carrito cuántas unidades van dentro de un combo y
+    recalcula su subtotal. Devuelve la lista de combos aplicados con su ahorro."""
+    aplicados = []
+    for item in items:
+        item.pop("combo_cant", None)
+        item.pop("precio_combo", None)
+    for combo in combos_activos():
+        disponibles = []
+        for parte in combo["partes"]:
+            unidades = sum(i["cantidad"] - i.get("combo_cant", 0) for i in items
+                           if _parte_de(combo, i["producto"]) is parte)
+            disponibles.append(unidades // parte["cantidad"])
+        veces = min(disponibles) if disponibles else 0
+        if veces <= 0:
+            continue
+        ahorro = 0
+        for parte in combo["partes"]:
+            faltan = veces * parte["cantidad"]
+            for i in items:
+                if faltan <= 0:
+                    break
+                if _parte_de(combo, i["producto"]) is not parte:
+                    continue
+                libres = i["cantidad"] - i.get("combo_cant", 0)
+                usar = min(libres, faltan)
+                if usar <= 0:
+                    continue
+                i["combo_cant"] = i.get("combo_cant", 0) + usar
+                i["precio_combo"] = parte["precio"]
+                i["combo_titulo"] = combo["titulo"]
+                ahorro += usar * (i["producto"].precio - parte["precio"])
+                faltan -= usar
+        aplicados.append({"titulo": combo["titulo"], "veces": veces, "ahorro": ahorro})
+    for item in items:
+        n = item.get("combo_cant", 0)
+        item["subtotal"] = n * item.get("precio_combo", 0) + (item["cantidad"] - n) * item["producto"].precio
+    return aplicados
+
+
+def combos_casi(items):
+    """Combos a los que al cliente le falta poco (para sugerirle que los complete)."""
+    sugerencias = []
+    for combo in combos_activos():
+        tiene = {id(parte): 0 for parte in combo["partes"]}
+        for i in items:
+            parte = _parte_de(combo, i["producto"])
+            if parte:
+                tiene[id(parte)] += i["cantidad"] - i.get("combo_cant", 0)
+        if any(tiene.values()) and not all(tiene[id(p)] >= p["cantidad"] for p in combo["partes"]):
+            sugerencias.append(combo)
+    return sugerencias
+
+
+def lineas_de(item):
+    """Una o dos líneas (unidades en combo y normales) con su precio, para el
+    pedido y para Mercado Pago. Si hay cupón, el ítem trae su precio_unitario."""
+    p = item["producto"]
+    if "precio_unitario" in item:
+        return [(p.nombre, item["cantidad"], item["precio_unitario"])]
+    n = item.get("combo_cant", 0)
+    lineas = []
+    if n:
+        lineas.append((f"{p.nombre} (combo)", n, item["precio_combo"]))
+    if item["cantidad"] - n:
+        lineas.append((p.nombre, item["cantidad"] - n, p.precio))
+    return lineas
 
 
 # =========================================================
@@ -1365,8 +1491,25 @@ def portada():
         tiles=TILES,
         bloques=bloques_portada(),
         paletas_bf=paletas_black_friday(8) if estado_black_friday() else [],
+        combos=combos_para_mostrar(),
         **contexto
     )
+
+
+def combos_para_mostrar():
+    """Combos activos con stock, con su precio normal y el ahorro (para la portada)."""
+    lista = []
+    for c in combos_activos():
+        normal = precio_normal_combo(c)
+        if normal:
+            fotos = []
+            for parte in c["partes"]:
+                p = (Producto.query.filter(db.func.lower(Producto.nombre).in_(parte["nombres"]), Producto.stock > 0)
+                     .order_by(Producto.stock.desc()).first())
+                if p and p.imagen:
+                    fotos.append(p.imagen.lower())
+            lista.append(dict(c, normal=normal, ahorro=normal - c["precio"], fotos=fotos))
+    return lista
 
 
 BANNER_BLACK_FRIDAY = {
@@ -1547,6 +1690,9 @@ def producto_detalle(slug):
     contexto["descripcion_auto"] = descripcion_producto(producto)
     contexto["ficha"] = ficha_tecnica(producto)
     contexto["ficha_rapida"] = ficha_rapida(producto)
+    combo = combo_de_producto(producto)
+    normal = precio_normal_combo(combo) if combo else None
+    contexto["combo"] = dict(combo, normal=normal, ahorro=normal - combo["precio"]) if combo and normal else None
     contexto["relacionados"] = productos_relacionados(producto)
     contexto["precio_transferencia"] = precio_transferencia_de(producto)
     contexto["pct_transferencia"] = round(descuento_transferencia_de(producto) * 100)
@@ -1658,12 +1804,40 @@ def carrito_ver():
         "items": items,
 
         "total": total,
+
+        "ahorro_combos": ahorro_combos(items),
+
+        "combos_sugeridos": combos_casi(items),
     })
 
     return render_template(
         "carrito.html",
         **contexto
     )
+
+
+@app.route("/carrito/combo/<combo_id>", methods=["POST"])
+def carrito_agregar_combo(combo_id):
+    """Agrega al carrito lo que falta para completar un combo (respeta el stock)."""
+    combo = next((c for c in combos_activos() if c["id"] == combo_id), None)
+    if not combo:
+        return redirect(url_for("carrito_ver"))
+    carrito = session.get("carrito", {})
+    items, _, _ = armar_items_carrito()
+    for parte in combo["partes"]:
+        tiene = sum(i["cantidad"] for i in items if (i["producto"].nombre or "").strip().lower() in parte["nombres"])
+        faltan = max(0, parte["cantidad"] - tiene)
+        if not faltan:
+            continue
+        p = (Producto.query.filter(db.func.lower(Producto.nombre).in_(parte["nombres"]), Producto.stock > 0)
+             .order_by(Producto.stock.desc()).first())
+        if not p or p.tiene_talles:
+            continue
+        clave = clave_carrito(p.id)
+        carrito[clave] = min(p.stock, carrito.get(clave, 0) + faltan)
+    session["carrito"] = carrito
+    session.modified = True
+    return redirect(url_for("carrito_ver"))
 
 
 @app.route(
@@ -1980,7 +2154,15 @@ def armar_items_carrito():
         total += subtotal
         total_items += cantidad
 
+    # Combos: si lleva todas las partes, baja el subtotal de esas unidades
+    if aplicar_combos(items):
+        total = sum(i["subtotal"] for i in items)
+
     return items, total, total_items
+
+
+def ahorro_combos(items):
+    return sum(i.get("combo_cant", 0) * (i["producto"].precio - i.get("precio_combo", 0)) for i in items)
 
 
 @app.template_global()
@@ -2030,15 +2212,16 @@ def crear_pedido(
 
     for item in items:
         p = item["producto"]
-        pedido.lineas.append(
-            LineaPedido(
-                producto_id=p.id,
-                nombre_producto=p.nombre,
-                precio_unitario=item.get("precio_unitario", p.precio),
-                cantidad=int(item["cantidad"]),
-                talle=item.get("talle"),
+        for nombre, cantidad, precio in lineas_de(item):
+            pedido.lineas.append(
+                LineaPedido(
+                    producto_id=p.id,
+                    nombre_producto=nombre,
+                    precio_unitario=int(precio),
+                    cantidad=int(cantidad),
+                    talle=item.get("talle"),
+                )
             )
-        )
 
     db.session.add(pedido)
 
@@ -2151,12 +2334,13 @@ def pagar_con_mercadopago(
     preference_data = {
         "items": [
             {
-                "title": nombre_con_talle(i["producto"].nombre, i.get("talle")),
-                "quantity": int(i["cantidad"]),
-                "unit_price": float(i.get("precio_unitario", i["producto"].precio)),
+                "title": nombre_con_talle(nombre, i.get("talle")),
+                "quantity": int(cantidad),
+                "unit_price": float(precio),
                 "currency_id": "ARS",
             }
             for i in items
+            for nombre, cantidad, precio in lineas_de(i)
         ],
         "external_reference": str(pedido.id),
         "payer": {
@@ -2272,6 +2456,8 @@ def carrito_pagar():
         if total_cupon >= total:
             cupon = None
             total_cupon = total
+            for item in items:   # vuelve a los precios normales (y a los combos)
+                item.pop("precio_unitario", None)
             hay_pack = any(
                 "pack" in (i["producto"].nombre or "").lower() for i in items
             )
@@ -2329,6 +2515,7 @@ def carrito_pagar():
             descuento_transferencia=DESCUENTO_TRANSFERENCIA * 100,
             bf_en_carrito=estado_black_friday() == "activo"
                           and any(es_paleta(i["producto"]) for i in items),
+            ahorro_combos=0 if cupon else ahorro_combos(items),
         ), (400 if error_form else 200)
 
     if request.method == "GET":
@@ -2446,8 +2633,8 @@ def carrito_pagar():
     else:
         total_final = total_transferencia
         cupon, descuento_cupon = None, 0
-        for item in items:
-            item["precio_unitario"] = item["producto"].precio
+        for item in items:   # precios normales (y combos) sin el cupón
+            item.pop("precio_unitario", None)
 
     # -----------------------------------------------------
     # CREAR PEDIDO (el 5% va solo sobre los productos, no sobre el envío)

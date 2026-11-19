@@ -11,6 +11,13 @@
 .carrito-cantidad .cantidad-control input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .carrito-eliminar-form { display: block; }
 .carrito-paso-siguiente { margin: 0 0 14px; font-size: 14px; color: #64748b; line-height: 1.4; }
+.carrito-combo-nota { display: block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--lime, #E57E3C); }
+.carrito-combo-ahorro span:last-child { color: var(--verde, #8fb487); font-weight: 800; }
+.carrito-combo-sugerencia { margin: 10px 0; padding: 12px 14px; border-radius: 12px; gap: 8px;
+  border: 1px dashed var(--lime, #E57E3C); background: rgba(229,126,60,.08); }
+.carrito-combo-sugerencia p { margin: 0; font-size: 14px; line-height: 1.4; }
+.carrito-combo-sugerencia button { align-self: flex-start; padding: 8px 14px; border-radius: 999px; border: 0;
+  background: var(--lime, #E57E3C); color: #fff; font-weight: 800; cursor: pointer; }
 </style>
 {% endblock %}
 
@@ -145,6 +152,9 @@
                 <strong>
                     ${{ "{:,}".format(item.subtotal).replace(",", ".") }}
                 </strong>
+                {% if item.combo_cant %}
+                <small class="carrito-combo-nota">{{ item.combo_cant }} en combo</small>
+                {% endif %}
 
             </div>
 
@@ -187,6 +197,20 @@
             <span>Productos</span>
             <span>{{ total_items_carrito }}</span>
         </div>
+
+        {% if ahorro_combos %}
+        <div class="resumen-linea carrito-combo-ahorro">
+            <span>🎾 Ahorro por combo</span>
+            <span>-${{ "{:,}".format(ahorro_combos).replace(",", ".") }}</span>
+        </div>
+        {% endif %}
+
+        {% for c in combos_sugeridos %}
+        <form method="post" action="{{ url_for('carrito_agregar_combo', combo_id=c.id) }}" class="carrito-combo-sugerencia">
+            <p><strong>¡Armá el combo!</strong> {{ c.titulo }} a ${{ "{:,}".format(c.precio).replace(",", ".") }}.</p>
+            <button type="submit">Completar el combo</button>
+        </form>
+        {% endfor %}
 
         <div class="resumen-linea resumen-total">
             <span>Total</span>

@@ -105,6 +105,15 @@
         <button class="btn btn-outline" disabled>Sin stock</button>
       {% endif %}
 
+      {% if combo %}
+      <form method="post" action="{{ url_for('carrito_agregar_combo', combo_id=combo.id) }}" class="pf-combo">
+        <span class="pf-combo-chip">PROMO</span>
+        <strong>{{ combo.titulo }}</strong>
+        <span><s>{{ combo.normal|pesos }}</s> <b>{{ combo.precio|pesos }}</b> · ahorrás {{ combo.ahorro|pesos }}</span>
+        <button type="submit">Agregar el combo al carrito</button>
+      </form>
+      {% endif %}
+
       <a class="pf-wa" target="_blank" rel="noopener" data-wa-origen="ficha del producto"
          href="{{ negocio.whatsapp_url }}?text={{ ('Hola! Tengo una consulta sobre ' ~ producto.nombre ~ ': ' ~ url_abs(url_for('producto_detalle', slug=producto.slug)))|urlencode }}">
         <i class="fab fa-whatsapp"></i> Consultar por WhatsApp
@@ -191,6 +200,15 @@
   .pf-wa { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; padding: 13px; border-radius: 10px;
            border: 1px solid #25d366; color: #25d366; font-weight: 700; text-decoration: none; }
   .pf-wa:hover { background: rgba(37, 211, 102, .1); }
+  .pf-combo { margin-top: 14px; padding: 14px 16px; border-radius: 12px; gap: 6px;
+              border: 1px solid var(--lime, #E57E3C); background: rgba(229,126,60,.1); }
+  .pf-combo-chip { align-self: flex-start; font-size: 11px; font-weight: 800; letter-spacing: .1em; padding: 3px 9px;
+                   border-radius: 999px; background: var(--lime, #E57E3C); color: #fff; }
+  .pf-combo strong { font-size: 16px; }
+  .pf-combo s { color: var(--muted, #777); }
+  .pf-combo b { color: var(--amarillo, #EAE339); font-size: 18px; }
+  .pf-combo button { margin-top: 4px; padding: 12px; border-radius: 10px; border: 0; cursor: pointer;
+                     background: var(--lime, #E57E3C); color: #fff; font-weight: 800; font-size: 15px; }
   .pf-beneficios { list-style: none; padding: 16px 0 0; margin: 18px 0 0; border-top: 1px solid var(--line, #ddd); font-size: 15px; line-height: 2; }
   .pf-beneficios i { width: 22px; color: var(--lime, #E57E3C); }
   .pf-beneficios a { color: inherit; }

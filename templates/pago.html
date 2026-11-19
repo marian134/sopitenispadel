@@ -290,11 +290,14 @@
             <ul class="co-items">
                 {% for item in items %}
                 <li>
-                    <span>{{ nombre_con_talle(item.producto.nombre, item.talle) }} × {{ item.cantidad }}</span>
+                    <span>{{ nombre_con_talle(item.producto.nombre, item.talle) }} × {{ item.cantidad }}{% if item.combo_cant and not cupon %} <em class="co-combo">({{ item.combo_cant }} en combo)</em>{% endif %}</span>
                     <span>{{ item.subtotal|pesos }}</span>
                 </li>
                 {% endfor %}
             </ul>
+            {% if ahorro_combos %}
+            <p class="co-nota co-combo-ahorro">🎾 Ahorrás {{ ahorro_combos|pesos }} con el combo. El combo no suma el descuento por transferencia.</p>
+            {% endif %}
 
             {% if cupon %}
             <div class="co-linea" id="linea-subtotal">

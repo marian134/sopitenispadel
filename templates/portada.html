@@ -144,6 +144,47 @@
 {% endif %}
 
 
+<!-- COMBOS (COMBOS en app.py: se muestran solos mientras estén activos y con stock) -->
+
+{% for c in combos %}
+<section class="combo-promo">
+    <div class="combo-fotos">
+        {% for f in c.fotos %}<img src="{{ url_for('static', filename='img/' ~ f) }}" alt="" width="160" height="160" loading="lazy">{% endfor %}
+    </div>
+    <div class="combo-texto">
+        <span class="combo-chip">PROMO TENIS</span>
+        <h2>{{ c.titulo }}</h2>
+        <p><s>{{ c.normal|pesos }}</s> <strong>{{ c.precio|pesos }}</strong> · ahorrás {{ c.ahorro|pesos }}</p>
+    </div>
+    <form method="post" action="{{ url_for('carrito_agregar_combo', combo_id=c.id) }}">
+        <button type="submit" class="combo-boton">Agregar el combo →</button>
+    </form>
+</section>
+{% endfor %}
+{% if combos %}
+<style>
+    .combo-promo { width: min(1180px, 92%); margin: 40px auto 0; padding: 18px 22px; border-radius: 18px;
+        display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center;
+        background: var(--surface, #0d1830); border: 1px solid var(--line, #1c2b4a); }
+    .combo-fotos { display: flex; gap: 8px; }
+    .combo-fotos img { width: 92px; height: 92px; object-fit: contain; background: #fff; border-radius: 12px; padding: 6px; }
+    .combo-chip { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--lime, #E57E3C); }
+    .combo-promo h2 { margin: 4px 0 6px; font-size: clamp(18px, 2.2vw, 26px); }
+    .combo-promo p { margin: 0; color: var(--muted, #9fb0cc); }
+    .combo-promo p s { opacity: .8; }
+    .combo-promo p strong { color: var(--amarillo, #EAE339); font-size: 1.2em; }
+    .combo-promo form { margin: 0; }
+    .combo-boton { padding: 13px 22px; border-radius: 999px; border: 0; cursor: pointer; white-space: nowrap;
+        background: var(--lime, #E57E3C); color: #fff; font-weight: 800; font-size: 15px; }
+    @media (max-width: 760px) {
+        .combo-promo { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+        .combo-fotos img { width: 72px; height: 72px; }
+        .combo-boton { width: 100%; }
+    }
+</style>
+{% endif %}
+
+
 <!-- UN BLOQUE POR DEPORTE (pádel primero) -->
 
 {% for b in bloques|sort(attribute='slug') if b.mas_vendidos or b.nuevos %}
