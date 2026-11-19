@@ -40,8 +40,10 @@ BANNERS = [
         "titulo": "Ya trabajamos con HEAD",
         "cta": "Ver productos",
         "url": "/catalogo/tenis?marca=Head",
-        "imagen": "banner_head.jpg",
-        "fondo": "#ffffff",
+        "imagen": "sopi-head.jpg",
+        "imagen_movil": "sopi-head-movil.jpg",
+        "ancho": 1600, "alto": 500,
+        "fondo": "#060d1c",
     },
     {
         "etiqueta": "Para profes y clubes",
@@ -49,18 +51,21 @@ BANNERS = [
         "subtitulo": "Head Pro, Head Championship y Penn Premier con envío gratis.",
         "cta": "Consultar",
         "url": "https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20info%20de%20las%20cajas",
-        "imagen": "banner-cajas.jpg",          # opcional
-        "imagen_movil": "banner-cajas.jpg",  # opcional
-        "fondo": "#1b2a3a",                    # color si no hay imagen
+        "imagen": "sopi-cajas.jpg",              # diseño en Figma: "SOPI · Banners del carrusel"
+        "imagen_movil": "sopi-cajas-movil.jpg",
+        "ancho": 1600, "alto": 500,
+        "fondo": "#060d1c",                      # color si no hay imagen
     },
     {
         "etiqueta": "Pádel",
         "titulo": "Paletas 2026",
-        "subtitulo": "Bullpadel, Nox, Adidas y Siux.",
+        "subtitulo": "Bullpadel, Nox, Adidas, Head y más.",
         "cta": "Comprar",
         "url": "/catalogo/padel",
-        "imagen": "banner-padel.jpg",
-        "fondo": "#1f4d3a",
+        "imagen": "sopi-paletas.jpg",
+        "imagen_movil": "sopi-paletas-movil.jpg",
+        "ancho": 1600, "alto": 500,
+        "fondo": "#060d1c",
     },
 ]
 
