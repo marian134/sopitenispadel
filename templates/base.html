@@ -256,6 +256,12 @@
           </a>
 
         {% endfor %}
+        {% if torneos_visible %}
+        <a href="{{ url_for('torneos.calendario') }}"
+           class="nav-sport-link{% if request.blueprint == 'torneos' %} activo{% endif %}">
+          Torneos
+        </a>
+        {% endif %}
          <a href="{{ url_for('quienes_somos') }}"
            class="nav-sport-link{% if request.endpoint == 'quienes_somos' %} activo{% endif %}">
           Quiénes somos
@@ -376,6 +382,13 @@
       </a>
       {% endif %}
     {% endfor %}
+
+    {% if torneos_visible %}
+    <a href="{{ url_for('torneos.calendario') }}"
+       class="{% if request.blueprint == 'torneos' %}activo{% endif %}">
+      Torneos <span class="nav-chevron" aria-hidden="true">›</span>
+    </a>
+    {% endif %}
 
     <a href="{{ url_for('quienes_somos') }}"
        class="{% if request.endpoint == 'quienes_somos' %}activo{% endif %}">

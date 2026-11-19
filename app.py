@@ -11,6 +11,7 @@ import correo_argentino as micorreo
 from descripciones import descripcion_producto, descripcion_corta
 from fichas import ficha_tecnica, ficha_rapida
 from templates import legales
+import torneos  # módulo de torneos (registra sus tablas antes de db.create_all)
 from datetime import timedelta, datetime, date, timezone
 from functools import wraps
 from flask_mail import Mail, Message
@@ -3468,6 +3469,11 @@ def productos():
 # PÁGINAS LEGALES
 # =========================================================
 legales.init_app(app, obtener_contexto_base)
+
+# =========================================================
+# TORNEOS (módulo aparte en torneos/, se ve en /torneos)
+# =========================================================
+torneos.init_app(app, obtener_contexto_base)
 # =========================================================
 # INICIO
 # =========================================================

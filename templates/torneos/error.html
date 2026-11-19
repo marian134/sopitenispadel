@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Torneos | SOPI Sports{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<section style="max-width: 640px; margin: 0 auto; padding: 64px 16px; text-align: center;">
+  <h1 style="font-family: var(--f-titulo, inherit); font-size: 26px;">Tuvimos un problema con los torneos</h1>
+  <p style="color: var(--muted, #9fb0cc);">Probá de nuevo en un momento. La tienda sigue funcionando normalmente.</p>
+  <p><a href="{{ url_for('torneos.calendario') }}">Volver a torneos</a> · <a href="/">Ir a la tienda</a></p>
+</section>
+{% endblock %}
