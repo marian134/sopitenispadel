@@ -10,7 +10,7 @@
 <section class="tn-hero" style="padding-top:16px;">
   <div class="tn-wrap">
     {% include "torneos/_marca.html" %}
-    <span class="tn-etiqueta">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }} · {{ comp.organizador.nombre }}</span>
+    <span class="tn-etiqueta">{{ comp.tipo|tipo_torneo }} · {{ comp.organizador.nombre }}</span>
     <h1>{{ comp.nombre }}</h1>
     <p>
       {% if comp.sede %}{{ comp.sede }}{% endif %}{% if comp.localidad %}{% if comp.sede %} · {% endif %}{{ comp.localidad }}{% endif %}
@@ -45,6 +45,8 @@
       <div style="white-space:pre-line;">{{ comp.descripcion }}</div>
     </div>
   {% endif %}
+
+  {% if lp %}{% include "torneos/_liga_publica.html" %}{% endif %}
 
   {% if escalera and escalera.semana %}
     <div class="tn-caja">
@@ -136,6 +138,15 @@
       </div>
     {% endfor %}
   </div>
+
+  {% if ediciones %}
+    <div class="tn-caja" style="margin-top:24px;">
+      <h2 style="margin-top:0;">Otras ediciones</h2>
+      <ul class="tn-dato" style="padding-left:18px; margin:0;">
+        {% for e in ediciones %}<li><a href="{{ url_for('torneos.torneo', slug=e.slug) }}">{{ e.nombre }}</a>{% if e.fecha_inicio %} · {{ e.fecha_inicio.strftime("%m/%Y") }}{% endif %}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
   <p class="tn-suave" style="margin-top:32px;">¿Ya estás anotado? Seguí todo desde el enlace personal que te llegó por mail. <a href="{{ url_for('torneos.recuperar_enlace') }}">Pedirlo de nuevo</a>.</p>
 </section>

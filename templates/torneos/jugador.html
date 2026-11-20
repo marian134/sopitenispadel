@@ -28,7 +28,7 @@
       {% set comp = i.categoria.competencia %}
       {% set b = bloques.get(i.id) %}
       <div class="tn-caja" id="insc-{{ i.id }}">
-        <span class="tn-tipo">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }}</span>
+        <span class="tn-tipo">{{ comp.tipo|tipo_torneo }}</span>
         <h2 style="margin:6px 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}" style="color:inherit;">{{ comp.nombre }}</a></h2>
         <p class="tn-dato">{{ i.categoria.nombre }}{% if i.jugador2 %} · con {{ (i.jugador2 if i.jugador1_id == j.id else i.jugador1).nombre_completo }}{% endif %}</p>
         {% if i.baja %}
@@ -118,6 +118,47 @@
                 </ul>
               </details>
             {% endif %}
+          {% endif %}
+        {% endif %}
+
+        {% set bl = bloques_liga.get(i.id) %}
+        {% if bl %}
+          {% if not bl.participa %}
+            <p class="tn-dato">Vas a poder jugar cuando el organizador confirme tu inscripción.</p>
+          {% else %}
+            {% if bl.mia %}
+              <p style="margin:12px 0 0; font-size:22px; font-weight:800;">{{ bl.mia.puntos|int if bl.mia.puntos == bl.mia.puntos|int else bl.mia.puntos }} puntos</p>
+              <p class="tn-dato" style="margin:0;">Puesto {{ bl.mia.posicion }} de {{ bl.total }} · {{ bl.mia.pj }} partido{{ "s" if bl.mia.pj != 1 }} jugado{{ "s" if bl.mia.pj != 1 }}</p>
+            {% endif %}
+            {% if bl.prox %}
+              <div class="tn-partido">
+                <strong>Fecha {{ bl.prox }} · {{ bl.prox_dia.strftime("%d/%m") }}</strong>
+                <form method="post" action="{{ url_for('torneos.liga_anotarse', enlace=j.enlace) }}" style="margin-top:6px;">
+                  <input type="hidden" name="insc" value="{{ i.id }}">
+                  <input type="hidden" name="fecha" value="{{ bl.prox }}">
+                  {% if bl.anotado %}
+                    <p class="tn-dato" style="margin:0 0 6px;">Estás anotado para jugar. El organizador arma los partidos y te avisa.</p>
+                    <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="bajarme">No puedo jugar esta fecha</button>
+                  {% else %}
+                    <button class="tn-boton tn-boton-chico" name="accion" value="anotarme">Quiero jugar esta fecha</button>
+                  {% endif %}
+                </form>
+              </div>
+            {% else %}
+              <p class="tn-dato">No quedan fechas por jugar.</p>
+            {% endif %}
+            {% for f in bl.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}
+            {% if bl.historial %}
+              <details class="tn-partido">
+                <summary style="cursor:pointer; font-weight:700;">Tus partidos</summary>
+                <ul class="tn-dato" style="padding-left:18px;">
+                  {% for h in bl.historial %}
+                    <li>Fecha {{ h.fecha }}: {{ "ganaste" if h.gane else "perdiste" }} con {{ h.rival.jugador1.nombre_completo }} · {{ h.sets }} · +{{ h.puntos|int if h.puntos == h.puntos|int else h.puntos }} pts</li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endif %}
+            <p style="margin:12px 0 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}">Ver la tabla completa</a></p>
           {% endif %}
         {% endif %}
 

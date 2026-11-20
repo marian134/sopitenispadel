@@ -28,11 +28,15 @@
           </label>
           <label class="tn-check">
             <input type="radio" name="tipo" value="escalera" {% if form and form.get('tipo') == 'escalera' %}checked{% endif %}>
-            <span><strong>Escalera de desafíos</strong><br><small>Ranking que dura semanas: los jugadores se desafían y suman puntos. Arranca con las reglas de los Desafíos Nivel Prado y después las podés cambiar.</small></span>
+            <span><strong>Escalera de desafíos</strong><br><small>Ranking que dura semanas: los jugadores se desafían y suman puntos. Arranca con reglas ya cargadas (puntos, plazos, divisiones) y después las podés cambiar.</small></span>
+          </label>
+          <label class="tn-check">
+            <input type="radio" name="tipo" value="liga" {% if form and form.get('tipo') == 'liga' %}checked{% endif %}>
+            <span><strong>Liga por fechas</strong><br><small>Una fecha por semana (ej. los domingos) y no hace falta jugarlas todas: cada partido suma puntos por games ganados. Vos armás los partidos de cada fecha o pedís una propuesta.</small></span>
           </label>
         </div>
       {% else %}
-        <p class="tn-suave">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo con cuadro" }}</p>
+        <p class="tn-suave">{{ comp.tipo|tipo_torneo }}</p>
       {% endif %}
 
       <div class="tn-caja tn-form">

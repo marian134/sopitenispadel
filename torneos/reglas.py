@@ -1,8 +1,8 @@
 """Reglas por defecto de cada formato.
 
 Se copian en la competencia al crearla (campo reglas_json) y el organizador
-las puede cambiar. Los valores de la escalera copian los Desafíos Nivel Prado
-(4ª edición, 2026).
+las puede cambiar. Los valores de la escalera son un formato habitual de
+escalera de club.
 """
 import copy
 
@@ -56,5 +56,24 @@ CUADRO = {
 }
 
 
+# Liga por fechas: se juega una fecha por semana (no hace falta jugarlas
+# todas) y cada partido suma por games, como en un formato habitual de
+# liga de club.
+LIGA = {
+    "formato_partido": "mejor de 3 sets; si quedan 1-1, súper tie-break a 10",
+    "puntos": {
+        "por_game": 1,          # cada game ganado en los sets 1 y 2
+        "gana_partido": 3,
+        "gana_super_tiebreak": 1,
+    },
+    "wo_como": "6-0 6-0",       # si no se presenta, cuenta como perder 6-0 6-0
+    "desempate": "menos_partidos",
+    "fechas": [],               # ["2026-11-01", "2026-11-08", ...]
+    "precio_por_partido": "",   # texto, ej. "$12.000 por partido, incluye cancha y pelotas"
+    "premio": "",
+    "disponibles": {},          # {"3": [ids de inscripción que se anotaron para la fecha 3]}
+}
+
+
 def por_defecto(tipo):
-    return copy.deepcopy(ESCALERA if tipo == "escalera" else CUADRO)
+    return copy.deepcopy({"escalera": ESCALERA, "liga": LIGA}.get(tipo, CUADRO))

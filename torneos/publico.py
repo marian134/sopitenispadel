@@ -95,11 +95,34 @@ def torneo(slug):
             por_dia.append((p.fecha_hora.date(), []))
         por_dia[-1][1].append(p)
     proximos = por_dia
+    lp = _datos_liga_publica(comp) if comp.tipo == "liga" else None
     return render_template(
         "torneos/torneo.html",
         **contexto(comp=comp, categorias=categorias, abierta=inscripcion_abierta(comp),
-                   escalera=escalera, proximos=proximos, nombre_ronda=cdr.nombre_ronda),
+                   escalera=escalera, proximos=proximos, nombre_ronda=cdr.nombre_ronda, lp=lp,
+                   ediciones=_otras_ediciones(comp)),
     )
+
+
+def _datos_liga_publica(comp):
+    from . import liga
+    prox = liga.proxima_fecha(comp)
+    pa, pb = liga.puntos_partido(comp, comp.reglas.get("wo_como") or "6-0 6-0")
+    return {
+        "fechas": liga.estado_fechas(comp), "tabla": liga.tabla(comp), "resultados": liga.resultados(comp),
+        "ejemplo": liga.ejemplo(comp),
+        "wo_texto": f"tu rival suma {int(pa) if float(pa).is_integer() else pa} y vos {int(pb) if float(pb).is_integer() else pb}",
+        "proximos": [p for p in Partido.query.filter_by(competencia_id=comp.id, semana=prox, estado="agendado")
+                     .order_by(Partido.fecha_hora).all()] if prox else [],
+    }
+
+
+def _otras_ediciones(comp):
+    """Las otras ediciones públicas del mismo torneo (copiadas una de otra)."""
+    raiz = comp.reglas.get("edicion_de") or comp.id
+    todas = [c for c in Competencia.query.filter_by(organizador_id=comp.organizador_id).all()
+             if (c.reglas.get("edicion_de") or c.id) == raiz and c.id != comp.id and c.estado in ESTADOS_PUBLICOS]
+    return sorted(todas, key=lambda c: c.id, reverse=True)
 
 
 def _buscar_o_crear_jugador(dni, nombre, apellido, celular, email):
@@ -257,12 +280,15 @@ def jugador(enlace):
         .filter((Inscripcion.jugador1_id == j.id) | (Inscripcion.jugador2_id == j.id))
         .order_by(Inscripcion.creado_en.desc()).all()
     )
-    bloques, bloques_cuadro = {}, {}
+    bloques, bloques_cuadro, bloques_liga = {}, {}, {}
     for insc in inscripciones:
         comp = insc.categoria.competencia
         if comp.tipo == "escalera":
             esc.procesar(comp)
             bloques[insc.id] = _bloque_escalera(insc, j)
+        elif comp.tipo == "liga":
+            if not insc.baja:
+                bloques_liga[insc.id] = _bloque_liga(insc)
         elif not insc.baja:
             bloques_cuadro[insc.id] = _bloque_cuadro(insc, j)
     from .desafios import MENSAJES
@@ -270,6 +296,7 @@ def jugador(enlace):
         "torneos/jugador.html",
         **contexto(
             j=j, inscripciones=inscripciones, bloques=bloques, bloques_cuadro=bloques_cuadro,
+            bloques_liga=bloques_liga,
             mensaje=MENSAJES.get(request.args.get("msj", "")),
             error=MENSAJES.get(request.args.get("error", "")) or request.args.get("error_texto"),
         ),
@@ -283,6 +310,50 @@ def _texto_sets(p, insc):
     if not res:
         return ""
     return res[-1].sets if insc.id == p.lado_a_id else esc.invertir(res[-1].sets)
+
+
+def _bloque_liga(insc):
+    """Lo que el jugador ve de una liga: próxima fecha, su partido, sus puntos."""
+    from . import liga
+    comp = insc.categoria.competencia
+    tabla = liga.tabla(comp)
+    mia = next((f for f in tabla if f["insc"].id == insc.id), None)
+    prox = liga.proxima_fecha(comp)
+    partidos = []
+    for p in Partido.query.filter_by(competencia_id=comp.id).all():
+        if insc.id not in (p.lado_a_id, p.lado_b_id) or p.estado not in ("agendado", "en_disputa"):
+            continue
+        rival = p.lado_b if p.lado_a_id == insc.id else p.lado_a
+
+        def ver(res, p=p):
+            if not res:
+                return None
+            return "W.O." if res.ausente_id else (res.sets if insc.id == p.lado_a_id else esc.invertir(res.sets))
+        mio, suyo = esc.resultado_de_jugador(p, insc), esc.resultado_de_jugador(p, rival)
+        dia = liga.fecha_numero(comp, p.semana)
+        partidos.append({
+            "p": p, "rival": rival, "soy_desafiante": False,
+            "ronda": f"Fecha {p.semana}" + (f" ({dia.strftime('%d/%m')})" if dia else ""),
+            "mio": mio, "suyo": suyo, "mio_txt": ver(mio), "suyo_txt": ver(suyo),
+            "wa": link_whatsapp(rival.jugador1.celular,
+                                f"Hola {rival.jugador1.nombre}! Jugamos en la fecha {p.semana} de {comp.nombre}."),
+        })
+    historial = []
+    for numero, dia, filas in liga.resultados(comp):
+        for r in filas:
+            if insc.id in (r["ganador"].id, r["perdedor"].id):
+                gane = r["ganador"].id == insc.id
+                historial.append({
+                    "fecha": numero, "rival": r["perdedor"] if gane else r["ganador"], "gane": gane,
+                    "sets": r["sets"] if gane or r["sets"] == "W.O." else esc.invertir(r["sets"]),
+                    "puntos": r["pts_ganador"] if gane else r["pts_perdedor"],
+                })
+    return {
+        "mia": mia, "total": len(tabla), "prox": prox,
+        "prox_dia": liga.fecha_numero(comp, prox) if prox else None,
+        "anotado": liga.esta_disponible(comp, insc, prox) if prox else False,
+        "partidos": partidos, "historial": historial, "participa": liga.participa(insc),
+    }
 
 
 def _bloque_cuadro(insc, j):

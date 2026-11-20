@@ -11,7 +11,7 @@
   {% include "torneos/_barra_org.html" %}
   {% with migas = [("Mis torneos", url_for("torneos.panel")), (comp.nombre, none)] %}{% include "torneos/_migas.html" %}{% endwith %}
 
-  <span class="tn-tipo">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo con cuadro" }}</span>
+  <span class="tn-tipo">{{ comp.tipo|tipo_torneo }}</span>
   <h1 class="tn-titulo">{{ comp.nombre }}</h1>
   <p class="tn-suave">{{ nombres_estado.get(comp.estado, comp.estado) }}{% if comp.precio %} · Inscripción {{ pesos(comp.precio) }}{% endif %}</p>
 
@@ -34,6 +34,10 @@
           <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cancelar">Cancelar</button>
         </form>
       {% endif %}
+      <form method="post" action="{{ url_for('torneos.competencia_copiar', comp_id=comp.id) }}"
+            onsubmit="return confirm('¿Crear una nueva edición con los mismos datos y categorías (sin inscriptos)?');">
+        <button class="tn-boton tn-boton-sec tn-boton-chico">Copiar para una nueva edición</button>
+      </form>
     </div>
 
     {% if comp.estado in ("inscripcion", "en_curso", "finalizada") %}
@@ -49,6 +53,7 @@
 
   {% if escalera %}{% include "torneos/_panel_escalera.html" %}{% endif %}
   {% if cuadro %}{% include "torneos/_panel_cuadro.html" %}{% endif %}
+  {% if liga %}{% include "torneos/_panel_liga.html" %}{% endif %}
 
   {% for c in categorias %}
     <div class="tn-caja" id="cat-{{ c.cat.id }}">

@@ -1,6 +1,6 @@
 """Motor de la escalera de desafíos.
 
-Cómo funciona (con las reglas por defecto de El Prado):
+Cómo funciona (con las reglas por defecto):
 - La etapa arranca el día de inicio de la competencia y se divide en semanas
   de 7 días. La semana 1 empieza ese día.
 - Cada partido suma o resta puntos (tabla torneo_movimiento) en la semana en
@@ -232,6 +232,10 @@ def aplicar_resultado(partido, sets_lado_a):
     """Cierra el partido con un resultado (desde el lado A) y suma los puntos.
     En un cuadro no hay puntos: el ganador pasa a la ronda siguiente."""
     comp = partido.lado_a.categoria.competencia
+    if comp.tipo == "liga":
+        from . import liga
+        liga.aplicar_resultado(partido, sets_lado_a)
+        return
     if comp.tipo != TIPO_ESCALERA:
         from . import cuadro
         sets = leer_sets(sets_lado_a, un_set=True)
@@ -262,6 +266,10 @@ def aplicar_wo(partido, ausente_id):
     comp = partido.lado_a.categoria.competencia
     ausente = partido.lado_a if partido.lado_a_id == ausente_id else partido.lado_b
     presente = partido.lado_b if ausente is partido.lado_a else partido.lado_a
+    if comp.tipo == "liga":
+        from . import liga
+        liga.aplicar_wo(partido, ausente_id)
+        return
     if comp.tipo != TIPO_ESCALERA:
         from . import cuadro
         partido.estado = PAR_WO

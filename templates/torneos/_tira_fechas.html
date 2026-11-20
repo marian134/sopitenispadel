@@ -1,0 +1,12 @@
+{# Tira de fechas de la liga. Recibe: fechas (liga.estado_fechas) #}
+{% set meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"] %}
+<div class="tn-fechas">
+  {% for f in fechas %}
+    <a class="tn-fecha tn-fecha-{{ f.estado }}" href="#fecha-{{ f.numero }}">
+      <small>Fecha {{ f.numero }}</small>
+      <strong>{{ f.fecha.day }}</strong>
+      <small>{{ meses[f.fecha.month - 1] }}</small>
+      <em>{{ {"jugada": "Jugada", "proxima": "Próxima", "sin_partidos": "Sin partidos", "futura": ""}[f.estado] }}</em>
+    </a>
+  {% endfor %}
+</div>

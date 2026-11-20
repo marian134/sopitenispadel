@@ -28,7 +28,31 @@ MENSAJES = {
     "invalido": "Ese desafío ya no es válido (cambió el ranking o ya hay un partido entre ustedes).",
     "selfie": "Falta la selfie del partido.",
     "no_juego": "La escalera no está en juego en este momento.",
+    "anotado": "¡Listo! Estás anotado para la fecha. El organizador arma los partidos y te avisa.",
+    "desanotado": "Te bajaste de la fecha.",
+    "con_partido": "Ya tenés partido armado en esa fecha: si no podés, avisale al organizador.",
 }
+
+
+@bp.route("/jugador/<enlace>/liga-fecha", methods=["POST"])
+def liga_anotarse(enlace):
+    """El jugador se anota (o se baja) para una fecha de la liga."""
+    from . import liga
+    j = _jugador(enlace)
+    insc = _mi_inscripcion(j, request.form.get("insc", type=int))
+    comp = insc.categoria.competencia
+    numero = request.form.get("fecha", type=int)
+    dia = liga.fecha_numero(comp, numero) if comp.tipo == "liga" else None
+    from datetime import date
+    if not dia or dia < date.today() or not liga.participa(insc):
+        return _volver(enlace, error="invalido", ancla=f"insc-{insc.id}")
+    si = request.form.get("accion") == "anotarme"
+    if not si and any(insc.id in (p.lado_a_id, p.lado_b_id)
+                      for p in Partido.query.filter_by(competencia_id=comp.id, semana=numero).all()):
+        return _volver(enlace, error="con_partido", ancla=f"insc-{insc.id}")
+    liga.marcar_disponible(comp, insc, numero, si)
+    db.session.commit()
+    return _volver(enlace, msj="anotado" if si else "desanotado", ancla=f"insc-{insc.id}")
 
 
 def _jugador(enlace):
@@ -129,7 +153,7 @@ def cargar_resultado(enlace):
     if p.estado != PAR_AGENDADO or esc.resultado_de_jugador(p, mia):
         return _volver(enlace, error="invalido")
     try:
-        desde_mi_lado = _sets_del_form(request.form, un_set=comp.tipo != "escalera")
+        desde_mi_lado = _sets_del_form(request.form, un_set=comp.tipo == "cuadro")
     except ValueError as e:
         return redirect(url_for("torneos.jugador", enlace=enlace, error_texto=str(e)) + f"#partido-{p.id}")
     selfie = None

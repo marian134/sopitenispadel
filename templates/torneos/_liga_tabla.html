@@ -1,0 +1,24 @@
+{# Tabla de posiciones de la liga. Recibe: tabla, fechas (estado_fechas), yo_id (opcional) #}
+<div class="tn-scroll">
+  <table class="tn-tabla">
+    <thead><tr><th>#</th><th>Jugador</th><th>Fechas jugadas</th><th>PJ</th><th>Puntos</th></tr></thead>
+    <tbody>
+      {% for f in tabla %}
+        {% set yo = yo_id is defined and yo_id == f.insc.id %}
+        <tr{% if yo %} style="color:var(--lime);font-weight:700;"{% endif %}>
+          <td>{{ f.posicion }}</td>
+          <td>{{ f.insc.jugador1.nombre_completo }}</td>
+          <td><span class="tn-puntos" aria-label="Jugó {{ f.fechas_jugadas|length }} fechas">
+            {% for x in fechas %}
+              <span class="tn-punto {{ 'tn-punto-si' if x.numero in f.fechas_jugadas else ('tn-punto-futura' if x.estado in ('futura', 'proxima') else 'tn-punto-no') }}"
+                    title="Fecha {{ x.numero }}"></span>
+            {% endfor %}
+          </span></td>
+          <td>{{ f.pj }}</td>
+          <td><strong>{{ f.puntos|int if f.puntos == f.puntos|int else f.puntos }}</strong></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="tn-suave" style="font-size:13px;">A igual puntaje, arriba quien jugó menos partidos. ● jugó esa fecha · ○ no jugó · ◌ por jugar</p>

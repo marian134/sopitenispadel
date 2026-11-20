@@ -16,7 +16,7 @@
         {% for c in abiertos %}
           <li><a href="{{ url_for('torneos.torneo', slug=c.slug) }}">
             <strong>{{ c.nombre }}</strong>
-            <span>{{ "Escalera" if c.tipo == "escalera" else "Torneo" }} · {{ c.organizador.nombre }}{% if c.localidad %} · {{ c.localidad }}{% endif %}</span>
+            <span>{{ c.tipo|tipo_torneo }} · {{ c.organizador.nombre }}{% if c.localidad %} · {{ c.localidad }}{% endif %}</span>
           </a></li>
         {% endfor %}
       </ul>

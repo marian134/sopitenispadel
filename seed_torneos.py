@@ -86,7 +86,7 @@ def cargar():
                            slug="desafios-de-primavera", estado="inscripcion", fecha_inicio=inicio,
                            fecha_fin=inicio + timedelta(days=83), precio=40000, incluye="un tubo de pelotas",
                            localidad="Quilmes", sede="Club Demo Tenis",
-                           descripcion="Escalera de singles con las reglas de los Desafíos Nivel Prado.\n"
+                           descripcion="Escalera de singles: desafiá hasta 5 puestos arriba y sumá puntos cada semana.\n"
                                        "Partidos al mejor de 3 sets con súper tie-break.")
     esc_comp.reglas = por_defecto("escalera")
     db.session.add(esc_comp)
@@ -167,7 +167,48 @@ def cargar():
     org.plan = "pago"   # para poder tener más de un torneo y probar la marca propia
     db.session.commit()
 
+    # --- Liga por fechas: 9 domingos, 3 ya jugados
+    from torneos import liga
+    hoy = date.today()
+    primer_domingo = hoy - timedelta(days=(hoy.weekday() + 1) % 7) - timedelta(days=21)
+    lg = Competencia(organizador_id=org.id, tipo="liga", nombre="Liga de los Domingos",
+                     slug="liga-de-los-domingos", estado="inscripcion", precio=0, localidad="Quilmes",
+                     sede="Club Demo Tenis",
+                     descripcion="Partidos de single entre alumnos del club. Hay fecha todos los domingos "
+                                 "y no hace falta jugarlas todas: cada partido suma.")
+    reglas = por_defecto("liga")
+    reglas["fechas"] = [(primer_domingo + timedelta(days=7 * k)).isoformat() for k in range(9)]
+    reglas["precio_por_partido"] = "$12.000 por partido, incluye cancha y pelotas."
+    reglas["premio"] = "Un mes de entrenamiento sin cargo en el grupo de adultos."
+    lg.reglas = reglas
+    lg.fecha_inicio, lg.fecha_fin = primer_domingo, primer_domingo + timedelta(days=56)
+    db.session.add(lg)
+    db.session.flush()
+    cat3 = Categoria(competencia_id=lg.id, nombre="Singles", modalidad="singles")
+    db.session.add(cat3)
+    db.session.flush()
+    for j in jugadores(10, desde=4):
+        db.session.add(Inscripcion(categoria_id=cat3.id, jugador1_id=j.id, estado_pago="confirmado",
+                                   creado_en=hace_mucho))
+    db.session.flush()
+    rng = random.Random(3)
+    for numero in (1, 2, 3):
+        parejas, _ = liga.proponer(lg, numero)
+        for a, b in parejas[: rng.choice([3, 4, 5])]:
+            p = liga.crear_partido(lg, numero, a.id, b.id)
+            db.session.flush()
+            sets = rng.choice(["6-2 6-3", "6-4 7-5", "4-6 6-3 10-6", "6-1 6-0", "7-6 3-6 10-8"])
+            db.session.add(Resultado(partido_id=p.id, cargado_por="organizador", cargado_por_id=org.id,
+                                     sets=sets, confirmado=True))
+            db.session.flush()
+            liga.aplicar_resultado(p, sets)
+    for insc in liga.participantes(lg)[:6]:
+        liga.marcar_disponible(lg, insc, liga.proxima_fecha(lg) or 4)
+    db.session.commit()
+    jl = liga.participantes(lg)[0].jugador1
+
     print("Listo. Torneos de ejemplo cargados.")
+    print("Panel del jugador (liga):", f"/torneos/jugador/{jl.enlace}  ({jl.nombre_completo})")
     print("Panel del jugador (escalera):", f"/torneos/jugador/{ins[3].jugador1.enlace}  ({ins[3].jugador1.nombre_completo})")
     print("Panel del jugador (desafiado):", f"/torneos/jugador/{ins[2].jugador1.enlace}  ({ins[2].jugador1.nombre_completo})")
 

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Fechas y puntos: {{ comp.nombre }} | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", url_for("torneos.panel")), (comp.nombre, url_for("torneos.competencia_panel", comp_id=comp.id)), ("Fechas y puntos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-angosto">
+    <h1 class="tn-titulo">Fechas y puntos de la liga</h1>
+    {% if guardado %}<p class="tn-ok">Guardado. {{ ejemplo }}</p>{% endif %}
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+    <form method="post" class="tn-form">
+      <div class="tn-caja tn-form">
+        <h2>Fechas</h2>
+        <p class="tn-suave" style="margin:0;">Una fecha por semana (o cada los días que quieras). No hace falta que todos jueguen todas.</p>
+        <div class="tn-dos">
+          <label>Primera fecha <input type="date" name="primera" value="{{ (reglas.get('fechas') or [''])[0] }}"></label>
+          <label>Cantidad de fechas <input name="cantidad" inputmode="numeric" value="{{ (reglas.get('fechas') or [])|length or 9 }}"></label>
+        </div>
+        <label>Cada cuántos días <input name="cada" inputmode="numeric" value="7"></label>
+        <label class="tn-check"><input type="checkbox" name="generar" value="1" {% if not reglas.get('fechas') %}checked{% endif %}>
+          <span>Armar las fechas con estos datos <small>(si no lo marcás, se usa la lista de abajo)</small></span></label>
+        <label>Lista de fechas <small>(una por línea, AAAA-MM-DD; podés sacar o agregar fechas sueltas)</small>
+          <textarea name="fechas" rows="5">{{ (reglas.get('fechas') or [])|join('\n') }}</textarea>
+        </label>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Cómo se suman puntos</h2>
+        <div class="tn-dos">
+          <label>Por cada game ganado en los sets 1 y 2 <input name="por_game" inputmode="decimal" value="{{ reglas.puntos.por_game }}"></label>
+          <label>Por ganar el partido <input name="gana_partido" inputmode="decimal" value="{{ reglas.puntos.gana_partido }}"></label>
+        </div>
+        <label>Por ganar el súper tie-break <input name="gana_super_tiebreak" inputmode="decimal" value="{{ reglas.puntos.gana_super_tiebreak }}"></label>
+        <label>Si alguien no se presenta, cuenta como perder <input name="wo_como" value="{{ reglas.get('wo_como', '6-0 6-0') }}"></label>
+        <label>Formato del partido <input name="formato_partido" value="{{ reglas.get('formato_partido', '') }}"></label>
+        <p class="tn-suave" style="margin:0;">A igual puntaje, queda arriba quien jugó menos partidos.</p>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2>Para mostrar en la página</h2>
+        <label>Precio por partido <small>(opcional, ej. "$12.000 por partido, incluye cancha y pelotas")</small>
+          <input name="precio_por_partido" value="{{ reglas.get('precio_por_partido', '') }}"></label>
+        <label>Premio <small>(opcional)</small>
+          <textarea name="premio" rows="2">{{ reglas.get('premio', '') }}</textarea></label>
+      </div>
+
+      <button class="tn-boton" type="submit">Guardar</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

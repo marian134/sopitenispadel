@@ -1,0 +1,59 @@
+{# Página pública de una liga por fechas. Recibe: comp, lp (datos de la liga) #}
+{% set pts = comp.reglas.get("puntos") or {} %}
+{% macro n(x) %}{{ x|int if x == x|int else x }}{% endmacro %}
+
+{% if lp.fechas %}
+  {% with fechas = lp.fechas %}{% include "torneos/_tira_fechas.html" %}{% endwith %}
+{% endif %}
+
+<div class="tn-caja">
+  <h2 style="margin-top:0;">Cómo se juega</h2>
+  <div class="tn-dos">
+    <div>
+      <p style="margin:0 0 6px; font-weight:700;">Cómo se suman puntos</p>
+      <table class="tn-tabla">
+        <tbody>
+          <tr><td>Cada game ganado en los sets 1 y 2</td><td><strong>+{{ n(pts.get("por_game", 1)) }}</strong></td></tr>
+          <tr><td>Ganar el partido</td><td><strong>+{{ n(pts.get("gana_partido", 3)) }}</strong></td></tr>
+          <tr><td>Ganar el súper tie-break</td><td><strong>+{{ n(pts.get("gana_super_tiebreak", 1)) }}</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="tn-dato">{{ lp.ejemplo }}</p>
+    </div>
+    <div>
+      <ul class="tn-dato" style="padding-left:18px; margin:0; line-height:1.7;">
+        {% if comp.reglas.get("formato_partido") %}<li>{{ comp.reglas.formato_partido|capitalize }}.</li>{% endif %}
+        <li>No hace falta jugar todas las fechas: cada partido suma.</li>
+        <li>Si no te presentás, perdés {{ comp.reglas.get("wo_como", "6-0 6-0") }}{% if lp.wo_texto %}: {{ lp.wo_texto }}{% endif %}.</li>
+        {% if comp.reglas.get("precio_por_partido") %}<li>{{ comp.reglas.precio_por_partido }}</li>{% endif %}
+      </ul>
+      {% if comp.reglas.get("premio") %}
+        <p style="margin:12px 0 0;"><strong>Premio:</strong> {{ comp.reglas.premio }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="tn-caja">
+  <h2 style="margin-top:0;">Tabla de posiciones</h2>
+  {% if lp.tabla %}
+    {% with tabla = lp.tabla, fechas = lp.fechas %}{% include "torneos/_liga_tabla.html" %}{% endwith %}
+  {% else %}
+    <p class="tn-suave" style="margin:0;">La tabla aparece cuando se confirmen los primeros jugadores.</p>
+  {% endif %}
+</div>
+
+{% if lp.proximos %}
+  <div class="tn-caja">
+    <h2 style="margin-top:0;">Próxima fecha</h2>
+    {% for p in lp.proximos %}
+      <p style="margin:6px 0;">{{ p.lado_a.jugador1.nombre_completo }} vs {{ p.lado_b.jugador1.nombre_completo }}
+        <span class="tn-suave">{% if p.fecha_hora %} · {{ p.fecha_hora.strftime("%H:%M") }}{% endif %}{% if p.cancha %} · cancha {{ p.cancha }}{% endif %}</span></p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="tn-caja">
+  <h2 style="margin-top:0;">Partidos jugados</h2>
+  {% with resultados = lp.resultados %}{% include "torneos/_liga_resultados.html" %}{% endwith %}
+</div>

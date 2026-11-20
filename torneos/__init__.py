@@ -25,7 +25,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import models  # noqa: F401  (registra las tablas antes de db.create_all)
 from .bp import bp, contexto, _estado
-from . import publico, cuentas, panel, panel_cuadro, desafios  # noqa: F401  (registran sus rutas en bp)
+from . import publico, cuentas, panel, panel_cuadro, panel_liga, desafios  # noqa: F401  (registran sus rutas en bp)
 
 
 def torneos_visible():
@@ -67,6 +67,10 @@ def init_app(app, contexto_base):
     @app.context_processor
     def _torneos():
         return {"torneos_visible": torneos_visible(), "torneos_abiertos": torneos_abiertos}
+
+    @app.template_filter("tipo_torneo")
+    def _tipo_torneo(tipo):
+        return {"escalera": "Escalera de desafíos", "liga": "Liga por fechas"}.get(tipo, "Torneo con cuadro")
 
 
 def _agregar_columnas_nuevas():

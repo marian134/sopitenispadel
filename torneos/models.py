@@ -16,6 +16,7 @@ PLAN_PAGO = "pago"
 # Tipos de competencia
 TIPO_CUADRO = "cuadro"
 TIPO_ESCALERA = "escalera"
+TIPO_LIGA = "liga"                 # liga por fechas (puntos por games)
 
 # Estados de una competencia (en el orden en que avanza)
 EST_BORRADOR = "borrador"          # la está armando el organizador, no se ve

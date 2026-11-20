@@ -21,7 +21,7 @@
       <div class="tn-grilla">
         {% for c in competencias %}
           <a class="tn-tarjeta" href="{{ url_for('torneos.torneo', slug=c.slug) }}">
-            <span class="tn-tipo">{{ "Escalera de desafíos" if c.tipo == "escalera" else "Torneo" }}</span>
+            <span class="tn-tipo">{{ c.tipo|tipo_torneo }}</span>
             <h3>{{ c.nombre }}</h3>
             <p class="tn-dato">{{ c.organizador.nombre }}{% if c.localidad %} · {{ c.localidad }}{% endif %}</p>
             {% if c.fecha_inicio %}

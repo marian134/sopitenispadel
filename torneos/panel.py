@@ -12,9 +12,9 @@ from .bp import bp, contexto
 from .models import (
     Categoria, Competencia, Inscripcion, Partido, Resultado,
     PAR_AGENDADO, PAR_ANULADO, PAR_DESAFIO, PAR_EN_DISPUTA, PAR_JUGADO, PAR_WO,
-    EST_BORRADOR, EST_CANCELADA, EST_EN_CURSO, EST_INSCRIPCION,
+    EST_BORRADOR, EST_CANCELADA, EST_EN_CURSO, EST_FINALIZADA, EST_INSCRIPCION,
     PAGO_CONFIRMADO, PAGO_PENDIENTE, PAGO_RECHAZADO, PLAN_GRATIS,
-    TIPO_CUADRO, TIPO_ESCALERA,
+    TIPO_CUADRO, TIPO_ESCALERA, TIPO_LIGA,
 )
 from .util import (
     CARPETA_ARCHIVOS, link_whatsapp, organizador_actual, organizador_requerido, slug_unico,
@@ -81,7 +81,7 @@ def _guardar_competencia(comp, form):
         return "Poné un nombre."
     if comp.id is None:
         tipo = form.get("tipo")
-        if tipo not in (TIPO_CUADRO, TIPO_ESCALERA):
+        if tipo not in (TIPO_CUADRO, TIPO_ESCALERA, TIPO_LIGA):
             return "Elegí si es un torneo con cuadro o una escalera."
         comp.tipo = tipo
         comp.reglas = reglas_mod.por_defecto(tipo)
@@ -203,8 +203,42 @@ def competencia_estado(comp_id):
         comp.estado = EST_BORRADOR
     elif accion == "cancelar" and comp.estado in (EST_BORRADOR, EST_INSCRIPCION):
         comp.estado = EST_CANCELADA
+    elif accion == "finalizar" and comp.tipo == TIPO_LIGA and comp.estado in (EST_INSCRIPCION, EST_EN_CURSO):
+        # La liga la cierra el organizador al terminar la última fecha
+        comp.estado = EST_FINALIZADA
+        cobros.crear_cobro(comp)
     db.session.commit()
     return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
+
+
+@bp.route("/panel/<int:comp_id>/copiar", methods=["POST"])
+@organizador_requerido
+def competencia_copiar(comp_id):
+    """Nueva edición: copia datos, categorías y reglas, sin inscriptos ni partidos."""
+    comp = _mi_competencia(comp_id)
+    org = organizador_actual()
+    if not _puede_crear(org):
+        return redirect(url_for("torneos.panel"))
+    reglas = comp.reglas
+    for clave in ("semana_cerrada", "divisiones_aplicadas", "disponibles", "fechas"):
+        reglas.pop(clave, None)
+    if comp.tipo == TIPO_LIGA:
+        reglas["disponibles"], reglas["fechas"] = {}, []
+    reglas["edicion_de"] = reglas.get("edicion_de") or comp.id   # todas apuntan a la primera
+    nombre = (request.form.get("nombre") or "").strip()[:150] or f"{comp.nombre} (nueva edición)"
+    nueva = Competencia(
+        organizador_id=org.id, tipo=comp.tipo, nombre=nombre, slug=slug_unico(Competencia, nombre),
+        deporte=comp.deporte, sede=comp.sede, localidad=comp.localidad, descripcion=comp.descripcion,
+        precio=comp.precio, incluye=comp.incluye, estado=EST_BORRADOR,
+    )
+    nueva.reglas = reglas
+    db.session.add(nueva)
+    db.session.flush()
+    for cat in comp.categorias:
+        db.session.add(Categoria(competencia_id=nueva.id, nombre=cat.nombre, modalidad=cat.modalidad,
+                                 cupo=cat.cupo, orden=cat.orden))
+    db.session.commit()
+    return redirect(url_for("torneos.competencia_editar", comp_id=nueva.id))
 
 
 def _hay_inscriptos(comp):
@@ -236,12 +270,14 @@ def competencia_panel(comp_id):
     escalera = _datos_escalera(comp) if comp.tipo == TIPO_ESCALERA else None
     from .panel_cuadro import datos_cuadro
     cuadro = datos_cuadro(comp) if comp.tipo == TIPO_CUADRO else None
+    from .panel_liga import datos_liga
+    liga_datos = datos_liga(comp) if comp.tipo == TIPO_LIGA else None
     return render_template(
         "torneos/competencia_panel.html",
         **contexto(
             comp=comp, categorias=categorias, url_publica=url_publica,
             niveles=comp.reglas.get("niveles_iniciales", []),
-            divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro,
+            divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro, liga=liga_datos,
             error=request.args.get("error"),
         ),
     )
@@ -282,7 +318,7 @@ def partido_resolver(partido_id):
     accion = request.form.get("accion")
     if accion == "resultado":
         try:
-            sets = esc.sets_texto(esc.leer_sets(request.form.get("sets"), un_set=comp.tipo != TIPO_ESCALERA))
+            sets = esc.sets_texto(esc.leer_sets(request.form.get("sets"), un_set=comp.tipo == TIPO_CUADRO))
         except ValueError as e:
             return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, error=str(e)) + "#partidos")
         db.session.add(Resultado(partido_id=p.id, cargado_por="organizador",
@@ -291,7 +327,7 @@ def partido_resolver(partido_id):
         esc.aplicar_resultado(p, sets)
     elif accion in ("wo_a", "wo_b"):
         esc.aplicar_wo(p, p.lado_a_id if accion == "wo_a" else p.lado_b_id)
-    elif accion == "anular" and comp.tipo == TIPO_ESCALERA:   # en un cuadro no se anula: rompería la llave
+    elif accion == "anular" and comp.tipo != TIPO_CUADRO:   # en un cuadro no se anula: rompería la llave
         p.estado = PAR_ANULADO
     db.session.commit()
     return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + "#partidos")

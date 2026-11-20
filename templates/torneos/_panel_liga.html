@@ -1,0 +1,98 @@
+{# Bloque de la liga por fechas en el panel del organizador #}
+{% set L = liga %}
+<div class="tn-caja" id="liga">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+    <h2 style="margin:0;">Liga por fechas</h2>
+    <div class="tn-acciones">
+      <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.opciones_liga', comp_id=comp.id) }}">Fechas y puntos</a>
+      {% if comp.estado in ("inscripcion", "en_curso") and L.fechas %}
+        <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}"
+              onsubmit="return confirm('¿Terminar la liga? Queda la tabla final y no se cargan más partidos.');">
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="finalizar">Terminar la liga</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+  <p class="tn-suave">{{ L.ejemplo }} Cada fecha armás los partidos a mano o pedís una propuesta según la tabla (sin repetir rivales).</p>
+  {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+
+  {% if not L.fechas %}
+    <p class="tn-error" style="margin-bottom:0;">Cargá las fechas en "Fechas y puntos" para empezar.</p>
+  {% else %}
+    {% with fechas = L.fechas %}{% include "torneos/_tira_fechas.html" %}{% endwith %}
+
+    {% for f in L.fechas %}
+      {% if f.partidos or f.estado in ("proxima", "sin_partidos") or f.anotados %}
+      <div id="fecha-{{ f.numero }}" style="border-top:1px solid var(--line); padding-top:12px; margin-top:12px;">
+        <h3 style="margin:0 0 6px;">Fecha {{ f.numero }} · {{ f.fecha.strftime("%d/%m") }}
+          {% if f.estado == "proxima" %}<span class="tn-estado tn-est-pendiente">Próxima</span>{% endif %}</h3>
+        <p class="tn-dato">
+          {{ f.anotados|length }} se anotaron para jugar{% if f.sin_partido %} · sin partido todavía: {{ f.sin_partido|map(attribute="jugador1.nombre_completo")|join(", ") }}{% endif %}
+        </p>
+
+        {% for x in f.partidos %}
+          {% set p = x.p %}
+          <div style="padding:8px 0; border-top:1px dashed var(--line);">
+            <strong>{{ p.lado_a.jugador1.nombre_completo }}</strong> vs <strong>{{ p.lado_b.jugador1.nombre_completo }}</strong>
+            {% if p.estado in ("jugado", "wo") %}
+              {% set r = (p.resultados|selectattr("confirmado")|rejectattr("ausente_id")|list)|last if p.resultados else none %}
+              <span class="tn-suave"> · {{ "W.O." if p.estado == "wo" else (r.sets if r else "") }} · ganó {{ (p.lado_a if p.ganador_id == p.lado_a_id else p.lado_b).jugador1.nombre }}
+                ({{ x.puntos.get(p.lado_a_id, 0)|int }} y {{ x.puntos.get(p.lado_b_id, 0)|int }} pts)</span>
+            {% elif p.estado == "anulado" %}
+              <span class="tn-suave"> · anulado</span>
+            {% else %}
+              {% if p.estado == "en_disputa" %}<span class="tn-estado tn-est-rechazado">Para resolver</span>{% endif %}
+              <form method="post" action="{{ url_for('torneos.partido_horario', partido_id=p.id) }}" class="tn-acciones" style="align-items:center; margin-top:6px;">
+                <input type="datetime-local" name="fecha_hora" value="{{ p.fecha_hora.strftime('%Y-%m-%dT%H:%M') if p.fecha_hora else f.fecha.isoformat() ~ 'T09:00' }}" aria-label="Hora"
+                       style="padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+                <input name="cancha" value="{{ p.cancha or '' }}" placeholder="Cancha" aria-label="Cancha"
+                       style="width:90px; padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+                <button class="tn-boton tn-boton-sec tn-boton-chico">Guardar horario</button>
+              </form>
+              {% if x.wa %}
+                <div class="tn-acciones" style="margin-top:6px;">
+                  {% for nombre, link in x.wa %}<a class="tn-boton tn-wa tn-boton-chico" href="{{ link }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar a {{ nombre }}</a>{% endfor %}
+                  {% if not p.resultados %}
+                    <form method="post" action="{{ url_for('torneos.liga_partido_borrar', partido_id=p.id) }}" onsubmit="return confirm('¿Sacar este partido?');">
+                      <button class="tn-boton tn-boton-sec tn-boton-chico">Sacar</button>
+                    </form>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% for r in p.resultados %}
+                <p class="tn-dato" style="margin:4px 0;">{{ (p.lado_a if r.cargado_por_id == p.lado_a_id else p.lado_b).jugador1.nombre }} cargó
+                  {% if r.ausente_id %}que no se presentó su rival{% else %}{{ r.sets }} (games de {{ p.lado_a.jugador1.nombre }} primero){% endif %}</p>
+              {% endfor %}
+              {% include "torneos/_resolver_partido.html" %}
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        {% if f.estado in ("proxima", "futura", "sin_partidos") and L.participantes|length >= 2 %}
+          <div class="tn-acciones" style="margin-top:8px; align-items:center;">
+            <form method="post" action="{{ url_for('torneos.liga_proponer', comp_id=comp.id, numero=f.numero) }}">
+              <button class="tn-boton tn-boton-chico">Proponer partidos{% if f.anotados %} con los anotados{% endif %}</button>
+            </form>
+            <form method="post" action="{{ url_for('torneos.liga_partido_nuevo', comp_id=comp.id, numero=f.numero) }}" class="tn-acciones" style="align-items:center;">
+              {% for lado in ["a", "b"] %}
+                <select name="{{ lado }}" aria-label="Jugador {{ lado|upper }}" style="padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+                  <option value="">Elegí…</option>
+                  {% for i in L.participantes %}<option value="{{ i.id }}">{{ i.jugador1.nombre_completo }}</option>{% endfor %}
+                </select>{% if lado == "a" %} vs {% endif %}
+              {% endfor %}
+              <button class="tn-boton tn-boton-sec tn-boton-chico">Agregar partido</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+
+    <h3 style="margin-top:20px;">Tabla de posiciones</h3>
+    {% if L.tabla %}
+      {% with tabla = L.tabla, fechas = L.fechas %}{% include "torneos/_liga_tabla.html" %}{% endwith %}
+    {% else %}
+      <p class="tn-suave">Todavía no hay jugadores confirmados.</p>
+    {% endif %}
+  {% endif %}
+</div>

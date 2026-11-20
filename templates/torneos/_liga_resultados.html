@@ -1,0 +1,18 @@
+{# Partidos jugados de la liga, por fecha. Recibe: resultados (liga.resultados) #}
+{% set dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] %}
+{% set meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] %}
+{% for numero, dia, filas in resultados %}
+  <div id="fecha-{{ numero }}" style="margin-top:14px;">
+    <p style="margin:0 0 4px; font-weight:700; color:var(--amarillo);">Fecha {{ numero }}{% if dia %} · {{ dias[dia.weekday()] }} {{ dia.day }} de {{ meses[dia.month - 1] }}{% endif %}</p>
+    {% for r in filas %}
+      <div class="tn-resultado">
+        <div class="tn-r-jugador tn-r-gano">{{ r.ganador.jugador1.nombre_completo }}<small>+{{ r.pts_ganador|int if r.pts_ganador == r.pts_ganador|int else r.pts_ganador }} pts</small></div>
+        <div class="tn-r-sets">{{ r.sets }}</div>
+        <div class="tn-r-jugador tn-r-derecha">{{ r.perdedor.jugador1.nombre_completo }}<small>+{{ r.pts_perdedor|int if r.pts_perdedor == r.pts_perdedor|int else r.pts_perdedor }} pts</small></div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="tn-suave">Todavía no hay partidos jugados.</p>
+{% endfor %}
+{% if resultados %}<p class="tn-suave" style="font-size:13px;">El ganador va a la izquierda. El resultado se lee desde su lado.</p>{% endif %}
