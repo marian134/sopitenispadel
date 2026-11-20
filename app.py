@@ -3496,6 +3496,8 @@ def productos():
 # PÁGINAS LEGALES
 # =========================================================
 legales.init_app(app, obtener_contexto_base)
+import dashboard_admin
+dashboard_admin.init_app(app, admin_requerido, obtener_contexto_base, vencer_pedidos_viejos)
 # =========================================================
 # INICIO
 # =========================================================

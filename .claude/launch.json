@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tienda-local",
+      "runtimeExecutable": "venv/Scripts/python.exe",
+      "runtimeArgs": ["-c", "import app; app.app.run(port=5055)"],
+      "port": 5055
+    },
+    {
+      "name": "torneos-local",
+      "runtimeExecutable": "venv/Scripts/python.exe",
+      "runtimeArgs": ["-c", "import os, sys; os.chdir('C:/Users/Mariano/Desktop/sopitenispadel-torneos'); sys.path.insert(0, os.getcwd()); os.environ.pop('DATABASE_URL', None); os.environ['TORNEOS_VISIBLE'] = '1'; import app; app.app.run(port=5056)"],
+      "port": 5056
+    }
+  ]
+}
