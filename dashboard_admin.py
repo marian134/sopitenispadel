@@ -1,7 +1,7 @@
 """
 Dashboard de movimientos de la tienda: /admin/dashboard
 
-Se engancha desde app.py con:
+Incluye la medición de visitas (visitas.py). Se engancha desde app.py con:
     import dashboard_admin
     dashboard_admin.init_app(app, admin_requerido, obtener_contexto_base, vencer_pedidos_viejos)
 """
@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from flask import render_template, request
 
+import visitas
 from models import db, Producto, Pedido, Cupon, CuponUso, ESTADO_PAGADO, ESTADO_PENDIENTE, ESTADO_FALLIDO
 
 PERIODOS = {"7": "7 días", "30": "30 días", "90": "90 días", "365": "12 meses"}
@@ -85,7 +86,12 @@ def datos_dashboard(dias):
         .group_by(Cupon.codigo).all()
     )
 
+    nombre_por_slug = {p.slug: p.nombre for p in productos.values() if p.slug}
+    v = visitas.datos_visitas(desde_utc, pagados, nombre_por_slug)
+
     return dict(
+        **v,
+        conversion_visitas=round(v["v_pagados"] * 100 / v["v_visitantes"], 1) if v["v_visitantes"] else 0,
         desde=desde_ar, hasta=hoy_ar,
         ingresos=ingresos, envios=envios, ventas_productos=ventas_productos,
         costo_total=costo_total, ganancia=ventas_productos - costo_total, sin_costo=sin_costo,
@@ -111,10 +117,12 @@ def datos_dashboard(dias):
 
 
 def init_app(app, admin_requerido, obtener_contexto_base, vencer_pedidos_viejos):
+    visitas.init_app(app)
 
     @admin_requerido
     def admin_dashboard():
         vencer_pedidos_viejos()
+        visitas.borrar_viejas()
         periodo = request.args.get("dias", "30")
         if periodo not in PERIODOS:
             periodo = "30"
