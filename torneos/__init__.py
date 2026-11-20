@@ -29,7 +29,30 @@ from . import publico, cuentas, panel, panel_cuadro, desafios  # noqa: F401  (re
 
 
 def torneos_visible():
-    return os.environ.get("TORNEOS_VISIBLE", "") == "1"
+    """La pestaña Torneos se muestra salvo que TORNEOS_VISIBLE=0 (para ocultarla rápido)."""
+    return os.environ.get("TORNEOS_VISIBLE", "1") != "0"
+
+
+def torneos_abiertos(cantidad=3):
+    """Competencias con inscripción abierta, para la promo de la portada."""
+    from .models import Competencia, EST_INSCRIPCION
+    try:
+        return (Competencia.query.filter_by(estado=EST_INSCRIPCION)
+                .order_by(Competencia.fecha_inicio.asc().nullslast(), Competencia.id.desc())
+                .limit(cantidad).all())
+    except Exception:
+        current_app.logger.exception("No se pudieron leer los torneos abiertos")
+        return []
+
+
+def rutas_sitemap():
+    """Direcciones públicas de torneos para el mapa del sitio de Google."""
+    from flask import url_for
+    from .models import Competencia, ESTADOS_PUBLICOS
+    rutas = [url_for("torneos.calendario"), url_for("torneos.organizar")]
+    rutas += [url_for("torneos.torneo", slug=c.slug)
+              for c in Competencia.query.filter(Competencia.estado.in_(ESTADOS_PUBLICOS)).order_by(Competencia.id)]
+    return rutas
 
 
 def init_app(app, contexto_base):
@@ -43,7 +66,7 @@ def init_app(app, contexto_base):
 
     @app.context_processor
     def _torneos():
-        return {"torneos_visible": torneos_visible()}
+        return {"torneos_visible": torneos_visible(), "torneos_abiertos": torneos_abiertos}
 
 
 def _agregar_columnas_nuevas():

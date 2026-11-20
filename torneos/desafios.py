@@ -227,4 +227,5 @@ def ver_selfie(res_id):
         )
     if not permitido:
         abort(404)
-    return send_from_directory(CARPETA_ARCHIVOS, os.path.basename(r.selfie))
+    from .archivos import servir
+    return servir(r.selfie)

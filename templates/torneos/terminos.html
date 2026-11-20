@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Términos de SOPI Torneos{% endblock %}
+{% block meta_description %}Condiciones de uso de SOPI Torneos para jugadores y organizadores de torneos de tenis.{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+{# BORRADOR: revisar con un profesional antes de publicar #}
+<section class="tn-wrap tn-angosto tn-seccion">
+  {% with migas = [("Términos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
+    <span class="tn-etiqueta">SOPI Torneos</span>
+    <h1>Términos y privacidad</h1>
+  </div>
+  <div class="tn-caja" style="line-height:1.6;">
+    <h2>Qué es SOPI Torneos</h2>
+    <p>Es un sistema de SOPI Sports para organizar torneos y escaleras de tenis. SOPI provee el sistema: cada torneo lo organiza y lo dirige su organizador (club, profe o circuito), que es responsable del reglamento, los horarios, las canchas, los premios y las decisiones deportivas.</p>
+
+    <h2>Inscripción y pagos</h2>
+    <p>La inscripción se paga directamente al organizador, que confirma el pago. Las devoluciones, cambios o cancelaciones de un torneo se arreglan con el organizador. SOPI no recibe el dinero de las inscripciones.</p>
+
+    <h2>Datos de los jugadores</h2>
+    <ul>
+      <li>Pedimos DNI, nombre, celular y, si querés, mail, para identificarte en todos los torneos y avisarte de tus partidos.</li>
+      <li>El DNI y el celular solo los ve el organizador del torneo en el que te anotaste. En las páginas públicas aparecen tu nombre, tus resultados y tu posición.</li>
+      <li>Los comprobantes de pago solo los ve el organizador. Las selfies de los partidos, los dos jugadores y el organizador.</li>
+      <li>Tu enlace personal es privado: no lo compartas. Si lo perdés, lo podés pedir de nuevo por mail.</li>
+      <li>Podés pedir que borremos tus datos escribiendo a {{ negocio.email if negocio is defined else "SOPI" }}.</li>
+    </ul>
+
+    <h2>Organizadores</h2>
+    <ul>
+      <li>El plan gratis permite un torneo o una escalera y muestra la marca SOPI.</li>
+      <li>El plan pago cuesta un monto por jugador inscripto, que se calcula al cerrar la inscripción (o al terminar la escalera) y se paga a SOPI por transferencia. Con más de un pago pendiente no se pueden crear torneos nuevos.</li>
+      <li>El organizador se compromete a usar los datos de los jugadores solo para su torneo.</li>
+    </ul>
+
+    <h2>Resultados</h2>
+    <p>Los resultados los cargan los jugadores o el organizador. Si hay diferencias, decide el organizador.</p>
+  </div>
+</section>
+{% endblock %}

@@ -3091,6 +3091,11 @@ def robots():
         "Disallow: /*?*q=",
         "Disallow: /*?*orden=",
         "Disallow: /*?*max_precio=",
+        # Torneos: paneles privados y enlaces personales
+        "Disallow: /torneos/panel",
+        "Disallow: /torneos/jugador/",
+        "Disallow: /torneos/ingresar",
+        "Disallow: /torneos/resultado/",
         "",
         f"Sitemap: {URL_PUBLICA}/sitemap.xml",
     ]
@@ -3120,6 +3125,9 @@ def sitemap():
         .filter(Producto.slug != None, con_foto())   # noqa: E711
         .order_by(Producto.id)
     ]
+
+    if torneos.torneos_visible():
+        rutas += torneos.rutas_sitemap()
 
     xml = ['<?xml version="1.0" encoding="UTF-8"?>',
            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']

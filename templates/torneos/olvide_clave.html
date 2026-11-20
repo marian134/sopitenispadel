@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Olvidé mi contraseña | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  {% with migas = [("Ingresar", url_for("torneos.ingresar")), ("Olvidé mi contraseña", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
+    <span class="tn-etiqueta">Organizadores</span>
+    <h1>Olvidé mi contraseña</h1>
+    <p>Te mandamos un link a tu mail para elegir una nueva.</p>
+  </div>
+  <div class="tn-caja">
+    {% if enviado %}
+      <p class="tn-ok" style="margin:0;">Si ese mail tiene una cuenta, en unos minutos te llega el link (revisá también spam). Vale por 2 horas.</p>
+    {% else %}
+      <form method="post" class="tn-form">
+        <label>Mail de tu cuenta <input type="email" name="email" required autocomplete="email"></label>
+        <button class="tn-boton" type="submit">Enviarme el link</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

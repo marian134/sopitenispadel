@@ -328,9 +328,18 @@ def procesar(comp, ahora=None):
     ahora = ahora or datetime.now()
     cambio = _vencer_desafios(comp, ahora)
     actual = semana_de(comp, ahora)
+    hasta = min((actual or 0) - 1, total_semanas(comp))
+    bloqueado = hasta > int(comp.reglas.get("semana_cerrada") or 0)
+    if bloqueado:
+        # Hay semanas para cerrar: se bloquea la fila de la competencia hasta
+        # terminar, así dos visitas al mismo tiempo no cierran dos veces la
+        # misma semana (en Postgres; SQLite ignora el bloqueo).
+        if cambio:
+            db.session.commit()
+        comp = (db.session.query(type(comp)).filter_by(id=comp.id)
+                .populate_existing().with_for_update().one())
     reglas = comp.reglas
     cerrada = int(reglas.get("semana_cerrada") or 0)
-    hasta = min((actual or 0) - 1, total_semanas(comp))
     for semana in range(cerrada + 1, hasta + 1):
         _cerrar_semana(comp, semana)
         reglas["semana_cerrada"] = semana
@@ -342,7 +351,8 @@ def procesar(comp, ahora=None):
             crear_cobro(comp)
     if cambio:
         comp.reglas = reglas
-        db.session.commit()
+    if cambio or bloqueado:
+        db.session.commit()   # también libera el bloqueo
 
 
 # ---------------------------------------------------------

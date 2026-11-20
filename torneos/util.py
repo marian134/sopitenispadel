@@ -12,12 +12,9 @@ from flask_mail import Message
 from models import db
 from .models import Organizador
 
-# Archivos que suben los jugadores (comprobantes, selfies). En local se
-# guardan en instance/torneos_archivos; antes de publicar se pasa a un
-# servicio de imágenes externo (ver "Plan técnico").
-CARPETA_ARCHIVOS = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "torneos_archivos"
-)
+# Archivos que suben los jugadores (comprobantes, selfies, logos): ver archivos.py
+# (Cloudinary en producción, instance/torneos_archivos en local).
+from .archivos import CARPETA as CARPETA_ARCHIVOS  # noqa: E402,F401
 EXTENSIONES_OK = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".pdf"}
 TAMANO_MAXIMO = 8 * 1024 * 1024  # 8 MB
 
@@ -32,6 +29,7 @@ def slugify(texto):
 # Palabras que ya usan las direcciones de /torneos: un torneo no puede llamarse así
 SLUGS_RESERVADOS = {
     "organizar", "ingresar", "salir", "panel", "jugador", "recuperar-enlace", "admin", "archivo",
+    "olvide-mi-clave", "nueva-clave", "terminos", "logo", "resultado",
 }
 
 
@@ -92,11 +90,8 @@ def guardar_archivo(archivo):
         raise ValueError("El archivo pesa más de 8 MB.")
     if not datos:
         raise ValueError("El archivo está vacío.")
-    os.makedirs(CARPETA_ARCHIVOS, exist_ok=True)
-    nombre = secrets.token_urlsafe(16) + ext
-    with open(os.path.join(CARPETA_ARCHIVOS, nombre), "wb") as f:
-        f.write(datos)
-    return nombre
+    from .archivos import guardar
+    return guardar(datos, ext)
 
 
 def enviar_mail(destino, asunto, cuerpo):

@@ -451,5 +451,5 @@ def comprobante(insc_id):
     if not insc or not insc.comprobante:
         abort(404)
     _mi_competencia(insc.categoria.competencia_id)
-    nombre = os.path.basename(insc.comprobante)
-    return send_from_directory(CARPETA_ARCHIVOS, nombre)
+    from .archivos import servir
+    return servir(insc.comprobante)

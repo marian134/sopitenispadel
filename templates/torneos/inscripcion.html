@@ -88,7 +88,7 @@
 
     <label class="tn-check">
       <input type="checkbox" name="acepto" value="1" required {% if form.get('acepto') %}checked{% endif %}>
-      <span>Leí la información y el reglamento del torneo, y acepto que mi nombre aparezca en las listas y resultados.</span>
+      <span>Leí la información y el reglamento del torneo, acepto los <a href="{{ url_for('torneos.terminos') }}" target="_blank" rel="noopener">términos de SOPI Torneos</a> y que mi nombre aparezca en las listas y resultados.</span>
     </label>
 
     <button class="tn-boton" type="submit">Confirmar inscripción</button>

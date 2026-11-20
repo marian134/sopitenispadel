@@ -18,6 +18,7 @@
       <label>Mail <input type="email" name="email" required autocomplete="email"></label>
       <label>Contraseña <input type="password" name="clave" required autocomplete="current-password"></label>
       <button class="tn-boton" type="submit">Ingresar</button>
+      <p class="tn-suave" style="margin:0;"><a href="{{ url_for('torneos.olvide_clave') }}">Olvidé mi contraseña</a></p>
     </form>
   </div>
   <p class="tn-suave">¿Todavía no tenés cuenta? <a href="{{ url_for('torneos.organizar') }}">Creala gratis</a>.</p>

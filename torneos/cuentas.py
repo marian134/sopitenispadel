@@ -2,13 +2,15 @@
 import os
 import re
 
-from flask import abort, redirect, render_template, request, send_from_directory, session, url_for
+from flask import abort, current_app, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import db
 from .bp import bp, contexto, WHATSAPP_SOPI
 from .models import Organizador, PLAN_PAGO, PRECIO_POR_INSCRIPTO
-from .util import CARPETA_ARCHIVOS, guardar_archivo, organizador_actual, organizador_requerido, slug_unico
+from .util import (
+    CARPETA_ARCHIVOS, enviar_mail, guardar_archivo, organizador_actual, organizador_requerido, slug_unico,
+)
 
 EMAIL_OK = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 COLOR_OK = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -87,6 +89,73 @@ def salir():
     return redirect(url_for("torneos.calendario"))
 
 
+# ---------------------------------------------------------
+# OLVIDÉ MI CONTRASEÑA (link por mail, vale 2 horas y una sola vez:
+# deja de servir apenas cambia la contraseña)
+# ---------------------------------------------------------
+def _serializador():
+    from itsdangerous import URLSafeTimedSerializer
+    return URLSafeTimedSerializer(current_app.secret_key, salt="torneos-clave")
+
+
+def _token_clave(org):
+    return _serializador().dumps({"id": org.id, "h": org.clave_hash[-12:]})
+
+
+def _org_del_token(token):
+    from itsdangerous import BadSignature, SignatureExpired
+    try:
+        datos = _serializador().loads(token, max_age=2 * 3600)
+    except (BadSignature, SignatureExpired):
+        return None
+    org = db.session.get(Organizador, datos.get("id"))
+    if not org or not org.activo or org.clave_hash[-12:] != datos.get("h"):
+        return None
+    return org
+
+
+@bp.route("/olvide-mi-clave", methods=["GET", "POST"])
+def olvide_clave():
+    enviado = False
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        org = Organizador.query.filter_by(email=email).first()
+        if org and org.activo:
+            link = url_for("torneos.nueva_clave", token=_token_clave(org), _external=True)
+            ok = enviar_mail(org.email, "Cambiar tu contraseña de SOPI Torneos",
+                             f"Hola {org.nombre}!\n\nPara elegir una contraseña nueva entrá a este link "
+                             f"(vale 2 horas):\n{link}\n\nSi no lo pediste, ignorá este mail.")
+            if not ok:
+                current_app.logger.info("Link para cambiar la clave de %s: %s", org.email, link)
+        enviado = True   # siempre lo mismo, para no revelar qué mails tienen cuenta
+    return render_template("torneos/olvide_clave.html", **contexto(enviado=enviado))
+
+
+@bp.route("/nueva-clave/<token>", methods=["GET", "POST"])
+def nueva_clave(token):
+    org = _org_del_token(token)
+    if not org:
+        return render_template("torneos/nueva_clave.html", **contexto(invalido=True))
+    error = None
+    if request.method == "POST":
+        clave = request.form.get("clave") or ""
+        if len(clave) < 8:
+            error = "La contraseña tiene que tener al menos 8 caracteres."
+        elif clave != request.form.get("clave2"):
+            error = "Las dos contraseñas no coinciden."
+        else:
+            org.clave_hash = generate_password_hash(clave)
+            db.session.commit()
+            session["torneo_org_id"] = org.id
+            return redirect(url_for("torneos.panel"))
+    return render_template("torneos/nueva_clave.html", **contexto(invalido=False, error=error))
+
+
+@bp.route("/terminos")
+def terminos():
+    return render_template("torneos/terminos.html", **contexto())
+
+
 @bp.route("/panel/perfil", methods=["GET", "POST"])
 @organizador_requerido
 def perfil():
@@ -121,4 +190,5 @@ def logo(org_id):
     org = db.session.get(Organizador, org_id)
     if not org or not org.logo or org.plan != PLAN_PAGO:
         abort(404)
-    return send_from_directory(CARPETA_ARCHIVOS, os.path.basename(org.logo))
+    from .archivos import servir
+    return servir(org.logo)
