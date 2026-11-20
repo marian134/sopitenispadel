@@ -6,7 +6,8 @@
 
 {% block content %}
 {% include "torneos/_estilos.html" %}
-<section class="tn-hero">
+<div class="tn-wrap">{% with migas = [("Organizar torneos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}</div>
+<section class="tn-hero" style="padding-top:16px;">
   <div class="tn-wrap">
     <span class="tn-etiqueta">Para clubes y profes</span>
     <h1>Organizá tus torneos sin planillas ni formularios</h1>

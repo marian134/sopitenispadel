@@ -13,7 +13,8 @@
   .tn-partido { border-top: 1px solid var(--line, #1c2b4a); padding-top: 14px; margin-top: 14px; }
 </style>
 <section class="tn-wrap tn-angosto tn-seccion">
-  <div class="tn-hero">
+  {% with migas = [("Mi panel", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
     <span class="tn-etiqueta">Tu panel</span>
     <h1>Hola, {{ j.nombre }}</h1>
     <p>Este es tu enlace personal: no lo compartas.</p>

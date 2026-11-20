@@ -6,8 +6,10 @@
 
 {% block content %}
 {% include "torneos/_estilos.html" %}
-<section class="tn-hero">
+<div class="tn-wrap">{% with migas = [(comp.nombre, none)] %}{% include "torneos/_migas.html" %}{% endwith %}</div>
+<section class="tn-hero" style="padding-top:16px;">
   <div class="tn-wrap">
+    {% include "torneos/_marca.html" %}
     <span class="tn-etiqueta">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo" }} · {{ comp.organizador.nombre }}</span>
     <h1>{{ comp.nombre }}</h1>
     <p>
@@ -18,9 +20,10 @@
 </section>
 
 <section class="tn-wrap tn-seccion">
+  {% include "torneos/_aviso_sopi.html" %}
   <div class="tn-caja">
     {% if comp.precio %}
-      <p style="margin-top:0;"><strong>Inscripción {{ pesos(comp.precio) }}</strong>{% if comp.incluye %} · Incluye {{ comp.incluye }}{% endif %}</p>
+      <p style="margin-top:0;"><strong>Inscripción {{ pesos(comp.precio) }}</strong>{% if cargo_jugador(comp) %} + {{ pesos(cargo_jugador(comp)) }} por jugador (sistema de inscripción){% endif %}{% if comp.incluye %} · Incluye {{ comp.incluye }}{% endif %}</p>
     {% else %}
       <p style="margin-top:0;"><strong>Inscripción gratis</strong></p>
     {% endif %}

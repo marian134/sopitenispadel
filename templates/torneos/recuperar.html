@@ -6,7 +6,8 @@
 {% block content %}
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-angosto tn-seccion">
-  <div class="tn-hero">
+  {% with migas = [("Recuperar mi enlace", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
     <span class="tn-etiqueta">Jugadores</span>
     <h1>Pedir mi enlace personal</h1>
     <p>Te lo mandamos al mail que dejaste cuando te inscribiste.</p>

@@ -6,7 +6,9 @@
 {% block content %}
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-angosto tn-seccion">
-  <div class="tn-hero">
+  {% with migas = [(comp.nombre, url_for('torneos.torneo', slug=comp.slug)), ("Inscripción", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
+    {% include "torneos/_marca.html" %}
     <span class="tn-etiqueta">Inscripción</span>
     <h1>{{ comp.nombre }}</h1>
     <p>{{ comp.organizador.nombre }}{% if comp.precio %} · {{ pesos(comp.precio) }}{% if comp.incluye %} (incluye {{ comp.incluye }}){% endif %}{% endif %}</p>
@@ -72,7 +74,7 @@
     {% if comp.precio %}
       <div class="tn-caja tn-form">
         <h2>Pago</h2>
-        <p style="margin:0;">Transferí <strong>{{ pesos(comp.precio) }}</strong> a {{ comp.organizador.nombre }}:</p>
+        <p style="margin:0;">Transferí <strong>{{ pesos(comp.precio) }}</strong>{% if cargo_jugador(comp) %} más <strong>{{ pesos(cargo_jugador(comp)) }} por jugador</strong> del sistema de inscripción (singles: {{ pesos(comp.precio + cargo_jugador(comp)) }}; dobles: {{ pesos(comp.precio + 2 * cargo_jugador(comp)) }}){% endif %} a {{ comp.organizador.nombre }}:</p>
         {% if comp.organizador.datos_bancarios %}
           <div class="tn-caja" style="white-space:pre-line; margin:0; background:var(--bg);">{{ comp.organizador.datos_bancarios }}</div>
         {% else %}

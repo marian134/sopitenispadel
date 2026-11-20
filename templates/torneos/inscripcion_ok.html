@@ -6,7 +6,8 @@
 {% block content %}
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-angosto tn-seccion">
-  <div class="tn-hero">
+  {% with migas = [(comp.nombre, url_for("torneos.torneo", slug=comp.slug)), ("Inscripción recibida", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
     <span class="tn-etiqueta">Inscripción recibida</span>
     <h1>¡Listo, {{ jugador.nombre }}!</h1>
     <p>Te anotaste en <strong>{{ comp.nombre }}</strong> ({{ insc.categoria.nombre }}).

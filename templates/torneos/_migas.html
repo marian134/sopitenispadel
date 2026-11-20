@@ -1,0 +1,9 @@
+{# Camino para volver: "Torneos › Nombre del torneo › Inscripción".
+   Recibe migas: lista de (texto, url o none). El último es la página actual. #}
+<nav class="tn-migas" aria-label="Estás en">
+  <a href="{{ url_for('torneos.calendario') }}">← Torneos</a>
+  {% for texto, url in migas %}
+    <span aria-hidden="true">›</span>
+    {% if url and not loop.last %}<a href="{{ url }}">{{ texto }}</a>{% else %}<span aria-current="page">{{ texto }}</span>{% endif %}
+  {% endfor %}
+</nav>

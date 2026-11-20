@@ -1,0 +1,10 @@
+{# Plan gratis: SOPI acompaña el torneo #}
+{% if comp.organizador.plan != "pago" %}
+  <div class="tn-caja" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; border-color: var(--lime, #E57E3C);">
+    <div>
+      <span class="tn-etiqueta">Torneo con SOPI</span>
+      <p style="margin:4px 0 0;">Pelotas, grips, cuerdas y raquetas para tu próximo partido{% if cupon_sopi %}: usá el cupón <strong style="color:var(--amarillo);">{{ cupon_sopi }}</strong> en la tienda{% endif %}.</p>
+    </div>
+    <a class="tn-boton tn-boton-chico" href="{{ url_for('catalogo', deporte_slug='tenis') }}">Ver la tienda</a>
+  </div>
+{% endif %}

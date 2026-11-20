@@ -7,11 +7,13 @@
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", url_for("torneos.panel")), ("Mis datos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   <div class="tn-angosto">
     <h1 class="tn-titulo">Mis datos</h1>
     {% if guardado %}<p class="tn-ok">Guardado.</p>{% endif %}
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
     <div class="tn-caja">
-      <form method="post" class="tn-form">
+      <form method="post" class="tn-form" enctype="multipart/form-data">
         <label>Nombre del club, profe o circuito
           <input name="nombre" value="{{ org.nombre }}" required maxlength="120">
         </label>
@@ -21,6 +23,20 @@
         <label>Datos para transferir la inscripción <small>(alias, CBU, titular; se muestran al inscribirse)</small>
           <textarea name="datos_bancarios" maxlength="500">{{ org.datos_bancarios or '' }}</textarea>
         </label>
+        {% if org.plan == "pago" %}
+          <div class="tn-caja tn-form" style="margin:0; background:var(--bg);">
+            <h2 style="margin:0;">Tu marca</h2>
+            <p class="tn-suave" style="margin:0;">Con el plan pago, las páginas de tus torneos llevan tu logo y tu color, sin publicidad de SOPI.</p>
+            {% if org.logo %}
+              <img src="{{ url_for('torneos.logo', org_id=org.id) }}" alt="Logo de {{ org.nombre }}" style="max-height:72px; max-width:220px; object-fit:contain;">
+              <label class="tn-check"><input type="checkbox" name="quitar_logo" value="1"> <span>Quitar el logo</span></label>
+            {% endif %}
+            <label>Logo <small>(JPG, PNG o WEBP)</small> <input type="file" name="logo" accept="image/*"></label>
+            <label>Color principal <input type="color" name="color" value="{{ org.color or '#E57E3C' }}" style="height:44px; padding:4px;"></label>
+          </div>
+        {% else %}
+          <p class="tn-suave" style="margin:0;">Plan gratis: tus torneos se muestran con la marca SOPI. ¿Querés tu logo y tus colores, y torneos ilimitados? <a href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20el%20plan%20pago%20de%20torneos" target="_blank" rel="noopener">Pasate al plan pago</a>.</p>
+        {% endif %}
         <p class="tn-suave" style="margin:0;">Mail de ingreso: {{ org.email }}</p>
         <button class="tn-boton" type="submit">Guardar</button>
       </form>

@@ -7,8 +7,8 @@
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", url_for("torneos.panel")), (comp.nombre, url_for("torneos.competencia_panel", comp_id=comp.id)), ("Reglas de la escalera", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   <div class="tn-angosto">
-    <p><a href="{{ url_for('torneos.competencia_panel', comp_id=comp.id) }}">← {{ comp.nombre }}</a></p>
     <h1 class="tn-titulo">Reglas de la escalera</h1>
     <p class="tn-suave">Vienen cargadas las de los Desafíos Nivel Prado. Cambiá lo que quieras: los cambios cuentan desde ahora (los puntos ya sumados no se recalculan).</p>
     {% if guardado %}<p class="tn-ok">Reglas guardadas.</p>{% endif %}

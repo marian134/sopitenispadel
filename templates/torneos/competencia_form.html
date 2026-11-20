@@ -13,6 +13,7 @@
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", url_for("torneos.panel")), ("Nuevo torneo", none)] if comp.id is none else [("Mis torneos", url_for("torneos.panel")), (comp.nombre, url_for("torneos.competencia_panel", comp_id=comp.id)), ("Editar", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   <div class="tn-angosto">
     <h1 class="tn-titulo">{{ "Nuevo torneo o escalera" if nuevo else "Editar " ~ comp.nombre }}</h1>
     {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
@@ -56,6 +57,11 @@
             <input name="incluye" value="{{ valor('incluye', comp.incluye) }}" placeholder="Un tubo de pelotas">
           </label>
         </div>
+        {% if organizador.plan == "pago" %}
+          {% set marcado = form.get('cargo_al_jugador') if form else comp.reglas.get('cargo_al_jugador') %}
+          <label class="tn-check"><input type="checkbox" name="cargo_al_jugador" value="1" {% if marcado %}checked{% endif %}>
+            <span><strong>Sumar el costo del sistema a la inscripción</strong><br><small>Cada jugador paga {{ pesos(organizador.precio_por_inscripto) }} más; si no lo marcás, lo pagás vos al cerrar la inscripción.</small></span></label>
+        {% endif %}
         <label>Información y reglamento <small>(formato de partido, horarios, premios)</small>
           <textarea name="descripcion" rows="6">{{ valor('descripcion', comp.descripcion) }}</textarea>
         </label>

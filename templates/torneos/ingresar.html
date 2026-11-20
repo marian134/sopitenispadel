@@ -6,7 +6,8 @@
 {% block content %}
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-angosto tn-seccion">
-  <div class="tn-hero">
+  {% with migas = [("Ingresar", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  <div class="tn-hero" style="padding-top:16px;">
     <span class="tn-etiqueta">Organizadores</span>
     <h1>Ingresá a tu panel</h1>
   </div>

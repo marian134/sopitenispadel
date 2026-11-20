@@ -17,7 +17,7 @@ from datetime import date, datetime, timedelta
 from models import db
 from .models import (
     Movimiento, Partido, RankingSemana,
-    EST_EN_CURSO, EST_INSCRIPCION, PAGO_CONFIRMADO,
+    EST_EN_CURSO, EST_FINALIZADA, EST_INSCRIPCION, PAGO_CONFIRMADO,
     PAR_AGENDADO, PAR_DESAFIO, PAR_EN_DISPUTA, PAR_JUGADO, PAR_VENCIDO, PAR_WO,
     PARTIDOS_ABIERTOS, TIPO_ESCALERA,
 )
@@ -335,6 +335,11 @@ def procesar(comp, ahora=None):
         _cerrar_semana(comp, semana)
         reglas["semana_cerrada"] = semana
         cambio = True
+        if semana == total_semanas(comp) and comp.estado in (EST_INSCRIPCION, EST_EN_CURSO):
+            # Terminó la etapa: queda finalizada y, en el plan pago, se genera el cobro
+            from .cobros import crear_cobro
+            comp.estado = EST_FINALIZADA
+            crear_cobro(comp)
     if cambio:
         comp.reglas = reglas
         db.session.commit()

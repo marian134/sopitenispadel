@@ -1,15 +1,17 @@
 """Alta, ingreso y perfil de los organizadores."""
+import os
 import re
 
-from flask import redirect, render_template, request, session, url_for
+from flask import abort, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import db
 from .bp import bp, contexto, WHATSAPP_SOPI
-from .models import Organizador, PRECIO_POR_INSCRIPTO
-from .util import organizador_actual, organizador_requerido, slug_unico
+from .models import Organizador, PLAN_PAGO, PRECIO_POR_INSCRIPTO
+from .util import CARPETA_ARCHIVOS, guardar_archivo, organizador_actual, organizador_requerido, slug_unico
 
 EMAIL_OK = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+COLOR_OK = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def _siguiente_seguro(valor):
@@ -89,11 +91,34 @@ def salir():
 @organizador_requerido
 def perfil():
     org = organizador_actual()
-    guardado = False
+    guardado, error = False, None
     if request.method == "POST":
         org.nombre = (request.form.get("nombre") or org.nombre).strip()[:120]
         org.whatsapp = (request.form.get("whatsapp") or "").strip()[:40]
         org.datos_bancarios = (request.form.get("datos_bancarios") or "").strip()[:500]
+        if org.plan == PLAN_PAGO:
+            # Plan pago: las páginas de sus torneos llevan su logo y su color
+            color = (request.form.get("color") or "").strip()
+            org.color = color if COLOR_OK.match(color) else None
+            archivo = request.files.get("logo")
+            if archivo and archivo.filename:
+                try:
+                    if os.path.splitext(archivo.filename)[1].lower() == ".pdf":
+                        raise ValueError("El logo tiene que ser una imagen (JPG, PNG o WEBP).")
+                    org.logo = guardar_archivo(archivo)
+                except ValueError as e:
+                    error = f"Logo: {e}"
+            if request.form.get("quitar_logo"):
+                org.logo = None
         db.session.commit()
-        guardado = True
-    return render_template("torneos/perfil.html", **contexto(org=org, guardado=guardado))
+        guardado = not error
+    return render_template("torneos/perfil.html", **contexto(org=org, guardado=guardado, error=error))
+
+
+@bp.route("/logo/<int:org_id>")
+def logo(org_id):
+    """Logo público del organizador (solo plan pago)."""
+    org = db.session.get(Organizador, org_id)
+    if not org or not org.logo or org.plan != PLAN_PAGO:
+        abort(404)
+    return send_from_directory(CARPETA_ARCHIVOS, os.path.basename(org.logo))

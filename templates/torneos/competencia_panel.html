@@ -9,6 +9,7 @@
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", url_for("torneos.panel")), (comp.nombre, none)] %}{% include "torneos/_migas.html" %}{% endwith %}
 
   <span class="tn-tipo">{{ "Escalera de desafíos" if comp.tipo == "escalera" else "Torneo con cuadro" }}</span>
   <h1 class="tn-titulo">{{ comp.nombre }}</h1>

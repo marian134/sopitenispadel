@@ -8,6 +8,7 @@
 {% include "torneos/_estilos.html" %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
+  {% with migas = [("Mis torneos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   {% if bienvenida %}
     <p class="tn-ok">¡Listo, {{ org.nombre }}! Ya tenés tu cuenta. Creá tu primer torneo o escalera.</p>
   {% endif %}
@@ -19,8 +20,24 @@
     {% endif %}
   </div>
 
+  {% if deuda %}
+    <div class="tn-caja">
+      <h2 style="margin-top:0;">Pendiente de pago a SOPI: {{ pesos(deuda|sum(attribute="monto")) }}</h2>
+      <ul class="tn-dato" style="padding-left:18px;">
+        {% for c in deuda %}<li>{{ c.inscriptos }} jugadores × {{ pesos(c.precio_unitario) }} = {{ pesos(c.monto) }} ({{ c.creado_en.strftime("%d/%m/%Y") }})</li>{% endfor %}
+      </ul>
+      <a class="tn-boton tn-wa tn-boton-chico" target="_blank" rel="noopener"
+         href="https://wa.me/5491128321531?text={{ ('Hola SOPI! Soy ' ~ org.nombre ~ ', quiero pagar lo pendiente de torneos.')|urlencode }}"><i class="fab fa-whatsapp"></i> Pagar a SOPI</a>
+    </div>
+  {% endif %}
+
   {% if not puede_crear %}
-    <p class="tn-caja tn-suave">El plan gratis incluye un torneo o una escalera. Para organizar más, pasate al plan pago ({{ pesos(org.precio_por_inscripto) }} por inscripto): escribinos por WhatsApp.</p>
+    {% if org.plan == "pago" %}
+      <p class="tn-caja">Para crear torneos nuevos, primero poné al día los pagos pendientes.</p>
+    {% else %}
+      <p class="tn-caja tn-suave">El plan gratis incluye un torneo o una escalera. Para organizar más (y con tu logo y colores), pasate al plan pago ({{ pesos(org.precio_por_inscripto) }} por inscripto):
+        <a href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20el%20plan%20pago%20de%20torneos" target="_blank" rel="noopener">escribinos por WhatsApp</a>.</p>
+    {% endif %}
   {% endif %}
 
   {% if not org.datos_bancarios %}

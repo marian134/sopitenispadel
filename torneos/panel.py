@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import abort, redirect, render_template, request, send_from_directory, url_for
 
 from models import db
+from . import cobros
 from . import escalera as esc
 from . import reglas as reglas_mod
 from .bp import bp, contexto
@@ -31,9 +32,10 @@ def _mi_competencia(comp_id):
 
 
 def _puede_crear(org):
-    """El plan gratis permite una sola competencia (sin contar canceladas)."""
+    """El plan gratis permite una sola competencia (sin contar canceladas).
+    En el plan pago, no se puede si debe más de un cobro."""
     if org.plan != PLAN_GRATIS:
-        return True
+        return not cobros.bloqueado_por_deuda(org)
     usadas = Competencia.query.filter(
         Competencia.organizador_id == org.id, Competencia.estado != EST_CANCELADA
     ).count()
@@ -67,6 +69,7 @@ def panel():
         **contexto(
             org=org, competencias=competencias, puede_crear=_puede_crear(org),
             bienvenida=request.args.get("bienvenida"),
+            deuda=cobros.impagos(org),
         ),
     )
 
@@ -119,6 +122,10 @@ def _guardar_competencia(comp, form):
     comp.cierre_inscripcion = _fecha_hora(form.get("cierre_inscripcion"))
     comp.precio = max(0, precio)
     comp.incluye = (form.get("incluye") or "").strip()[:150]
+    if organizador_actual().plan != PLAN_GRATIS:
+        reglas = comp.reglas
+        reglas["cargo_al_jugador"] = bool(form.get("cargo_al_jugador"))
+        comp.reglas = reglas
     if comp.id is None:
         comp.slug = slug_unico(Competencia, nombre)
         db.session.add(comp)
@@ -190,6 +197,8 @@ def competencia_estado(comp_id):
         comp.estado = EST_INSCRIPCION
     elif accion == "cerrar" and comp.estado == EST_INSCRIPCION:
         comp.estado = EST_EN_CURSO
+        if comp.tipo == TIPO_CUADRO:
+            cobros.crear_cobro(comp)   # plan pago: inscriptos x precio por inscripto
     elif accion == "borrador" and comp.estado == EST_INSCRIPCION and not _hay_inscriptos(comp):
         comp.estado = EST_BORRADOR
     elif accion == "cancelar" and comp.estado in (EST_BORRADOR, EST_INSCRIPCION):

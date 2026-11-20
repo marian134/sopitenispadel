@@ -36,6 +36,8 @@ def init_app(app, contexto_base):
     """Registra las rutas. contexto_base es obtener_contexto_base de app.py."""
     _estado["contexto_base"] = contexto_base
     app.register_blueprint(bp)
+    from .admin import admin_bp
+    app.register_blueprint(admin_bp)   # /admin/torneos, con la clave de admin de la tienda
     with app.app_context():
         _agregar_columnas_nuevas()
 

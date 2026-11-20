@@ -1,0 +1,17 @@
+{# Marca de la página de un torneo. Plan pago: logo y color del organizador.
+   Plan gratis: aviso de SOPI con link a la tienda (y cupón si está configurado). #}
+{% set org = comp.organizador %}
+{% if org.plan == "pago" %}
+  {% if org.color %}
+    <style>
+      .tn-etiqueta { color: {{ org.color }}; }
+      .tn-boton:not(.tn-boton-sec):not(.tn-wa) { background: {{ org.color }}; }
+      .tn-boton:not(.tn-boton-sec):not(.tn-wa):hover { filter: brightness(.92); background: {{ org.color }}; }
+    </style>
+  {% endif %}
+  {% if org.logo %}
+    <img src="{{ url_for('torneos.logo', org_id=org.id) }}" alt="{{ org.nombre }}" style="max-height:64px; max-width:200px; object-fit:contain; display:block; margin-bottom:10px;">
+  {% endif %}
+{% else %}
+  {% set mostrar_sopi = true %}
+{% endif %}
