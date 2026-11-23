@@ -42,13 +42,7 @@
               <span class="tn-suave"> · anulado</span>
             {% else %}
               {% if p.estado == "en_disputa" %}<span class="tn-estado tn-est-rechazado">Para resolver</span>{% endif %}
-              <form method="post" action="{{ url_for('torneos.partido_horario', partido_id=p.id) }}" class="tn-acciones" style="align-items:center; margin-top:6px;">
-                <input type="datetime-local" name="fecha_hora" value="{{ p.fecha_hora.strftime('%Y-%m-%dT%H:%M') if p.fecha_hora else f.fecha.isoformat() ~ 'T09:00' }}" aria-label="Hora"
-                       style="padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-                <input name="cancha" value="{{ p.cancha or '' }}" placeholder="Cancha" aria-label="Cancha"
-                       style="width:90px; padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-                <button class="tn-boton tn-boton-sec tn-boton-chico">Guardar horario</button>
-              </form>
+              {% with dia_sugerido = f.fecha %}{% include "torneos/_form_horario.html" %}{% endwith %}
               {% if x.wa %}
                 <div class="tn-acciones" style="margin-top:6px;">
                   {% for nombre, link in x.wa %}<a class="tn-boton tn-wa tn-boton-chico" href="{{ link }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar a {{ nombre }}</a>{% endfor %}

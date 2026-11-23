@@ -11,6 +11,7 @@
     <span class="tn-etiqueta">Torneos</span>
     <h1>Torneos y escaleras de tenis</h1>
     <p>Inscribite online, seguí el cuadro o el ranking y cargá tus resultados desde el celular.</p>
+    {% if organizador %}<a class="tn-boton tn-boton-chico" href="{{ url_for('torneos.panel') }}">Mi panel de organizador</a>{% endif %}
   </div>
 </section>
 

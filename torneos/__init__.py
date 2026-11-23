@@ -72,6 +72,23 @@ def init_app(app, contexto_base):
     def _tipo_torneo(tipo):
         return {"escalera": "Escalera de desafíos", "liga": "Liga por fechas"}.get(tipo, "Torneo con cuadro")
 
+    @app.cli.command("torneos-recordatorios")
+    def _recordatorios():
+        """Mail a los que juegan mañana. Correrlo una vez por día (tarea programada de Render)."""
+        from .avisos import recordatorios
+        with app.test_request_context(base_url=os.environ.get("TORNEOS_URL_BASE", "https://sopitenispadel.com.ar")):
+            partidos, mails = recordatorios()
+        print(f"Recordatorios: {partidos} partidos, {mails} mails enviados.")
+
+    @app.template_filter("nombre_cat")
+    def _nombre_cat(cat):
+        """"Caballeros B · singles", sin repetir la modalidad si el nombre ya la dice."""
+        nombre = cat.nombre or ""
+        bajo = nombre.lower()
+        if cat.modalidad in bajo or ("single" in bajo and cat.modalidad == "singles") or ("doble" in bajo and cat.modalidad == "dobles"):
+            return nombre
+        return f"{nombre} · {cat.modalidad}"
+
 
 def _agregar_columnas_nuevas():
     """Migración liviana: agrega las columnas de models.COLUMNAS_NUEVAS que

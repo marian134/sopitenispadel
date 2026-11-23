@@ -34,7 +34,7 @@
         {% if i.baja %}
           <span class="tn-estado tn-est-baja">De baja</span>
         {% else %}
-          <span class="tn-estado tn-est-{{ i.estado_pago }}">{{ nombres_pago.get(i.estado_pago) }}</span>
+          {% include "torneos/_estado_pago_jugador.html" %}
         {% endif %}
 
         {% if b %}
@@ -96,13 +96,15 @@
             {# RANKING DE SU DIVISIÓN #}
             <details class="tn-partido">
               <summary style="cursor:pointer; font-weight:700;">Ranking de {{ b.division }}</summary>
+              <p class="tn-dato">Cada división se ordena por separado. "Esta semana" se suma al nivel el lunes.</p>
               <table class="tn-tabla tn-ranking" style="margin-top:8px;">
-                <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>PJ</th></tr></thead>
+                <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th title="Se suma el lunes">Esta semana</th><th>PJ</th></tr></thead>
                 <tbody>
                 {% for f in b.grupo %}
                   {% set yo = f.insc.id == i.id %}
                   <tr><td class="{{ 'tn-yo' if yo }}">{{ f.posicion }}</td><td class="{{ 'tn-yo' if yo }}">{{ f.insc.jugador1.nombre_completo }}</td>
-                      <td class="{{ 'tn-yo' if yo }}">{{ "%.1f"|format(f.puntos) }}</td><td>{{ f.jugados }}</td></tr>
+                      <td class="{{ 'tn-yo' if yo }}">{{ "%.1f"|format(f.puntos) }}</td>
+                      <td>{% if f.esta_semana %}{{ ("%+.1f"|format(f.esta_semana)).replace(".", ",") }}{% else %}<span class="tn-suave">—</span>{% endif %}</td><td>{{ f.jugados }}</td></tr>
                 {% endfor %}
                 </tbody>
               </table>

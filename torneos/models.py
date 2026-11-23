@@ -202,6 +202,7 @@ class Partido(db.Model):
     cancha = db.Column(db.String(40))
     fecha_hora = db.Column(db.DateTime)
     vence_en = db.Column(db.DateTime)            # escalera: plazo para responder
+    recordado = db.Column(db.Boolean, nullable=False, default=False)   # mail del día anterior ya enviado
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     lado_a = db.relationship("Inscripcion", foreign_keys=[lado_a_id])
@@ -286,4 +287,5 @@ COLUMNAS_NUEVAS = [
     ("torneo_inscripcion", "siembra", "INTEGER"),
     ("torneo_partido", "cuadro", "VARCHAR(12)"),
     ("torneo_inscripcion", "zona", "INTEGER"),
+    ("torneo_partido", "recordado", "BOOLEAN NOT NULL DEFAULT FALSE"),
 ]

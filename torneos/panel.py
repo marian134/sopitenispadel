@@ -1,11 +1,12 @@
 """Panel del organizador: sus competencias, categorías e inscriptos."""
 import os
+import re
 from datetime import datetime
 
 from flask import abort, redirect, render_template, request, send_from_directory, url_for
 
 from models import db
-from . import cobros
+from . import avisos, cobros
 from . import escalera as esc
 from . import reglas as reglas_mod
 from .bp import bp, contexto
@@ -17,10 +18,8 @@ from .models import (
     TIPO_CUADRO, TIPO_ESCALERA, TIPO_LIGA,
 )
 from .util import (
-    CARPETA_ARCHIVOS, link_whatsapp, organizador_actual, organizador_requerido, slug_unico,
+    CARPETA_ARCHIVOS, link_whatsapp, organizador_actual, organizador_requerido, pesos, slug_unico,
 )
-
-FILAS_CATEGORIA_NUEVAS = 3
 
 
 def _mi_competencia(comp_id):
@@ -69,9 +68,97 @@ def panel():
         **contexto(
             org=org, competencias=competencias, puede_crear=_puede_crear(org),
             bienvenida=request.args.get("bienvenida"),
-            deuda=cobros.impagos(org),
+            deuda=cobros.impagos(org), pasos=_primeros_pasos(org, competencias),
+            revisar={c.id: len(a_revisar(c)) for c in competencias},
         ),
     )
+
+
+def _primeros_pasos(org, competencias):
+    publicado = next((c for c in competencias if c.estado in (EST_INSCRIPCION, EST_EN_CURSO, EST_FINALIZADA)), None)
+    return [
+        {"titulo": "Cargá tus datos para transferir", "hecho": bool(org.datos_bancarios),
+         "texto": "Alias, CBU y titular: se los mostramos a los jugadores al inscribirse.",
+         "link": url_for("torneos.perfil"), "boton": "Cargar mis datos"},
+        {"titulo": "Creá tu torneo", "hecho": bool(competencias),
+         "texto": "Elegí el formato, las categorías y el precio.",
+         "link": url_for("torneos.competencia_nueva"), "boton": "+ Nuevo torneo"},
+        {"titulo": "Publicalo", "hecho": bool(publicado),
+         "texto": "Entrá al torneo y tocá \"Publicar y abrir inscripción\".",
+         "link": url_for("torneos.competencia_panel", comp_id=competencias[0].id) if competencias else None,
+         "boton": "Ir al torneo"},
+        {"titulo": "Compartí el link", "hecho": bool(publicado),
+         "texto": "Mandalo por WhatsApp o Instagram: los jugadores se anotan solos.", "link": None},
+    ]
+
+
+def leer_filas_categoria(form):
+    """Lee las filas de categorías del formulario (desplegables o texto).
+    Devuelve (filas, error)."""
+    indices = set()
+    for clave in form:
+        m = re.fullmatch(r"cat_(?:elegida|nombre|id|modalidad|cupo)_(\d+)", clave)
+        if m:
+            indices.add(int(m.group(1)))
+    filas = []
+    for n in sorted(indices):
+        elegida = (form.get(f"cat_elegida_{n}") or "").strip()
+        escrita = (form.get(f"cat_nombre_{n}") or "").strip()
+        nombre = (escrita if elegida in ("", "otra") else elegida)[:80]
+        borrar = form.get(f"cat_borrar_{n}") == "1"
+        cat_id = form.get(f"cat_id_{n}") or None
+        fila = {"id": cat_id, "nombre": nombre, "borrar": borrar, "orden": n,
+                "modalidad": form.get(f"cat_modalidad_{n}") or "", "cupo": None}
+        filas.append(fila)
+        if borrar or (not nombre and not cat_id and not elegida):
+            continue
+        if elegida == "otra" and not escrita:
+            return filas, "Escribí el nombre de la categoría."
+        if not nombre:
+            return filas, "Elegí el nombre de cada categoría."
+        if fila["modalidad"] not in ("singles", "dobles"):
+            return filas, f"Elegí si \"{nombre}\" es de singles o de dobles."
+        cupo_txt = (form.get(f"cat_cupo_{n}") or "").strip()
+        if cupo_txt == "otro":
+            cupo_txt = (form.get(f"cat_cupo_otro_{n}") or "").strip()
+            if not cupo_txt.isdigit() or int(cupo_txt) < 2:
+                return filas, f"El cupo de \"{nombre}\" tiene que ser un número (2 o más)."
+        if f"cat_cupo_{n}" in form and cupo_txt == "":
+            return filas, f"Elegí el cupo de \"{nombre}\" (o \"Sin límite\")."
+        if cupo_txt in ("", "sin", "0"):
+            fila["cupo"] = None
+        elif cupo_txt.isdigit():
+            fila["cupo"] = int(cupo_txt)
+        else:
+            return filas, f"El cupo de \"{nombre}\" tiene que ser un número."
+    return filas, None
+
+
+def filas_para_form(form, comp):
+    """Filas para volver a mostrar el formulario después de un error."""
+    filas, _e = leer_filas_categoria(form)
+    inscriptos = {str(c.id): len(c.inscripciones) for c in comp.categorias} if comp.id else {}
+    salida = []
+    for f in filas:
+        if f["borrar"]:
+            continue
+        cupo = form.get(f"cat_cupo_{f['orden']}") or ""
+        if cupo == "otro":
+            cupo = form.get(f"cat_cupo_otro_{f['orden']}") or ""
+        salida.append({"id": f["id"], "nombre": f["nombre"], "modalidad": f["modalidad"],
+                       "cupo": cupo, "inscriptos": inscriptos.get(f["id"] or "", 0)})
+    return salida or [{"id": None, "nombre": "", "modalidad": "", "cupo": ""}]
+
+
+def mezcla_modalidades(comp):
+    """Aviso si el nombre dice dobles (o singles) y hay categorías de la otra modalidad."""
+    nombre = (comp.nombre or "").lower()
+    mods = {c.modalidad for c in comp.categorias}
+    if "doble" in nombre and "singles" in mods:
+        return "El torneo se llama \"dobles\" pero tiene categorías de singles. Revisalas si no es a propósito."
+    if "single" in nombre and "dobles" in mods:
+        return "El torneo se llama \"singles\" pero tiene categorías de dobles. Revisalas si no es a propósito."
+    return None
 
 
 def _guardar_competencia(comp, form):
@@ -93,24 +180,10 @@ def _guardar_competencia(comp, form):
     if inicio and fin and fin < inicio:
         return "La fecha de fin es anterior a la de inicio."
 
-    # Categorías: filas existentes (cat_id_N) y nuevas
-    filas = []
-    for clave in form:
-        if not clave.startswith("cat_nombre_"):
-            continue
-        n = clave[len("cat_nombre_"):]
-        cat_nombre = (form.get(clave) or "").strip()[:80]
-        cupo_txt = (form.get(f"cat_cupo_{n}") or "").strip()
-        if cupo_txt and not cupo_txt.isdigit():
-            return f"El cupo de \"{cat_nombre or 'una categoría'}\" tiene que ser un número."
-        filas.append({
-            "id": form.get(f"cat_id_{n}") or None,
-            "nombre": cat_nombre,
-            "modalidad": "dobles" if form.get(f"cat_modalidad_{n}") == "dobles" else "singles",
-            "cupo": int(cupo_txt) if cupo_txt else None,
-            "orden": int(n) if n.isdigit() else 99,
-        })
-    if not any(f["nombre"] for f in filas):
+    filas, error = leer_filas_categoria(form)
+    if error:
+        return error
+    if not any(f["nombre"] and not f["borrar"] for f in filas):
         return "Agregá al menos una categoría."
 
     comp.nombre = nombre
@@ -122,10 +195,15 @@ def _guardar_competencia(comp, form):
     comp.cierre_inscripcion = _fecha_hora(form.get("cierre_inscripcion"))
     comp.precio = max(0, precio)
     comp.incluye = (form.get("incluye") or "").strip()[:150]
+    reglas = comp.reglas
     if organizador_actual().plan != PLAN_GRATIS:
-        reglas = comp.reglas
         reglas["cargo_al_jugador"] = bool(form.get("cargo_al_jugador"))
-        comp.reglas = reglas
+    canchas = form.get("canchas") or ""
+    if canchas.isdigit() and 1 <= int(canchas) <= 20:
+        reglas["canchas"] = int(canchas)
+    elif "canchas" in form:
+        reglas.pop("canchas", None)
+    comp.reglas = reglas
     if comp.id is None:
         comp.slug = slug_unico(Competencia, nombre)
         db.session.add(comp)
@@ -134,12 +212,12 @@ def _guardar_competencia(comp, form):
     existentes = {str(c.id): c for c in comp.categorias}
     for f in sorted(filas, key=lambda x: x["orden"]):
         cat = existentes.get(f["id"]) if f["id"] else None
-        if cat and not f["nombre"]:
+        if cat and (f["borrar"] or not f["nombre"]):
             # borrar solo si no tiene inscriptos
             if not cat.inscripciones:
                 db.session.delete(cat)
             continue
-        if not f["nombre"]:
+        if not f["nombre"] or f["borrar"]:
             continue
         if not cat:
             cat = Categoria(competencia_id=comp.id)
@@ -163,9 +241,11 @@ def competencia_nueva():
             return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
         db.session.rollback()
         comp = Competencia(organizador_id=org.id, estado=EST_BORRADOR)
+    form = request.form if request.method == "POST" else None
     return render_template(
         "torneos/competencia_form.html",
-        **contexto(comp=comp, error=error, form=request.form, filas_nuevas=FILAS_CATEGORIA_NUEVAS + 2),
+        **contexto(comp=comp, error=error, form=form,
+                   filas_form=filas_para_form(form, comp) if form else None),
     )
 
 
@@ -180,10 +260,11 @@ def competencia_editar(comp_id):
             db.session.commit()
             return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
         db.session.rollback()
+    form = request.form if error else None
     return render_template(
         "torneos/competencia_form.html",
-        **contexto(comp=comp, error=error, form=request.form if error else None,
-                   filas_nuevas=FILAS_CATEGORIA_NUEVAS),
+        **contexto(comp=comp, error=error, form=form,
+                   filas_form=filas_para_form(form, comp) if form else None),
     )
 
 
@@ -195,6 +276,8 @@ def competencia_estado(comp_id):
     accion = request.form.get("accion")
     if accion == "abrir" and comp.estado == EST_BORRADOR and comp.categorias:
         comp.estado = EST_INSCRIPCION
+        db.session.commit()
+        return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, publicado=1))
     elif accion == "cerrar" and comp.estado == EST_INSCRIPCION:
         comp.estado = EST_EN_CURSO
         if comp.tipo == TIPO_CUADRO:
@@ -247,7 +330,8 @@ def _hay_inscriptos(comp):
 
 @bp.route("/panel/<int:comp_id>")
 @organizador_requerido
-def competencia_panel(comp_id):
+def competencia_panel(comp_id, agregar=None):
+    agregar = agregar or {}
     comp = _mi_competencia(comp_id)
     esc.procesar(comp)
     url_publica = url_for("torneos.torneo", slug=comp.slug, _external=True)
@@ -261,7 +345,14 @@ def competencia_panel(comp_id):
                 f"Hola {i.jugador1.nombre}! Confirmamos tu inscripción en {comp.nombre} "
                 f"({cat.nombre}). Desde este enlace seguís todo: {enlace}"
             )
-            filas.append({"i": i, "wa": link_whatsapp(i.jugador1.celular, texto)})
+            fila = {"i": i, "wa": link_whatsapp(i.jugador1.celular, texto)}
+            if comp.precio and not i.baja and i.estado_pago != PAGO_CONFIRMADO:
+                aviso = (f"Hola {i.jugador1.nombre}! Te recuerdo el pago de la inscripción en {comp.nombre} "
+                         f"({cat.nombre}): {pesos(avisos.monto(i))}."
+                         + (f" Datos para transferir: {comp.organizador.datos_bancarios}." if comp.organizador.datos_bancarios else "")
+                         + f" Subí el comprobante desde tu enlace: {enlace}")
+                fila["wa_recordar"] = link_whatsapp(i.jugador1.celular, aviso)
+            filas.append(fila)
         activos = [i for i in inscriptos if not i.baja]
         categorias.append({
             "cat": cat, "filas": filas, "activos": len(activos),
@@ -278,9 +369,80 @@ def competencia_panel(comp_id):
             comp=comp, categorias=categorias, url_publica=url_publica,
             niveles=comp.reglas.get("niveles_iniciales", []),
             divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro, liga=liga_datos,
-            error=request.args.get("error"),
+            error=request.args.get("error"), aviso_mezcla=mezcla_modalidades(comp),
+            publicado=request.args.get("publicado"), guardado=request.args.get("guardado", type=int),
+            error_horario=request.args.get("error_horario"), partido_error=request.args.get("partido_error", type=int),
+            agregar_abierto=agregar.get("cat"), agregar_error=agregar.get("error"),
+            agregar_form=agregar.get("form") or {}, agregado=request.args.get("agregado"),
+            wa_compartir=link_whatsapp("", f"{comp.nombre}: inscribite y seguí el torneo acá {url_publica}"),
+            pasos=_pasos_torneo(comp, categorias),
+            a_revisar=a_revisar(comp), deben=deben(comp), aviso_pago=request.args.get("aviso_pago"),
         ),
     )
+
+
+def _pasos_torneo(comp, categorias):
+    """Pasos en orden del torneo, para el organizador (cambio 20)."""
+    inscriptos = sum(c["activos"] for c in categorias)
+    confirmados = sum(c["confirmados"] for c in categorias)
+    abierto = comp.estado in (EST_EN_CURSO, EST_FINALIZADA)
+    if comp.tipo == TIPO_CUADRO:
+        from . import zonas as zns
+        ultimo = ("Armar las zonas" if zns.activas(comp) else "Armar el cuadro",
+                  "Con los inscriptos que tienen el pago confirmado.")
+    elif comp.tipo == TIPO_ESCALERA:
+        ultimo = ("Asignar nivel inicial y división", "En la lista de inscriptos; el ranking arranca el lunes.")
+    else:
+        ultimo = ("Armar los partidos de cada fecha", "Con los que se anotan para jugar esa fecha.")
+    pasos = [
+        {"titulo": "Publicar el torneo", "texto": "Queda visible y se abre la inscripción.",
+         "hecho": comp.estado != EST_BORRADOR},
+        {"titulo": "Recibir inscriptos y confirmar pagos",
+         "texto": f"{inscriptos} anotado{'s' if inscriptos != 1 else ''}, {confirmados} con pago confirmado.",
+         "hecho": abierto},
+        {"titulo": "Cerrar la inscripción", "texto": "Nadie más se puede anotar y empieza el juego.",
+         "hecho": abierto},
+        {"titulo": ultimo[0], "texto": ultimo[1], "hecho": False},
+    ]
+    if comp.tipo != TIPO_CUADRO:
+        pasos[2]["texto"] = "Opcional: los jugadores se pueden seguir sumando mientras dura."
+    return pasos
+
+
+@bp.route("/panel/<int:comp_id>/categoria/<int:cat_id>/agregar", methods=["POST"])
+@organizador_requerido
+def inscripcion_agregar(comp_id, cat_id):
+    """El organizador anota a un jugador (cambio 18)."""
+    from .publico import _avisar_inscripcion, _buscar_o_crear_jugador, _leer_persona, _validar_persona, lugares_libres
+    comp = _mi_competencia(comp_id)
+    cat = db.session.get(Categoria, cat_id)
+    if not cat or cat.competencia_id != comp.id or comp.estado in (EST_FINALIZADA, EST_CANCELADA):
+        abort(404)
+    form = request.form
+    p1, p2 = _leer_persona(form, ""), _leer_persona(form, "2")
+    error = _validar_persona(p1, "")
+    if not error and cat.modalidad == "dobles":
+        error = _validar_persona(p2, "del compañero/a")
+        if not error and p1["dni"] == p2["dni"]:
+            error = "El DNI del compañero/a es igual al del jugador."
+    if not error and lugares_libres(cat) == 0:
+        error = f"{cat.nombre} ya llegó al cupo ({cat.cupo}). Subí el cupo en \"Editar datos y categorías\"."
+    if not error:
+        j1 = _buscar_o_crear_jugador(**p1)
+        j2 = _buscar_o_crear_jugador(**p2) if cat.modalidad == "dobles" else None
+        ids = {j1.id, j2.id if j2 else -1}
+        if any(not i.baja and {i.jugador1_id, i.jugador2_id} & ids for i in cat.inscripciones):
+            db.session.rollback()
+            error = f"Ese DNI ya está anotado en {cat.nombre}."
+    if error:
+        return competencia_panel(comp.id, agregar={"cat": str(cat.id), "error": error, "form": form})
+    insc = Inscripcion(categoria_id=cat.id, jugador1_id=j1.id, jugador2_id=j2.id if j2 else None,
+                       estado_pago=PAGO_CONFIRMADO if (form.get("pagado") or not comp.precio) else PAGO_PENDIENTE)
+    db.session.add(insc)
+    db.session.commit()
+    _avisar_inscripcion(comp, cat, insc)
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id,
+                            agregado=j1.nombre_completo) + f"#cat-{cat.id}")
 
 
 def _datos_escalera(comp):
@@ -466,10 +628,17 @@ def inscripcion_accion(insc_id):
         abort(404)
     comp = _mi_competencia(insc.categoria.competencia_id)
     accion = request.form.get("accion")
+    antes = insc.estado_pago
+    mensaje = None
     if accion == "confirmar":
         insc.estado_pago = PAGO_CONFIRMADO
     elif accion == "rechazar":
         insc.estado_pago = PAGO_RECHAZADO
+    elif accion == "recordar":
+        db.session.commit()
+        enviados = avisos.recordar_pago(insc)
+        return redirect(url_for("torneos.competencia_panel", comp_id=comp.id,
+                                aviso_pago=_texto_recordados(enviados, 1)) + f"#cat-{insc.categoria_id}")
     elif accion == "pendiente":
         insc.estado_pago = PAGO_PENDIENTE
     elif accion == "baja":
@@ -493,7 +662,39 @@ def inscripcion_accion(insc_id):
         if nombre is None or nombre in esc.nombres_divisiones(comp):
             insc.division = nombre
     db.session.commit()
-    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + f"#cat-{insc.categoria_id}")
+    if insc.estado_pago != antes and insc.estado_pago in (PAGO_CONFIRMADO, PAGO_RECHAZADO):
+        avisos.pago(insc)   # mail al jugador: dado de alta o revisar el pago
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, aviso_pago=mensaje) + f"#cat-{insc.categoria_id}")
+
+
+def _texto_recordados(enviados, total):
+    if not total:
+        return "No hay pagos pendientes."
+    if not enviados:
+        return "No salió ningún mail (falta el mail del jugador o el mail no está configurado). Usá el botón de WhatsApp."
+    return f"Le mandamos el recordatorio por mail a {enviados} jugador{'es' if enviados != 1 else ''}."
+
+
+def deben(comp):
+    """Inscripciones activas sin el pago confirmado (solo si la inscripción tiene precio)."""
+    if not comp.precio:
+        return []
+    return [i for c in comp.categorias for i in c.inscripciones if not i.baja and i.estado_pago != PAGO_CONFIRMADO]
+
+
+def a_revisar(comp):
+    """Pagos que esperan que el organizador los revise."""
+    return [i for c in comp.categorias for i in c.inscripciones if not i.baja and i.estado_pago == PAGO_PENDIENTE]
+
+
+@bp.route("/panel/<int:comp_id>/recordar-pagos", methods=["POST"])
+@organizador_requerido
+def recordar_pagos(comp_id):
+    comp = _mi_competencia(comp_id)
+    lista = deben(comp)
+    enviados = sum(1 for i in lista if avisos.recordar_pago(i))
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id,
+                            aviso_pago=_texto_recordados(enviados, len(lista))) + "#pagos")
 
 
 @bp.route("/panel/inscripcion/<int:insc_id>/comprobante")

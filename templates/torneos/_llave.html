@@ -1,10 +1,6 @@
-{# Dibuja una llave. Recibe: rondas (cuadro.estructura). #}
-<div class="tn-llave">
-  {% for r in rondas %}
-    <div class="tn-ronda">
-      <p class="tn-ronda-nombre">{{ r.nombre }}</p>
-      <div class="tn-ronda-partidos">
-        {% for p in r.partidos %}
+{# Dibuja una llave. Recibe: rondas (cuadro.estructura) y opcional tercer (partidos del tercer puesto),
+   que se dibuja en la última columna, debajo de la final. #}
+{% macro partido(p, r) %}
           {% set res = (p.resultados|selectattr("confirmado")|rejectattr("ausente_id")|list)|last if p.resultados else none %}
           <div class="tn-llave-partido{% if p.estado == 'bye' %} tn-llave-bye{% endif %}" id="llave-{{ p.id }}">
             {% for lado in [p.lado_a, p.lado_b] %}
@@ -26,7 +22,19 @@
               <div class="tn-llave-hora">{{ ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m %H:%M") }}{% if p.cancha %} · {{ p.cancha }}{% endif %}</div>
             {% endif %}
           </div>
-        {% endfor %}
+{% endmacro %}
+<div class="tn-llave">
+  {% for r in rondas %}
+    <div class="tn-ronda">
+      <p class="tn-ronda-nombre">{{ r.nombre }}</p>
+      <div class="tn-ronda-partidos">
+        {% for p in r.partidos %}{{ partido(p, r) }}{% endfor %}
+        {% if loop.last and tercer %}
+          <div class="tn-llave-tercer">
+            <p class="tn-ronda-nombre">Tercer puesto</p>
+            {% for p in tercer %}{{ partido(p, {"numero": 0}) }}{% endfor %}
+          </div>
+        {% endif %}
       </div>
     </div>
   {% endfor %}

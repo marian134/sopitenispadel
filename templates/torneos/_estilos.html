@@ -71,6 +71,16 @@
   .tn-llave-sets { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted, #9fb0cc); }
   .tn-gano .tn-llave-sets { color: var(--text, #fff); }
   .tn-llave-hora { padding: 4px 10px; font-size: 11px; color: var(--amarillo, #EAE339); border-top: 1px solid var(--line, #1c2b4a); }
+  .tn-podio { display: grid; gap: 10px; margin: 12px 0 16px; }
+  .tn-podio-campeon { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(234, 227, 57, .22), rgba(229, 126, 60, .14)); border: 2px solid var(--amarillo, #EAE339); }
+  .tn-podio-copa { font-size: 44px; line-height: 1; }
+  .tn-podio small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted, #9fb0cc); }
+  .tn-podio-campeon strong { font-size: clamp(18px, 3.4vw, 26px); color: var(--amarillo, #EAE339); font-family: var(--f-titulo, inherit); }
+  .tn-podio-resto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .tn-podio-resto > div { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 12px; background: var(--bg, #060d1c); border: 1px solid var(--line-2, #2a3d63); }
+  .tn-podio-resto > div > span { font-size: 26px; }
+  .tn-llave-tercer { margin-top: 18px; }
+  .tn-llave-tercer .tn-ronda-nombre { color: var(--amarillo, #EAE339); }
   .tn-campeon { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 999px; background: rgba(234, 227, 57, .14); color: var(--amarillo, #EAE339); font-weight: 800; }
   /* Liga por fechas */
   .tn-fechas { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; margin: 8px 0 16px; }
@@ -94,4 +104,98 @@
   .tn-resultado .tn-r-gano small { color: var(--amarillo, #EAE339); }
   .tn-resultado .tn-r-sets { font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
   .tn-resultado .tn-r-derecha { text-align: right; }
+  [hidden] { display: none !important; }
+  .tn-pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .tn-pasos li { display: flex; gap: 12px; align-items: flex-start; }
+  .tn-paso-num { flex: 0 0 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; border: 2px solid var(--line-2, #2a3d63); color: var(--muted, #9fb0cc); }
+  .tn-paso-hecho .tn-paso-num { background: var(--verde, #8fb487); border-color: var(--verde, #8fb487); color: #0b1530; }
+  .tn-paso-hecho strong { opacity: .7; }
+  .tn-paso-actual .tn-paso-num { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+  .tn-horario { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-top: 8px; }
+  .tn-horario label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted, #9fb0cc); }
+  .tn-horario input, .tn-horario select { padding: 7px 8px; border-radius: 8px; background: var(--bg, #060d1c); color: var(--text, #fff); border: 1px solid var(--line-2, #2a3d63); font: inherit; font-size: 14px; min-width: 0; }
+  @media (max-width: 560px) { .tn-horario { grid-template-columns: 1fr 1fr; } .tn-horario button { grid-column: 1 / -1; } }
+  .tn-alerta-pagos { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; background: rgba(234, 227, 57, .12); border: 2px solid var(--amarillo, #EAE339); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+  .tn-estado-grande { border-radius: 12px; padding: 14px 16px; margin: 12px 0; border: 2px solid; }
+  .tn-estado-grande h3 { margin: 0 0 4px; font-size: 17px; }
+  .tn-estado-grande p { margin: 4px 0; }
+  .tn-eg-ok { border-color: var(--verde, #8fb487); background: rgba(143, 180, 135, .14); }
+  .tn-eg-pend { border-color: var(--amarillo, #EAE339); background: rgba(234, 227, 57, .10); }
+  .tn-eg-mal { border-color: #e63946; background: rgba(230, 57, 70, .12); }
+  .tn-guardado { color: var(--verde, #8fb487); font-weight: 700; font-size: 14px; margin: 6px 0 0; }
+  @media (max-width: 760px) {
+    .tn-tabla-tarjetas thead { display: none; }
+    .tn-tabla-tarjetas, .tn-tabla-tarjetas tbody, .tn-tabla-tarjetas tr, .tn-tabla-tarjetas td { display: block; width: 100%; box-sizing: border-box; }
+    .tn-tabla-tarjetas tr { border: 1px solid var(--line, #1c2b4a); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: var(--bg, #060d1c); }
+    .tn-tabla-tarjetas td { border: 0; padding: 4px 0; }
+    .tn-tabla-tarjetas td[data-et]::before { content: attr(data-et); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #9fb0cc); }
+    .tn-tabla-tarjetas td.tn-td-acciones { padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--line, #1c2b4a); }
+  }
+  .tn-req { color: #ff8a93; font-weight: 800; }
+  .tn-nota-req { font-size: 13px; color: var(--muted, #9fb0cc); margin: 0; }
+  .tn-form :is(input, select, textarea).tn-falta { border-color: #e63946; box-shadow: 0 0 0 2px rgba(230, 57, 70, .35); }
+  .tn-aviso-falta { background: rgba(230, 57, 70, .14); border: 1px solid #e63946; color: #ffd3d6; padding: 10px 12px; border-radius: 10px; font-size: 14px; margin: 0; }
 </style>
+<script>
+/* Formularios: * en lo obligatorio, aclaración arriba y en rojo lo que falta */
+(function () {
+  function etiquetas() {
+    document.querySelectorAll('.tn-form label').forEach(function (lab) {
+      if (lab.classList.contains('tn-check') || lab.dataset.tnEt) return;
+      if (!lab.querySelector('input, select, textarea')) return;
+      lab.dataset.tnEt = '1';
+      var nodo = lab.firstChild;
+      while (nodo && nodo.nodeType === 3 && !nodo.textContent.trim()) nodo = nodo.nextSibling;
+      if (!nodo || nodo.nodeType !== 3) return;
+      var et = document.createElement('span');
+      et.className = 'tn-et';
+      et.textContent = nodo.textContent.replace(/\s+$/, '');
+      var marca = document.createElement('span');
+      marca.className = 'tn-req';
+      marca.textContent = ' *';
+      marca.setAttribute('aria-hidden', 'true');
+      et.appendChild(marca);
+      lab.replaceChild(et, nodo);
+    });
+  }
+  function marcas() {
+    document.querySelectorAll('.tn-et').forEach(function (et) {
+      var campo = et.parentNode.querySelector('input, select, textarea');
+      var m = et.querySelector('.tn-req');
+      if (m) m.hidden = !(campo && campo.required);
+    });
+  }
+  function preparar() {
+    etiquetas();
+    marcas();
+    document.querySelectorAll('form.tn-form').forEach(function (f) {
+      if (f.dataset.tnNota || f.querySelectorAll('label [required]').length < 2) return;
+      f.dataset.tnNota = '1';
+      var p = document.createElement('p');
+      p.className = 'tn-nota-req';
+      p.innerHTML = '<span class="tn-req">*</span> obligatorio';
+      f.insertBefore(p, f.firstChild);
+    });
+  }
+  window.tnPreparar = preparar;
+  function limpiar(e) {
+    var c = e.target;
+    if (c.classList && c.classList.contains('tn-falta') && c.checkValidity()) c.classList.remove('tn-falta');
+  }
+  document.addEventListener('invalid', function (e) {
+    var c = e.target;
+    c.classList.add('tn-falta');
+    var f = c.form;
+    if (f && !f.querySelector('.tn-aviso-falta')) {
+      var a = document.createElement('p');
+      a.className = 'tn-aviso-falta';
+      a.textContent = 'Faltan datos: completá los campos marcados en rojo.';
+      f.insertBefore(a, f.firstChild);
+    }
+  }, true);
+  document.addEventListener('input', limpiar, true);
+  document.addEventListener('change', limpiar, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', preparar); else preparar();
+})();
+</script>
+

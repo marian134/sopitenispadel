@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Inscriptos de torneos | Admin SOPI{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-seccion">
+  <div class="tn-barra">
+    <nav aria-label="Administración">
+      <a href="{{ url_for('admin_pedidos') }}">← Admin de la tienda</a>
+      <a href="{{ url_for('torneos_admin.inicio') }}">Organizadores y cobros</a>
+    </nav>
+  </div>
+  <h1 class="tn-titulo">Todos los inscriptos</h1>
+
+  <form method="get" class="tn-caja tn-form" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items:end;">
+    <label>Torneo
+      <select name="torneo">
+        <option value="">Todos</option>
+        {% for c in competencias %}<option value="{{ c.id }}" {% if filtro.torneo == c.id %}selected{% endif %}>{{ c.nombre }} · {{ c.organizador.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Organizador
+      <select name="organizador">
+        <option value="">Todos</option>
+        {% for o in organizadores %}<option value="{{ o.id }}" {% if filtro.organizador == o.id %}selected{% endif %}>{{ o.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Estado
+      <select name="pago">
+        <option value="">Todos</option>
+        {% for clave, nombre in estados.items() %}<option value="{{ clave }}" {% if filtro.pago == clave %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        <option value="baja" {% if filtro.pago == 'baja' %}selected{% endif %}>De baja</option>
+      </select>
+    </label>
+    <label>Buscar <input name="q" value="{{ filtro.q }}" placeholder="Nombre, DNI, mail o celular"></label>
+    <div class="tn-acciones">
+      <button class="tn-boton tn-boton-chico">Filtrar</button>
+      <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos_admin.inscriptos') }}">Limpiar</a>
+      <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos_admin.inscriptos', formato='csv', **filtro) }}">Bajar en Excel (CSV)</a>
+    </div>
+  </form>
+
+  <div class="tn-grilla" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+    <div class="tn-tarjeta"><span class="tn-tipo">Inscripciones</span><h3>{{ totales.inscripciones }}</h3><p class="tn-dato">{{ totales.jugadores }} jugadores</p></div>
+    <div class="tn-tarjeta"><span class="tn-tipo">Pago confirmado</span><h3>{{ totales.confirmados }}</h3></div>
+    <div class="tn-tarjeta"><span class="tn-tipo">A revisar</span><h3>{{ totales.a_revisar }}</h3></div>
+    <div class="tn-tarjeta"><span class="tn-tipo">Rechazados</span><h3>{{ totales.rechazados }}</h3></div>
+    <div class="tn-tarjeta"><span class="tn-tipo">De baja</span><h3>{{ totales.bajas }}</h3></div>
+  </div>
+
+  <div class="tn-caja" style="margin-top:20px;">
+    {% if filas %}
+      <div class="tn-scroll">
+        <table class="tn-tabla tn-tabla-tarjetas">
+          <thead><tr><th>Jugador</th><th>Celular</th><th>Mail</th><th>Torneo</th><th>Categoría</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody>
+            {% for i in filas %}
+              {% set comp = i.categoria.competencia %}
+              <tr>
+                <td><strong>{{ i.jugador1.nombre_completo }}</strong>{% if i.jugador2 %}<br>y {{ i.jugador2.nombre_completo }}{% endif %}<br><small class="tn-suave">DNI {{ i.jugador1.dni }}</small></td>
+                <td data-et="Celular">{{ i.jugador1.celular or "—" }}</td>
+                <td data-et="Mail">{{ i.jugador1.email or "—" }}</td>
+                <td data-et="Torneo"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}" target="_blank" rel="noopener">{{ comp.nombre }}</a><br><small class="tn-suave">{{ comp.organizador.nombre }}</small></td>
+                <td data-et="Categoría">{{ i.categoria.nombre }}</td>
+                <td data-et="Estado">{% if i.baja %}<span class="tn-estado tn-est-baja">De baja</span>{% else %}<span class="tn-estado tn-est-{{ i.estado_pago }}">{{ estados.get(i.estado_pago, i.estado_pago) }}</span>{% endif %}</td>
+                <td data-et="Fecha">{{ i.creado_en.strftime("%d/%m/%Y") }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="tn-suave" style="margin:0;">No hay inscriptos con esos filtros.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

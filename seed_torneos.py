@@ -130,6 +130,7 @@ def cargar():
                            descripcion="Cuadro de eliminación directa. Partidos al mejor de 3 sets con súper tie-break.")
     reglas = por_defecto("cuadro")
     reglas.update(consuelo=True, tercer_puesto=True)
+    reglas["canchas"] = 4
     cdr_comp.reglas = reglas
     db.session.add(cdr_comp)
     db.session.flush()
@@ -163,7 +164,6 @@ def cargar():
     db.session.add(abierto)
     db.session.flush()
     db.session.add(Categoria(competencia_id=abierto.id, nombre="Mixto", modalidad="dobles", cupo=16))
-    db.session.add(Categoria(competencia_id=abierto.id, nombre="Singles Damas", modalidad="singles", cupo=16))
     org.plan = "pago"   # para poder tener más de un torneo y probar la marca propia
     db.session.commit()
 

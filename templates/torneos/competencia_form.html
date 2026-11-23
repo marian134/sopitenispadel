@@ -21,7 +21,7 @@
     <form method="post" class="tn-form">
       {% if nuevo %}
         <div class="tn-caja">
-          <h2>¿Qué vas a organizar?</h2>
+          <h2>¿Qué vas a organizar? <span class="tn-req">*</span></h2>
           <label class="tn-check">
             <input type="radio" name="tipo" value="cuadro" required {% if form and form.get('tipo') == 'cuadro' %}checked{% endif %}>
             <span><strong>Torneo con cuadro</strong><br><small>Llave de eliminación, de un fin de semana o de varias semanas.</small></span>
@@ -50,6 +50,13 @@
           <label>Empieza <input type="date" name="fecha_inicio" value="{{ valor('fecha_inicio', comp.fecha_inicio.isoformat() if comp.fecha_inicio else '') }}"></label>
           <label>Termina <input type="date" name="fecha_fin" value="{{ valor('fecha_fin', comp.fecha_fin.isoformat() if comp.fecha_fin else '') }}"></label>
         </div>
+        {% set canchas_sel = (form.get('canchas') if form else comp.reglas.get('canchas'))|string if (form or comp.id) else '' %}
+        <label id="canchas" data-no-escalera {% if comp.id and comp.tipo == 'escalera' %}hidden{% endif %}>Canchas del club <small>(para elegirlas al poner horarios)</small>
+          <select name="canchas">
+            <option value="">Sin cargar</option>
+            {% for n in range(1, 21) %}<option value="{{ n }}" {% if canchas_sel == n|string %}selected{% endif %}>{{ n }} cancha{{ "s" if n != 1 }}</option>{% endfor %}
+          </select>
+        </label>
         <label>Cierre de inscripción <small>(opcional)</small>
           <input type="datetime-local" name="cierre_inscripcion" value="{{ valor('cierre_inscripcion', comp.cierre_inscripcion.strftime('%Y-%m-%dT%H:%M') if comp.cierre_inscripcion else '') }}">
         </label>
@@ -73,36 +80,22 @@
 
       <div class="tn-caja tn-form">
         <h2>Categorías</h2>
-        <p class="tn-suave" style="margin:0;">Ej. "Caballeros B", "Damas", o las divisiones de la escalera. Dejá el nombre vacío para borrar una categoría (solo si no tiene inscriptos).</p>
+        <p class="tn-suave" style="margin:0;"><strong>Categoría</strong> = grupo de nivel o de edad (ej. Caballeros B, Damas +35). <strong>Cupo</strong> = cuántos jugadores (o parejas, en dobles) pueden anotarse. No cargues jugadores acá: <strong>se anotan solos desde el link del torneo</strong>{% if not nuevo %}, o los agregás vos desde el panel{% endif %}.</p>
         {% set existentes = comp.categorias|sort(attribute='orden') if not nuevo else [] %}
-        {% for cat in existentes %}
-          {% set n = loop.index0 %}
-          <div class="tn-dos" style="grid-template-columns: 2fr 1fr 1fr;">
-            <input type="hidden" name="cat_id_{{ n }}" value="{{ cat.id }}">
-            <label>Nombre <input name="cat_nombre_{{ n }}" value="{{ valor('cat_nombre_' ~ n, cat.nombre) }}"></label>
-            <label>Modalidad
-              {% set mod = form.get('cat_modalidad_' ~ n) if form else cat.modalidad %}
-              <select name="cat_modalidad_{{ n }}">
-                <option value="singles" {% if mod != 'dobles' %}selected{% endif %}>Singles</option>
-                <option value="dobles" {% if mod == 'dobles' %}selected{% endif %}>Dobles</option>
-              </select>
-            </label>
-            <label>Cupo <input name="cat_cupo_{{ n }}" inputmode="numeric" value="{{ valor('cat_cupo_' ~ n, cat.cupo) }}" placeholder="Sin límite"></label>
-          </div>
-        {% endfor %}
-        {% for k in range(filas_nuevas) %}
-          {% set n = existentes|length + k %}
-          <div class="tn-dos" style="grid-template-columns: 2fr 1fr 1fr;">
-            <label>Nombre <input name="cat_nombre_{{ n }}" value="{{ form.get('cat_nombre_' ~ n, '') if form else '' }}" placeholder="{{ 'Ej. Caballeros B' if n == 0 else '' }}"></label>
-            <label>Modalidad
-              <select name="cat_modalidad_{{ n }}">
-                <option value="singles">Singles</option>
-                <option value="dobles" {% if form and form.get('cat_modalidad_' ~ n) == 'dobles' %}selected{% endif %}>Dobles</option>
-              </select>
-            </label>
-            <label>Cupo <input name="cat_cupo_{{ n }}" inputmode="numeric" value="{{ form.get('cat_cupo_' ~ n, '') if form else '' }}" placeholder="Sin límite"></label>
-          </div>
-        {% endfor %}
+        {% if form %}
+          {% set filas = filas_form %}
+        {% else %}
+          {% set filas = [] %}
+          {% for cat in existentes %}{% set _ = filas.append({"id": cat.id, "nombre": cat.nombre, "modalidad": cat.modalidad, "cupo": cat.cupo, "inscriptos": cat.inscripciones|length}) %}{% endfor %}
+          {% if not filas %}{% set _ = filas.append({"id": none, "nombre": "", "modalidad": "", "cupo": ""}) %}{% endif %}
+        {% endif %}
+        <div id="categorias">
+          {% for f in filas %}
+            {% with n = loop.index0 %}{% include "torneos/_fila_categoria.html" %}{% endwith %}
+          {% endfor %}
+        </div>
+        <template id="fila-nueva">{% with n = "__N__", f = {"id": none, "nombre": "", "modalidad": "", "cupo": ""} %}{% include "torneos/_fila_categoria.html" %}{% endwith %}</template>
+        <button type="button" class="tn-boton tn-boton-sec tn-boton-chico" id="agregar-categoria" style="justify-self:start;">+ Agregar categoría</button>
       </div>
 
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -112,4 +105,56 @@
     </form>
   </div>
 </section>
+<style>
+  .tn-cat-fila { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line, #1c2b4a); }
+  @media (max-width: 640px) { .tn-cat-fila { grid-template-columns: 1fr 1fr; } .tn-cat-fila > label:first-of-type { grid-column: 1 / -1; } }
+</style>
+<script>
+  (function () {
+    var cont = document.getElementById('categorias');
+    var plantilla = document.getElementById('fila-nueva');
+    var proximo = cont.querySelectorAll('[data-fila]').length;
+    function preparar(fila) {
+      var eleg = fila.querySelector('[data-elegida]'), otra = fila.querySelector('[data-otra]');
+      var cupo = fila.querySelector('[data-cupo]'), cupoOtro = fila.querySelector('[data-cupo-otro]');
+      var mod = fila.querySelector('[data-modalidad]'), parejas = fila.querySelector('[data-parejas]');
+      function act() {
+        var o = eleg.value === 'otra';
+        otra.hidden = !o; otra.required = o;
+        var c = cupo.value === 'otro';
+        cupoOtro.hidden = !c; cupoOtro.required = c;
+        parejas.hidden = mod.value !== 'dobles';
+        if (window.tnPreparar) window.tnPreparar();
+      }
+      [eleg, cupo, mod].forEach(function (el) { el.addEventListener('change', act); });
+      var quitar = fila.querySelector('[data-quitar]');
+      if (quitar) quitar.addEventListener('click', function () {
+        var vivas = cont.querySelectorAll('[data-fila]:not([hidden])');
+        if (vivas.length <= 1) { alert('El torneo necesita al menos una categoría.'); return; }
+        if (fila.querySelector('[name^="cat_id_"]')) {
+          fila.querySelector('[data-borrar]').value = '1';
+          fila.hidden = true;
+          fila.querySelectorAll('[required]').forEach(function (el) { el.required = false; });
+        } else {
+          fila.remove();
+        }
+      });
+      act();
+    }
+    cont.querySelectorAll('[data-fila]').forEach(preparar);
+    var canchas = document.getElementById('canchas');
+    document.querySelectorAll('input[name="tipo"]').forEach(function (r) {
+      r.addEventListener('change', function () { if (canchas) canchas.hidden = r.value === 'escalera' && r.checked; });
+    });
+    document.getElementById('agregar-categoria').addEventListener('click', function () {
+      var html = plantilla.innerHTML.replace(/__N__/g, String(proximo++));
+      var caja = document.createElement('div');
+      caja.innerHTML = html.trim();
+      var fila = caja.firstElementChild;
+      cont.appendChild(fila);
+      preparar(fila);
+      fila.querySelector('[data-elegida]').focus();
+    });
+  })();
+</script>
 {% endblock %}

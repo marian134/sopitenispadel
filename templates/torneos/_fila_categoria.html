@@ -1,0 +1,40 @@
+{# Una fila de categoría del formulario del torneo. Recibe n (índice) y f (id, nombre, modalidad, cupo). #}
+{% set sugeridas = ["Caballeros A", "Caballeros B", "Caballeros C", "Caballeros D", "Damas A", "Damas B", "Damas C",
+                    "Mixto", "Principiantes", "Libre", "+35", "+45", "+55", "+65", "Menores"] %}
+{% set cupos = [4, 8, 12, 16, 24, 32, 48, 64] %}
+{% set es_otra = f.nombre and f.nombre not in sugeridas %}
+{% set cupo_txt = "sin" if f.cupo in (none, 0) and f.id else (f.cupo|string if f.cupo not in (none, "") else "") %}
+{% set cupo_otro = cupo_txt not in ("", "sin") and cupo_txt|int not in cupos %}
+<div class="tn-cat-fila" data-fila>
+  {% if f.id %}<input type="hidden" name="cat_id_{{ n }}" value="{{ f.id }}">{% endif %}
+  <input type="hidden" name="cat_borrar_{{ n }}" value="" data-borrar>
+  <label>Nombre de la categoría
+    <select name="cat_elegida_{{ n }}" required data-elegida>
+      <option value="">Elegí…</option>
+      {% for s in sugeridas %}<option value="{{ s }}" {% if f.nombre == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      <option value="otra" {% if es_otra %}selected{% endif %}>Otra (escribila)</option>
+    </select>
+    <input name="cat_nombre_{{ n }}" value="{{ f.nombre if es_otra else '' }}" maxlength="80" placeholder="Ej. Caballeros +40 B" data-otra {% if not es_otra %}hidden{% else %}required{% endif %}>
+  </label>
+  <label>Modalidad
+    <select name="cat_modalidad_{{ n }}" required data-modalidad>
+      <option value="">Elegí…</option>
+      <option value="singles" {% if f.modalidad == 'singles' %}selected{% endif %}>Singles</option>
+      <option value="dobles" {% if f.modalidad == 'dobles' %}selected{% endif %}>Dobles</option>
+    </select>
+  </label>
+  <label>Cupo máximo <small data-parejas {% if f.modalidad != 'dobles' %}hidden{% endif %}>(parejas)</small>
+    <select name="cat_cupo_{{ n }}" required data-cupo>
+      <option value="">Elegí…</option>
+      <option value="sin" {% if cupo_txt == 'sin' %}selected{% endif %}>Sin límite</option>
+      {% for c in cupos %}<option value="{{ c }}" {% if cupo_txt == c|string %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      <option value="otro" {% if cupo_otro %}selected{% endif %}>Otro número</option>
+    </select>
+    <input name="cat_cupo_otro_{{ n }}" inputmode="numeric" value="{{ cupo_txt if cupo_otro else '' }}" placeholder="Ej. 20" data-cupo-otro {% if not cupo_otro %}hidden{% else %}required{% endif %}>
+  </label>
+  {% if f.inscriptos %}
+    <small class="tn-suave" style="align-self:center;">{{ f.inscriptos }} anotado{{ "s" if f.inscriptos != 1 }}</small>
+  {% else %}
+    <button type="button" class="tn-boton tn-boton-sec tn-boton-chico" data-quitar style="align-self:end; margin-bottom:4px;">Quitar</button>
+  {% endif %}
+</div>

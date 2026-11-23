@@ -26,13 +26,15 @@
     <div id="cuadro-{{ c.cat.id }}" style="border-top:1px solid var(--line); padding-top:14px; margin-top:14px;">
       <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
         <h3 style="margin:0;">{{ c.cat.nombre }}</h3>
-        {% if c.campeon %}<span class="tn-campeon">🏆 {{ c.campeon.jugador1.nombre_completo }}{% if c.campeon.jugador2 %} / {{ c.campeon.jugador2.nombre_completo }}{% endif %}</span>{% endif %}
       </div>
+      {% if c.podio %}{% with podio = c.podio %}{% include "torneos/_podio.html" %}{% endwith %}{% endif %}
       <p class="tn-dato">
         {{ c.participantes }} jugador{{ "es" if c.participantes != 1 }} confirmado{{ "s" if c.participantes != 1 }}
         {% if c.tamano %} · cuadro de {{ c.tamano }}{% if c.byes %} con {{ c.byes }} pase{{ "s" if c.byes != 1 }} libre{{ "s" if c.byes != 1 }}{% endif %}{% if c.max_cabezas %} · hasta {{ c.max_cabezas }} cabezas de serie{% endif %}{% endif %}
       </p>
-      {% if cuadro.zonas_activas %}
+      {% if comp.estado in ("borrador", "inscripcion") %}
+        <p class="tn-dato">{{ "Las zonas" if cuadro.zonas_activas else "El cuadro" }} se arma{{ "n" if cuadro.zonas_activas }} cuando cierres la inscripción (paso 3).</p>
+      {% elif cuadro.zonas_activas %}
         {% if not c.zonas_con_resultados and not c.con_resultados %}
           <form method="post" action="{{ url_for('torneos.zonas_armar', comp_id=comp.id, cat_id=c.cat.id) }}"
                 {% if c.zonas_armadas %}onsubmit="return confirm('¿Volver a sortear las zonas? Se pierden las actuales.');"{% endif %}>
@@ -57,19 +59,14 @@
       {% endif %}
 
       {% if c.principal %}
-        <div style="margin-top:12px;">{% with rondas = c.principal %}{% include "torneos/_llave.html" %}{% endwith %}</div>
-      {% endif %}
-
-      {% if c.tercer %}
-        <p style="margin:12px 0 6px; font-weight:700;">Tercer puesto</p>
-        {% with rondas = [{"numero": 1, "nombre": "Tercer puesto", "partidos": c.tercer}] %}{% include "torneos/_llave.html" %}{% endwith %}
+        <div style="margin-top:12px;">{% with rondas = c.principal, tercer = c.tercer %}{% include "torneos/_llave.html" %}{% endwith %}</div>
       {% endif %}
 
       {% if comp.reglas.get('consuelo') and c.principal %}
         <p style="margin:16px 0 6px; font-weight:700;">Consuelo
           {% if c.campeon_consuelo %}<span class="tn-campeon" style="margin-left:8px;">🏆 {{ c.campeon_consuelo.jugador1.nombre_completo }}</span>{% endif %}</p>
         {% if c.consuelo %}
-          {% with rondas = c.consuelo %}{% include "torneos/_llave.html" %}{% endwith %}
+          {% with rondas = c.consuelo, tercer = none %}{% include "torneos/_llave.html" %}{% endwith %}
         {% elif c.consuelo_listo %}
           <form method="post" action="{{ url_for('torneos.cuadro_consuelo', comp_id=comp.id, cat_id=c.cat.id) }}">
             <button class="tn-boton tn-boton-chico">Armar consuelo ({{ c.consuelo_entrantes }} jugadores)</button>
@@ -87,7 +84,8 @@
 {% if cuadro.por_jugar %}
 <div class="tn-caja" id="horarios">
   <h2>Partidos por jugar y horarios</h2>
-  <p class="tn-suave">Asigná día, hora y cancha. Te avisamos si un jugador queda con dos partidos pegados o si se superpone una cancha. Después avisales por WhatsApp.</p>
+  <p class="tn-suave">Asigná día, hora y cancha. Te avisamos si un jugador queda con dos partidos pegados o si se superpone una cancha. Después avisales por WhatsApp.
+    {% if not comp.reglas.get('canchas') %}<br><a href="{{ url_for('torneos.competencia_editar', comp_id=comp.id) }}#canchas">Cargá cuántas canchas tenés</a> para elegirlas de una lista.{% endif %}</p>
   {% for f in cuadro.por_jugar %}
     {% set p = f.p %}
     <div id="partido-{{ p.id }}" style="border-top:1px solid var(--line); padding:12px 0;">
@@ -96,13 +94,7 @@
         <span class="tn-suave"> · {{ f.cat.nombre }} · {{ f.ronda }}{% if p.cuadro == 'consuelo' %} (consuelo){% endif %}</span></p>
       {% for lado in [p.lado_a, p.lado_b] %}{% if lado and lado.restricciones %}<p class="tn-dato" style="margin:2px 0;">{{ lado.jugador1.nombre }} no puede: {{ lado.restricciones }}</p>{% endif %}{% endfor %}
       {% for a in f.avisos %}<p class="tn-error" style="margin:6px 0; padding:6px 10px;">{{ a }}</p>{% endfor %}
-      <form method="post" action="{{ url_for('torneos.partido_horario', partido_id=p.id) }}" class="tn-acciones" style="align-items:center; margin-top:6px;">
-        <input type="datetime-local" name="fecha_hora" value="{{ p.fecha_hora.strftime('%Y-%m-%dT%H:%M') if p.fecha_hora else '' }}" aria-label="Día y hora"
-               style="padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-        <input name="cancha" value="{{ p.cancha or '' }}" placeholder="Cancha" aria-label="Cancha"
-               style="width:90px; padding:6px 8px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-        <button class="tn-boton tn-boton-sec tn-boton-chico">Guardar</button>
-      </form>
+      {% with dia_sugerido = none %}{% include "torneos/_form_horario.html" %}{% endwith %}
       {% if f.wa %}
         <div class="tn-acciones" style="margin-top:6px;">
           {% for nombre, link in f.wa %}<a class="tn-boton tn-wa tn-boton-chico" href="{{ link }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar a {{ nombre }}</a>{% endfor %}

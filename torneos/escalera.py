@@ -115,6 +115,14 @@ def puntos_semana(insc, semana):
     ), 2)
 
 
+def con_semana(grupos, semana):
+    """Agrega a cada fila del ranking lo que suma en la semana en curso (se aplica el lunes)."""
+    for _nombre, grupo in grupos:
+        for f in grupo:
+            f["esta_semana"] = puntos_semana(f["insc"], semana) if semana else 0
+    return grupos
+
+
 def partidos_de(insc, estados=None, semana=None):
     q = Partido.query.filter(
         (Partido.lado_a_id == insc.id) | (Partido.lado_b_id == insc.id)

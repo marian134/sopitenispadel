@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import abort, redirect, render_template, request, url_for
 
 from models import db
+from . import avisos
 from . import cuadro as cdr
 from . import zonas as zns
 from .bp import bp, contexto
@@ -44,6 +45,7 @@ def cuadro_armar(comp_id, cat_id):
         db.session.rollback()
         return _volver(comp, str(e), f"cuadro-{cat.id}")
     db.session.commit()
+    avisos.partidos_nuevos(cdr.partidos(cat))
     return _volver(comp, ancla=f"cuadro-{cat.id}")
 
 
@@ -59,6 +61,7 @@ def zonas_armar(comp_id, cat_id):
         db.session.rollback()
         return _volver(comp, str(e), f"cuadro-{cat.id}")
     db.session.commit()
+    avisos.partidos_nuevos(zns.partidos(cat))
     return _volver(comp, ancla=f"cuadro-{cat.id}")
 
 
@@ -75,6 +78,7 @@ def zonas_pasar(comp_id, cat_id):
         db.session.rollback()
         return _volver(comp, str(e), f"cuadro-{cat.id}")
     db.session.commit()
+    avisos.partidos_nuevos(cdr.partidos(cat))
     return _volver(comp, ancla=f"cuadro-{cat.id}")
 
 
@@ -90,7 +94,13 @@ def cuadro_consuelo(comp_id, cat_id):
         db.session.rollback()
         return _volver(comp, f"Consuelo: {e}", f"cuadro-{cat.id}")
     db.session.commit()
+    avisos.partidos_nuevos(cdr.partidos(cat, cdr.CONSUELO))
     return _volver(comp, ancla=f"cuadro-{cat.id}")
+
+
+def _error_horario(comp, p, error):
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, error_horario=error,
+                            partido_error=p.id) + f"#partido-{p.id}")
 
 
 @bp.route("/panel/partido/<int:partido_id>/horario", methods=["POST"])
@@ -100,14 +110,25 @@ def partido_horario(partido_id):
     if not p:
         abort(404)
     comp = _mi_competencia(p.competencia_id)
-    valor = request.form.get("fecha_hora") or ""
+    f = request.form
+    dia, hora, cancha = (f.get("dia") or "").strip(), (f.get("hora") or "").strip(), (f.get("cancha") or "").strip()[:40]
+    if f.get("fecha_hora") and not dia:   # formato anterior (un solo campo)
+        dia, _, hora = f.get("fecha_hora").partition("T")
+    faltan = [n for n, v in (("el día", dia), ("la hora", hora), ("la cancha", cancha)) if not v]
+    if faltan:
+        return _error_horario(comp, p, f"Para guardar el horario falta {', '.join(faltan)}.")
     try:
-        p.fecha_hora = datetime.strptime(valor, "%Y-%m-%dT%H:%M") if valor else None
+        nuevo = datetime.strptime(f"{dia}T{hora[:5]}", "%Y-%m-%dT%H:%M")
     except ValueError:
-        return _volver(comp, "La fecha y hora no es válida.", "horarios")
-    p.cancha = (request.form.get("cancha") or "").strip()[:40] or None
+        return _error_horario(comp, p, "El día o la hora no son válidos.")
+    cambio = (p.fecha_hora, p.cancha)
+    if p.fecha_hora != nuevo:
+        p.recordado = False   # si cambió el día, vuelve a salir el recordatorio
+    p.fecha_hora, p.cancha = nuevo, cancha
     db.session.commit()
-    return _volver(comp, ancla=f"partido-{p.id}")
+    if cambio != (p.fecha_hora, p.cancha):
+        avisos.horario(p)
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, guardado=p.id) + f"#partido-{p.id}")
 
 
 @bp.route("/panel/<int:comp_id>/opciones", methods=["GET", "POST"])
@@ -177,7 +198,7 @@ def datos_cuadro(comp):
             "principal": cdr.estructura(cat),
             "consuelo": cdr.estructura(cat, cdr.CONSUELO),
             "tercer": cdr.partidos(cat, cdr.TERCER),
-            "campeon": cdr.campeon(cat),
+            "campeon": cdr.campeon(cat), "podio": cdr.podio(cat),
             "campeon_consuelo": cdr.campeon(cat, cdr.CONSUELO),
             "con_resultados": cdr.hay_resultados(cat),
             "consuelo_listo": not pendientes and len(entrantes) >= 2,

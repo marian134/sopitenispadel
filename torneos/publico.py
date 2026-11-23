@@ -1,4 +1,5 @@
 """Páginas públicas: calendario, página del torneo, inscripción y panel del jugador."""
+import re
 from datetime import datetime
 
 from flask import abort, redirect, render_template, request, session, url_for
@@ -71,7 +72,7 @@ def torneo(slug):
         escalera = {
             "semana": semana, "total": esc.total_semanas(comp),
             "especial": esc.especial(comp, semana)[1] if semana else None,
-            "rankings": {c.id: esc.ranking(c, semana or 1) for c in comp.categorias},
+            "rankings": {c.id: esc.con_semana(esc.ranking(c, semana or 1), semana) for c in comp.categorias},
         }
     categorias = [
         {"cat": c, "libres": lugares_libres(c),
@@ -81,6 +82,7 @@ def torneo(slug):
          "consuelo": cdr.estructura(c, cdr.CONSUELO) if comp.tipo == "cuadro" else [],
          "tercer": cdr.partidos(c, cdr.TERCER) if comp.tipo == "cuadro" else [],
          "campeon": cdr.campeon(c) if comp.tipo == "cuadro" else None,
+         "podio": cdr.podio(c) if comp.tipo == "cuadro" else None,
          "zonas": zns.estructura(c) if zns.activas(comp) else []}
         for c in sorted(comp.categorias, key=lambda c: c.orden)
     ]
@@ -183,6 +185,8 @@ def inscripcion(slug):
             error = f"La categoría {cat.nombre} ya no tiene lugares."
         else:
             error = _validar_persona(p1, "")
+            if not error and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", p1["email"]):
+                error = "Poné tu mail: ahí te llega el enlace para seguir el torneo."
             if not error and cat.modalidad == "dobles":
                 error = _validar_persona(p2, "de tu compañero/a")
                 if not error and p2["dni"] == p1["dni"]:
@@ -419,7 +423,7 @@ def _bloque_escalera(insc, j):
     }
     if not datos["participa"] or not semana:
         return datos
-    grupos = esc.ranking(insc.categoria, semana)
+    grupos = esc.con_semana(esc.ranking(insc.categoria, semana), semana)
     division, grupo, mia = esc.fila_de(grupos, insc)
     enlace_panel = url_for("torneos.jugador", enlace=j.enlace, _external=True)
     torneo_url = url_for("torneos.torneo", slug=comp.slug, _external=True)

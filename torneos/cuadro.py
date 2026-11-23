@@ -239,6 +239,33 @@ def campeon(cat, cuadro=PRINCIPAL):
     return None
 
 
+def podio(cat):
+    """Al terminar la final: {"campeon", "subcampeon", "terceros": [...]}; si no, None.
+    Con partido por el tercer puesto, el tercero es el ganador (cuando se juega);
+    sin ese partido, los dos que perdieron las semifinales."""
+    total = rondas_de(cat)
+    if not total:
+        return None
+    final = Partido.query.filter_by(categoria_id=cat.id, cuadro=PRINCIPAL, ronda=str(total)).first()
+    if not final or final.estado not in TERMINADOS or not final.ganador_id:
+        return None
+    sub = perdedor_id(final)
+    terceros = []
+    tercer = Partido.query.filter_by(categoria_id=cat.id, cuadro=TERCER).first()
+    if tercer:
+        if tercer.estado in TERMINADOS and tercer.ganador_id:
+            terceros = [tercer.ganador_id]
+    elif total >= 2:
+        semis = Partido.query.filter_by(categoria_id=cat.id, cuadro=PRINCIPAL, ronda=str(total - 1)).all()
+        terceros = [x for x in (perdedor_id(s) for s in semis) if x]
+    return {
+        "campeon": db.session.get(Inscripcion, final.ganador_id),
+        "subcampeon": db.session.get(Inscripcion, sub) if sub else None,
+        "terceros": [db.session.get(Inscripcion, x) for x in terceros],
+        "tercer_pendiente": bool(tercer) and not terceros,
+    }
+
+
 def _revisar_final_torneo(p):
     """Si se jugaron todas las finales (y tercer puesto), el torneo queda finalizado."""
     db.session.flush()

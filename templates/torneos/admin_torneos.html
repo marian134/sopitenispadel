@@ -10,9 +10,13 @@
     <nav aria-label="Administración">
       <a href="{{ url_for('admin_pedidos') }}">← Admin de la tienda</a>
       <a href="{{ url_for('torneos.calendario') }}">Ver torneos</a>
+      <a href="{{ url_for('torneos_admin.inscriptos') }}">Todos los inscriptos</a>
     </nav>
   </div>
-  <h1 class="tn-titulo">Torneos: organizadores y cobros</h1>
+  <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+    <h1 class="tn-titulo">Torneos: organizadores y cobros</h1>
+    <a class="tn-boton tn-boton-chico" href="{{ url_for('torneos_admin.inscriptos') }}">Ver todos los inscriptos</a>
+  </div>
 
   <div class="tn-grilla">
     <div class="tn-tarjeta"><span class="tn-tipo">Por cobrar</span><h3>{{ pesos(total_pendiente) }}</h3><p class="tn-dato">{{ cobros_pend|length }} cobro{{ "s" if cobros_pend|length != 1 }}</p></div>

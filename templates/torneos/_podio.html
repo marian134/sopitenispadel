@@ -1,0 +1,13 @@
+{# Podio al terminar el cuadro. Recibe podio (cuadro.podio). #}
+{% macro nombre(i) %}{{ i.jugador1.nombre_completo }}{% if i.jugador2 %} / {{ i.jugador2.nombre_completo }}{% endif %}{% endmacro %}
+<div class="tn-podio">
+  <div class="tn-podio-campeon">
+    <span class="tn-podio-copa">🏆</span>
+    <div><small>Campeón</small><strong>{{ nombre(podio.campeon) }}</strong></div>
+  </div>
+  <div class="tn-podio-resto">
+    {% if podio.subcampeon %}<div><span>🥈</span><div><small>Subcampeón</small><strong>{{ nombre(podio.subcampeon) }}</strong></div></div>{% endif %}
+    {% for t in podio.terceros %}<div><span>🥉</span><div><small>Tercer puesto</small><strong>{{ nombre(t) }}</strong></div></div>{% endfor %}
+    {% if podio.tercer_pendiente %}<div><span>🥉</span><div><small>Tercer puesto</small><strong class="tn-suave">Por jugarse</strong></div></div>{% endif %}
+  </div>
+</div>

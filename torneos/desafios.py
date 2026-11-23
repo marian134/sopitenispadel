@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from flask import abort, redirect, request, send_from_directory, url_for
 
 from models import db
+from . import avisos
 from . import escalera as esc
 from .bp import bp
 from .models import (
@@ -15,6 +16,7 @@ from .models import (
 from .util import CARPETA_ARCHIVOS, guardar_archivo, organizador_actual
 
 MENSAJES = {
+    "comprobante": "Listo, mandaste el comprobante. El organizador lo revisa y te confirma.",
     "desafio": "Desafío enviado. Avisale a tu rival por WhatsApp para que lo responda.",
     "aceptado": "Aceptaste el desafío. Coordinen día y cancha, y después carguen el resultado.",
     "rechazado": "Rechazaste el desafío.",
@@ -100,12 +102,14 @@ def desafiar(enlace):
     if rival_id not in validos:
         return _volver(enlace, error="invalido", ancla=f"insc-{insc.id}")
     dias = int(comp.reglas.get("plazo_respuesta_dias") or 2)
-    db.session.add(Partido(
+    nuevo = Partido(
         competencia_id=comp.id, categoria_id=insc.categoria_id, semana=semana,
         lado_a_id=insc.id, lado_b_id=rival_id, desafiante_id=insc.id,
         estado=PAR_DESAFIO, vence_en=datetime.now() + timedelta(days=dias),
-    ))
+    )
+    db.session.add(nuevo)
     db.session.commit()
+    avisos.desafio(nuevo)
     return _volver(enlace, msj="desafio", ancla=f"insc-{insc.id}")
 
 
@@ -180,7 +184,25 @@ def cargar_resultado(enlace):
     else:
         msj = "resultado"
     db.session.commit()
+    if msj == "resultado":
+        avisos.resultado_para_confirmar(p, mia)
     return _volver(enlace, msj=msj, ancla=f"insc-{mia.id}")
+
+
+@bp.route("/jugador/<enlace>/comprobante", methods=["POST"])
+def subir_comprobante(enlace):
+    """El jugador sube (o vuelve a subir) el comprobante de pago."""
+    j = _jugador(enlace)
+    insc = _mi_inscripcion(j, request.form.get("insc", type=int))
+    if insc.baja or insc.estado_pago == "confirmado":
+        return _volver(enlace, ancla=f"insc-{insc.id}")
+    try:
+        insc.comprobante = guardar_archivo(request.files.get("comprobante"))
+    except ValueError as e:
+        return redirect(url_for("torneos.jugador", enlace=enlace, error_texto=f"Comprobante: {e}") + f"#insc-{insc.id}")
+    insc.estado_pago = "pendiente"
+    db.session.commit()
+    return _volver(enlace, msj="comprobante", ancla=f"insc-{insc.id}")
 
 
 @bp.route("/jugador/<enlace>/confirmar", methods=["POST"])

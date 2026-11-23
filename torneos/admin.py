@@ -8,12 +8,15 @@ import os
 from datetime import datetime
 from functools import wraps
 
-from flask import Blueprint, abort, redirect, render_template, request, session, url_for
+import csv
+import io
+
+from flask import Blueprint, Response, abort, redirect, render_template, request, session, url_for
 
 from models import db
 from .bp import contexto
 from .cobros import impagos
-from .models import Cobro, Competencia, Organizador, PLAN_GRATIS, PLAN_PAGO
+from .models import Categoria, Cobro, Competencia, Inscripcion, Organizador, PLAN_GRATIS, PLAN_PAGO
 from .util import link_whatsapp, pesos
 
 admin_bp = Blueprint("torneos_admin", __name__, url_prefix="/admin/torneos")
@@ -102,3 +105,62 @@ def cobro(cobro_id):
         c.pagado, c.pagado_en = False, None
     db.session.commit()
     return redirect(url_for("torneos_admin.inicio") + "#cobros")
+
+
+ESTADOS_PAGO = {"pendiente": "Pago a revisar", "confirmado": "Pago confirmado", "rechazado": "Pago rechazado"}
+
+
+@admin_bp.route("/inscriptos")
+@admin_requerido
+def inscriptos():
+    """Tablero con todos los inscriptos de todos los torneos, con filtros y totales."""
+    comp_id = request.args.get("torneo", type=int)
+    org_id = request.args.get("organizador", type=int)
+    estado = request.args.get("pago") or ""
+    texto = (request.args.get("q") or "").strip().lower()
+    consulta = (Inscripcion.query.join(Categoria, Inscripcion.categoria_id == Categoria.id)
+                .join(Competencia, Categoria.competencia_id == Competencia.id))
+    if comp_id:
+        consulta = consulta.filter(Competencia.id == comp_id)
+    if org_id:
+        consulta = consulta.filter(Competencia.organizador_id == org_id)
+    if estado == "baja":
+        consulta = consulta.filter(Inscripcion.baja.is_(True))
+    elif estado in ESTADOS_PAGO:
+        consulta = consulta.filter(Inscripcion.estado_pago == estado, Inscripcion.baja.is_(False))
+    filas = consulta.order_by(Inscripcion.creado_en.desc()).all()
+    if texto:
+        def coincide(i):
+            js = [x for x in (i.jugador1, i.jugador2) if x]
+            return any(texto in " ".join(filter(None, [x.nombre_completo, x.dni, x.email or "", x.celular or ""])).lower() for x in js)
+        filas = [i for i in filas if coincide(i)]
+    if request.args.get("formato") == "csv":
+        salida = io.StringIO()
+        w = csv.writer(salida, delimiter=";")
+        w.writerow(["Torneo", "Organizador", "Categoría", "Jugador", "DNI", "Celular", "Mail", "Compañero/a",
+                    "Estado", "Fecha"])
+        for i in filas:
+            comp = i.categoria.competencia
+            w.writerow([comp.nombre, comp.organizador.nombre, i.categoria.nombre, i.jugador1.nombre_completo,
+                        i.jugador1.dni, i.jugador1.celular or "", i.jugador1.email or "",
+                        i.jugador2.nombre_completo if i.jugador2 else "",
+                        "De baja" if i.baja else ESTADOS_PAGO.get(i.estado_pago, i.estado_pago),
+                        i.creado_en.strftime("%d/%m/%Y %H:%M")])
+        return Response("﻿" + salida.getvalue(), mimetype="text/csv",
+                        headers={"Content-Disposition": "attachment; filename=inscriptos-torneos.csv"})
+    activos = [i for i in filas if not i.baja]
+    totales = {
+        "inscripciones": len(activos),
+        "jugadores": sum(2 if i.jugador2_id else 1 for i in activos),
+        "confirmados": sum(1 for i in activos if i.estado_pago == "confirmado"),
+        "a_revisar": sum(1 for i in activos if i.estado_pago == "pendiente"),
+        "rechazados": sum(1 for i in activos if i.estado_pago == "rechazado"),
+        "bajas": len(filas) - len(activos),
+    }
+    return render_template(
+        "torneos/admin_inscriptos.html",
+        **contexto(filas=filas, totales=totales, estados=ESTADOS_PAGO,
+                   competencias=Competencia.query.order_by(Competencia.creado_en.desc()).all(),
+                   organizadores=Organizador.query.order_by(Organizador.nombre).all(),
+                   filtro={"torneo": comp_id, "organizador": org_id, "pago": estado, "q": request.args.get("q", "")}),
+    )

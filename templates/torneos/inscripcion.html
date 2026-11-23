@@ -27,7 +27,7 @@
             <option value="{{ c.id }}" data-modalidad="{{ c.modalidad }}"
                     {% if form.get('categoria') == c.id|string %}selected{% endif %}
                     {% if lib == 0 %}disabled{% endif %}>
-              {{ c.nombre }} ({{ c.modalidad }}){% if lib == 0 %} · completa{% elif lib is not none %} · quedan {{ lib }}{% endif %}
+              {{ c|nombre_cat }}{% if lib == 0 %} · completa{% elif lib is not none %} · quedan {{ lib }}{% endif %}
             </option>
           {% endfor %}
         </select>
@@ -45,7 +45,7 @@
         <label>Apellido <input name="apellido" value="{{ form.get('apellido', '') }}" required autocomplete="family-name"></label>
       </div>
       <label>Mail <small>(te mandamos tu enlace personal para seguir el torneo)</small>
-        <input type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email">
+        <input type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email" required>
       </label>
     </div>
 
@@ -108,6 +108,7 @@
         var el = document.querySelector('[name="' + n + '"]');
         if (el) el.required = dobles;
       });
+      if (window.tnPreparar) window.tnPreparar();
     }
     sel.addEventListener('change', actualizar);
     actualizar();

@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from flask import abort, redirect, render_template, request, url_for
 
 from models import db
+from . import avisos
 from . import liga
 from .bp import bp, contexto
 from .models import Partido, TIPO_LIGA, PAR_AGENDADO
@@ -85,9 +86,9 @@ def liga_proponer(comp_id, numero):
     if not liga.fecha_numero(comp, numero):
         abort(404)
     parejas, _sin = liga.proponer(comp, numero)
-    for a, b in parejas:
-        liga.crear_partido(comp, numero, a.id, b.id)
+    nuevos = [liga.crear_partido(comp, numero, a.id, b.id) for a, b in parejas]
     db.session.commit()
+    avisos.partidos_nuevos(nuevos)
     return _volver(comp, f"fecha-{numero}")
 
 
@@ -101,8 +102,9 @@ def liga_partido_nuevo(comp_id, numero):
     validos = {i.id for i in liga.participantes(comp)}
     if not a or not b or a == b or a not in validos or b not in validos:
         return _volver(comp, f"fecha-{numero}", "Elegí dos jugadores distintos.")
-    liga.crear_partido(comp, numero, a, b)
+    nuevo = liga.crear_partido(comp, numero, a, b)
     db.session.commit()
+    avisos.partido_nuevo(nuevo)
     return _volver(comp, f"fecha-{numero}")
 
 

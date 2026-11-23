@@ -14,15 +14,12 @@
   <span class="tn-tipo">{{ comp.tipo|tipo_torneo }}</span>
   <h1 class="tn-titulo">{{ comp.nombre }}</h1>
   <p class="tn-suave">{{ nombres_estado.get(comp.estado, comp.estado) }}{% if comp.precio %} · Inscripción {{ pesos(comp.precio) }}{% endif %}</p>
+  {% if aviso_mezcla %}<p class="tn-error" style="background:rgba(234,227,57,.10); border-color:var(--amarillo); color:inherit;">⚠ {{ aviso_mezcla }} <a href="{{ url_for('torneos.competencia_editar', comp_id=comp.id) }}">Revisar categorías</a></p>{% endif %}
 
   <div class="tn-caja">
     <div class="tn-acciones">
       <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.competencia_editar', comp_id=comp.id) }}">Editar datos y categorías</a>
-      {% if comp.estado == "borrador" %}
-        <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}">
-          <button class="tn-boton tn-boton-chico" name="accion" value="abrir">Publicar y abrir inscripción</button>
-        </form>
-      {% elif comp.estado == "inscripcion" %}
+      {% if comp.estado == "inscripcion" %}
         <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}"
               onsubmit="return confirm('¿Cerrar la inscripción? Nadie más se va a poder anotar.');">
           <button class="tn-boton tn-boton-chico" name="accion" value="cerrar">Cerrar inscripción y empezar</button>
@@ -41,15 +38,74 @@
     </div>
 
     {% if comp.estado in ("inscripcion", "en_curso", "finalizada") %}
-      <p style="margin:16px 0 6px;"><strong>Link para compartir</strong> <span class="tn-suave">(WhatsApp, Instagram)</span></p>
-      <div class="tn-copiar">
-        <input id="link-publico" value="{{ url_publica }}" readonly>
-        <button type="button" class="tn-boton tn-boton-chico" onclick="navigator.clipboard.writeText(document.getElementById('link-publico').value); this.textContent='¡Copiado!';">Copiar</button>
+      <div class="tn-acciones" style="margin-top:14px;">
+        <a class="tn-boton tn-boton-chico" href="{{ url_publica }}" target="_blank" rel="noopener">Ver la página del torneo</a>
+        <a class="tn-boton tn-wa tn-boton-chico" href="{{ wa_compartir }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Compartir por WhatsApp</a>
       </div>
-    {% elif comp.estado == "borrador" %}
-      <p class="tn-suave" style="margin-bottom:0;">Revisá los datos y publicalo para que los jugadores se puedan anotar.</p>
+      <details style="margin-top:10px;">
+        <summary class="tn-suave" style="cursor:pointer; font-size:14px;">Copiar el link (para Instagram u otro lado)</summary>
+        <div class="tn-copiar" style="margin-top:8px;">
+          <input id="link-publico" value="{{ url_publica }}" readonly>
+          <button type="button" class="tn-boton tn-boton-chico" onclick="navigator.clipboard.writeText(document.getElementById('link-publico').value); this.textContent='¡Copiado!';">Copiar</button>
+        </div>
+      </details>
     {% endif %}
   </div>
+
+  {% if publicado and comp.estado == "inscripcion" %}
+    <div class="tn-ok" style="margin-bottom:16px;">
+      <h2 style="margin:0 0 6px;">¡Publicado!</h2>
+      <p style="margin:0 0 10px;">El torneo ya se ve en el calendario y los jugadores se pueden anotar. Mandales el link:</p>
+      <div class="tn-acciones">
+        <a class="tn-boton tn-boton-chico" href="{{ url_publica }}" target="_blank" rel="noopener">Ver la página del torneo</a>
+        <a class="tn-boton tn-wa tn-boton-chico" href="{{ wa_compartir }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Compartir por WhatsApp</a>
+      </div>
+    </div>
+  {% endif %}
+  {% if agregado %}<p class="tn-ok">Agregaste a {{ agregado }}.</p>{% endif %}
+  {% if aviso_pago %}<p class="tn-ok">{{ aviso_pago }}</p>{% endif %}
+  {% if a_revisar or deben %}
+    <div class="tn-alerta-pagos" id="pagos">
+      <div>
+        {% if a_revisar %}<strong>Tenés {{ a_revisar|length }} pago{{ "s" if a_revisar|length != 1 }} para revisar</strong>
+          <div class="tn-acciones" style="margin-top:6px;">
+            {% for i in a_revisar %}<a class="tn-boton tn-boton-sec tn-boton-chico" href="#insc-{{ i.id }}">{{ i.jugador1.nombre_completo }}</a>{% endfor %}
+          </div>
+        {% else %}<strong>{{ deben|length }} jugador{{ "es" if deben|length != 1 }} todavía no pag{{ "aron" if deben|length != 1 else "ó" }}</strong>{% endif %}
+      </div>
+      {% if deben %}
+        <form method="post" action="{{ url_for('torneos.recordar_pagos', comp_id=comp.id) }}"
+              onsubmit="return confirm('¿Mandar un mail de recordatorio a los {{ deben|length }} que deben?');">
+          <button class="tn-boton tn-boton-sec tn-boton-chico">Recordar el pago a todos los que deben ({{ deben|length }})</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if comp.estado in ("borrador", "inscripcion") %}
+    <div class="tn-caja">
+      <h2 style="margin-top:0;">Pasos</h2>
+      {% set actual = (pasos|map(attribute='hecho')|list).index(false) %}
+      <ol class="tn-pasos">
+        {% for paso in pasos %}
+          <li class="{{ 'tn-paso-hecho' if paso.hecho else ('tn-paso-actual' if loop.index0 == actual else '') }}">
+            <span class="tn-paso-num">{{ "✓" if paso.hecho else loop.index }}</span>
+            <span><strong>{{ paso.titulo }}</strong><br><small class="tn-suave">{{ paso.texto }}</small>
+              {% if loop.index0 == actual and loop.index == 1 %}
+                <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}" style="margin-top:6px;">
+                  <button class="tn-boton tn-boton-chico" name="accion" value="abrir">Publicar y abrir inscripción</button>
+                </form>
+              {% elif loop.index0 == actual and loop.index == 2 and comp.tipo == "cuadro" %}
+                <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}" style="margin-top:6px;"
+                      onsubmit="return confirm('¿Cerrar la inscripción? Nadie más se va a poder anotar.');">
+                  <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cerrar">Cuando estén todos: cerrar inscripción</button>
+                </form>
+              {% endif %}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  {% endif %}
 
   {% if escalera %}{% include "torneos/_panel_escalera.html" %}{% endif %}
   {% if cuadro %}{% include "torneos/_panel_cuadro.html" %}{% endif %}
@@ -61,7 +117,7 @@
         · {{ c.cat.modalidad|capitalize }} · {{ c.activos }}{% if c.cat.cupo %}/{{ c.cat.cupo }}{% endif %} inscriptos · {{ c.confirmados }} con pago confirmado</span></h2>
       {% if c.filas %}
         <div class="tn-scroll">
-          <table class="tn-tabla">
+          <table class="tn-tabla tn-tabla-tarjetas">
             <thead><tr>
               <th>Jugador</th><th>Celular</th><th>Estado</th>
               {% if comp.tipo == "escalera" %}<th>Nivel inicial</th><th>División</th>{% endif %}
@@ -71,21 +127,21 @@
             <tbody>
             {% for f in c.filas %}
               {% set i = f.i %}
-              <tr>
+              <tr id="insc-{{ i.id }}">
                 <td>
                   <strong>{{ i.jugador1.nombre_completo }}</strong>
                   {% if i.jugador2 %}<br>y {{ i.jugador2.nombre_completo }}{% endif %}
                   <br><small class="tn-suave">DNI {{ i.jugador1.dni }} · {{ i.creado_en.strftime("%d/%m %H:%M") }}</small>
                   {% if i.restricciones %}<br><small class="tn-suave">No puede: {{ i.restricciones }}</small>{% endif %}
                 </td>
-                <td>{{ i.jugador1.celular }}</td>
-                <td>
+                <td data-et="Celular">{{ i.jugador1.celular }}</td>
+                <td data-et="Estado">
                   {% if i.baja %}<span class="tn-estado tn-est-baja">De baja</span>
                   {% else %}<span class="tn-estado tn-est-{{ i.estado_pago }}">{{ nombres_pago.get(i.estado_pago) }}</span>{% endif %}
                   {% if i.comprobante %}<br><a href="{{ url_for('torneos.comprobante', insc_id=i.id) }}" target="_blank" rel="noopener">Ver comprobante</a>{% endif %}
                 </td>
                 {% if comp.tipo == "escalera" %}
-                  <td>
+                  <td data-et="Nivel inicial">
                     <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}" class="tn-acciones">
                       <input type="hidden" name="accion" value="nivel">
                       <select name="nivel" onchange="this.form.submit()" aria-label="Nivel inicial de {{ i.jugador1.nombre_completo }}" style="padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
@@ -96,7 +152,7 @@
                       </select>
                     </form>
                   </td>
-                  <td>
+                  <td data-et="División">
                     <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}">
                       <input type="hidden" name="accion" value="division">
                       <select name="division" onchange="this.form.submit()" aria-label="División de {{ i.jugador1.nombre_completo }}" style="padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
@@ -109,7 +165,7 @@
                   </td>
                 {% endif %}
                 {% if comp.tipo == "cuadro" %}
-                  <td>
+                  <td data-et="Cabeza de serie">
                     <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}" class="tn-acciones">
                       <input type="hidden" name="accion" value="siembra">
                       <input name="siembra" inputmode="numeric" value="{{ i.siembra or '' }}" placeholder="—" aria-label="Cabeza de serie de {{ i.jugador1.nombre_completo }}"
@@ -117,7 +173,7 @@
                     </form>
                   </td>
                 {% endif %}
-                <td>
+                <td class="tn-td-acciones">
                   <div class="tn-acciones">
                     {% if not i.baja %}
                       {% if i.estado_pago != "confirmado" %}
@@ -126,7 +182,12 @@
                       {% if i.estado_pago == "pendiente" %}
                         <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}"><button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="rechazar">Rechazar</button></form>
                       {% endif %}
-                      <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar</a>
+                      {% if f.wa_recordar %}
+                        <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa_recordar }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Recordar pago</a>
+                        <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}"><button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="recordar" title="Le manda un mail con el monto y los datos para transferir">Recordar por mail</button></form>
+                      {% else %}
+                        <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar</a>
+                      {% endif %}
                       <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}" onsubmit="return confirm('¿Dar de baja?');"><button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="baja">Baja</button></form>
                     {% else %}
                       <form method="post" action="{{ url_for('torneos.inscripcion_accion', insc_id=i.id) }}"><button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="alta">Volver a anotar</button></form>
@@ -139,7 +200,45 @@
           </table>
         </div>
       {% else %}
-        <p class="tn-suave" style="margin:0;">Todavía no hay inscriptos.</p>
+        <p class="tn-suave" style="margin:0;">Todavía no hay inscriptos.{% if comp.estado == "borrador" %} Publicá el torneo y compartí el link para que se anoten.{% endif %}</p>
+      {% endif %}
+      {% if comp.estado not in ("finalizada", "cancelada") %}
+        {% set abierto = agregar_abierto == c.cat.id|string %}
+        <details style="margin-top:12px;" {% if abierto %}open{% endif %} id="agregar-{{ c.cat.id }}">
+          <summary class="tn-boton tn-boton-sec tn-boton-chico" style="list-style:none; display:inline-flex;">+ Agregar jugador</summary>
+          <form method="post" action="{{ url_for('torneos.inscripcion_agregar', comp_id=comp.id, cat_id=c.cat.id) }}" class="tn-form" style="margin-top:12px;">
+            <p class="tn-suave" style="margin:0;">Para anotar vos a alguien (por ejemplo, si te pagó en mano).</p>
+            {% if abierto and agregar_error %}<p class="tn-error" style="margin:0;">{{ agregar_error }}</p>{% endif %}
+            {% set fa = agregar_form if abierto else {} %}
+            <div class="tn-dos">
+              <label>DNI <input name="dni" inputmode="numeric" required value="{{ fa.get('dni', '') }}"></label>
+              <label>Celular <input name="celular" inputmode="tel" required value="{{ fa.get('celular', '') }}"></label>
+            </div>
+            <div class="tn-dos">
+              <label>Nombre <input name="nombre" required value="{{ fa.get('nombre', '') }}"></label>
+              <label>Apellido <input name="apellido" required value="{{ fa.get('apellido', '') }}"></label>
+            </div>
+            <label>Mail <small>(opcional: si lo ponés, le mandamos su enlace para seguir el torneo)</small>
+              <input type="email" name="email" value="{{ fa.get('email', '') }}"></label>
+            {% if c.cat.modalidad == "dobles" %}
+              <p style="margin:6px 0 0; font-weight:700;">Compañero/a</p>
+              <div class="tn-dos">
+                <label>DNI <input name="dni2" inputmode="numeric" required value="{{ fa.get('dni2', '') }}"></label>
+                <label>Celular <input name="celular2" inputmode="tel" required value="{{ fa.get('celular2', '') }}"></label>
+              </div>
+              <div class="tn-dos">
+                <label>Nombre <input name="nombre2" required value="{{ fa.get('nombre2', '') }}"></label>
+                <label>Apellido <input name="apellido2" required value="{{ fa.get('apellido2', '') }}"></label>
+              </div>
+              <label>Mail <small>(opcional)</small> <input type="email" name="email2" value="{{ fa.get('email2', '') }}"></label>
+            {% endif %}
+            {% if comp.precio %}
+              <label class="tn-check"><input type="checkbox" name="pagado" value="1" {% if fa.get('pagado') or not abierto %}checked{% endif %}>
+                <span>Ya pagó: queda con el pago confirmado</span></label>
+            {% endif %}
+            <div><button class="tn-boton tn-boton-chico" type="submit">Agregar</button></div>
+          </form>
+        </details>
       {% endif %}
     </div>
   {% endfor %}

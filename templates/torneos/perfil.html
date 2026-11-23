@@ -35,7 +35,11 @@
             <label>Color principal <input type="color" name="color" value="{{ org.color or '#E57E3C' }}" style="height:44px; padding:4px;"></label>
           </div>
         {% else %}
-          <p class="tn-suave" style="margin:0;">Plan gratis: tus torneos se muestran con la marca SOPI. ¿Querés tu logo y tus colores, y torneos ilimitados? <a href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Quiero%20el%20plan%20pago%20de%20torneos" target="_blank" rel="noopener">Pasate al plan pago</a>.</p>
+          <div class="tn-caja" style="margin:0; background:var(--bg); opacity:.95;">
+            <h2 style="margin:0 0 6px;">Tu marca <span class="tn-estado tn-est-pendiente" style="font-size:11px; vertical-align:middle;">Plan pago</span></h2>
+            <p class="tn-suave" style="margin:0 0 10px;">Con el plan pago tus torneos llevan <strong>tu logo y tu color</strong>, sin publicidad de SOPI, y podés organizar <strong>todos los torneos que quieras</strong>. Se paga {{ pesos(org.precio_por_inscripto) }} por inscripto.</p>
+            <a class="tn-boton tn-wa tn-boton-chico" href="https://wa.me/5491128321531?text=Hola%20SOPI!%20Soy%20{{ org.nombre|urlencode }}%20y%20quiero%20el%20plan%20pago%20de%20torneos" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Pedir el plan pago</a>
+          </div>
         {% endif %}
         <p class="tn-suave" style="margin:0;">Mail de ingreso: {{ org.email }}</p>
         <button class="tn-boton" type="submit">Guardar</button>

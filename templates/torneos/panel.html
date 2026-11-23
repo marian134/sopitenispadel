@@ -10,15 +10,39 @@
   {% include "torneos/_barra_org.html" %}
   {% with migas = [("Mis torneos", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   {% if bienvenida %}
-    <p class="tn-ok">¡Listo, {{ org.nombre }}! Ya tenés tu cuenta. Creá tu primer torneo o escalera.</p>
+    <p class="tn-ok">¡Listo, {{ org.nombre }}! Ya tenés tu cuenta. Seguí los primeros pasos de abajo.</p>
   {% endif %}
 
   <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
     <h1 class="tn-titulo">Mis torneos</h1>
     {% if puede_crear %}
-      <a class="tn-boton" href="{{ url_for('torneos.competencia_nueva') }}">+ Nuevo torneo o escalera</a>
+      <a class="tn-boton" href="{{ url_for('torneos.competencia_nueva') }}">+ Nuevo torneo</a>
     {% endif %}
   </div>
+
+  {% if not (pasos|selectattr("hecho")|list|length == pasos|length) %}
+    <div class="tn-caja">
+      <h2 style="margin-top:0;">Primeros pasos</h2>
+      <ol class="tn-pasos">
+        {% for paso in pasos %}
+          <li class="{{ 'tn-paso-hecho' if paso.hecho else ('tn-paso-actual' if loop.index0 == (pasos|map(attribute='hecho')|list).index(false) else '') }}">
+            <span class="tn-paso-num">{{ "✓" if paso.hecho else loop.index }}</span>
+            <span><strong>{{ paso.titulo }}</strong><br><small class="tn-suave">{{ paso.texto }}</small>
+              {% if paso.link and not paso.hecho %}<br><a class="tn-boton tn-boton-chico" href="{{ paso.link }}" style="margin-top:6px;">{{ paso.boton }}</a>{% endif %}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+
+  {% set total_revisar = revisar.values()|sum %}
+  {% if total_revisar %}
+    {% set primero = competencias|selectattr("id", "in", revisar|dictsort|selectattr(1)|map(attribute=0)|list)|first %}
+    <div class="tn-alerta-pagos">
+      <strong>Tenés {{ total_revisar }} pago{{ "s" if total_revisar != 1 }} para revisar</strong>
+      <a class="tn-boton tn-boton-chico" href="{{ url_for('torneos.competencia_panel', comp_id=primero.id) }}#pagos">Revisar{% if revisar|dictsort|selectattr(1)|list|length > 1 %} en {{ primero.nombre }}{% endif %}</a>
+    </div>
+  {% endif %}
 
   {% if deuda %}
     <div class="tn-caja">
@@ -40,9 +64,6 @@
     {% endif %}
   {% endif %}
 
-  {% if not org.datos_bancarios %}
-    <p class="tn-caja">Cargá tus <a href="{{ url_for('torneos.perfil') }}">datos para transferir</a>: se los mostramos a los jugadores al inscribirse.</p>
-  {% endif %}
 
   {% if competencias %}
     <div class="tn-grilla">
@@ -52,13 +73,15 @@
           <h3>{{ c.nombre }}</h3>
           <p class="tn-dato">{{ nombres_estado.get(c.estado, c.estado) }}</p>
           <p class="tn-dato">{{ c.categorias|length }} categoría{{ "s" if c.categorias|length != 1 }}</p>
+          {% if revisar.get(c.id) %}<span class="tn-estado tn-est-pendiente">{{ revisar[c.id] }} pago{{ "s" if revisar[c.id] != 1 }} para revisar</span>{% endif %}
         </a>
       {% endfor %}
     </div>
   {% else %}
     <div class="tn-caja tn-vacio">
       <h2>Todavía no creaste ningún torneo</h2>
-      <p class="tn-suave">Elegí si es un torneo con cuadro (fin de semana o varias semanas) o una escalera de desafíos.</p>
+      <p class="tn-suave">Podés armar un <strong>torneo con cuadro</strong> (con o sin zonas, de un fin de semana o de varias semanas), una <strong>escalera de desafíos</strong> o una <strong>liga por fechas</strong>.</p>
+      {% if puede_crear %}<a class="tn-boton" href="{{ url_for('torneos.competencia_nueva') }}">+ Nuevo torneo</a>{% endif %}
     </div>
   {% endif %}
 </section>

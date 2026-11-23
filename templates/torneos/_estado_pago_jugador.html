@@ -1,0 +1,36 @@
+{# Cartel grande del estado de la inscripción para el jugador (cambio 11). Recibe i, comp, j. #}
+{% set org = comp.organizador %}
+{% set wa_org = "https://wa.me/" ~ (org.whatsapp|default('', true)|replace(' ', '')|replace('-', '')) %}
+{% if i.estado_pago == "confirmado" or not comp.precio and i.estado_pago != "rechazado" %}
+  <div class="tn-estado-grande tn-eg-ok">
+    <h3>✓ Estás dado de alta en el torneo</h3>
+    <p class="tn-dato">{% if comp.precio %}{{ org.nombre }} confirmó tu pago.{% else %}La inscripción es gratis.{% endif %} Cuando se armen los partidos te avisamos por mail.</p>
+  </div>
+{% else %}
+  <div class="tn-estado-grande {{ 'tn-eg-mal' if i.estado_pago == 'rechazado' else 'tn-eg-pend' }}">
+    {% if i.estado_pago == "rechazado" %}
+      <h3>✗ No pudieron confirmar tu pago</h3>
+      <p>Revisá la transferencia y volvé a subir el comprobante, o escribile a {{ org.nombre }}.</p>
+    {% elif i.comprobante %}
+      <h3>⏳ Tu pago está en revisión</h3>
+      <p>Ya mandaste el comprobante: {{ org.nombre }} lo revisa y te confirma por mail. Hasta entonces la inscripción no está confirmada.</p>
+    {% else %}
+      <h3>⚠ Tu pago está pendiente</h3>
+      <p>Para quedar dado de alta, transferí y subí el comprobante.</p>
+    {% endif %}
+    {% set total = comp.precio + cargo_jugador(comp) * (2 if i.jugador2_id else 1) %}
+    <p><strong>Monto: {{ pesos(total) }}</strong></p>
+    {% if org.datos_bancarios %}<div class="tn-dato" style="white-space:pre-line; margin:6px 0;">{{ org.datos_bancarios }}</div>{% endif %}
+    {% if i.estado_pago == "rechazado" or not i.comprobante %}
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('torneos.subir_comprobante', enlace=j.enlace) }}" class="tn-form" style="margin-top:10px;">
+        <input type="hidden" name="insc" value="{{ i.id }}">
+        <label>Comprobante <small>(foto o PDF)</small> <input type="file" name="comprobante" accept="image/*,.pdf" required></label>
+        <div><button class="tn-boton tn-boton-chico">Subir comprobante</button></div>
+      </form>
+    {% endif %}
+    {% if org.whatsapp %}
+      <a class="tn-boton tn-wa tn-boton-chico" style="margin-top:10px;" target="_blank" rel="noopener"
+         href="{{ wa_org }}?text={{ ('Hola! Soy ' ~ j.nombre_completo ~ ', te escribo por mi pago de ' ~ comp.nombre ~ '.')|urlencode }}"><i class="fab fa-whatsapp"></i> Escribirle a {{ org.nombre }}</a>
+    {% endif %}
+  </div>
+{% endif %}
