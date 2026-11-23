@@ -53,7 +53,7 @@ def cuadro_armar(comp_id, cat_id):
 @organizador_requerido
 def zonas_armar(comp_id, cat_id):
     comp, cat = _mi_categoria(comp_id, cat_id)
-    if zns.hay_resultados(cat) or cdr.hay_resultados(cat):
+    if zns.hay_resultados(cat) or cdr.hay_resultados(cat) or cdr.hay_resultados(cat, cdr.PLATA):
         return _volver(comp, "Las zonas ya tienen resultados: no se pueden volver a sortear.", f"cuadro-{cat.id}")
     try:
         zns.armar(cat)
@@ -70,7 +70,7 @@ def zonas_armar(comp_id, cat_id):
 def zonas_pasar(comp_id, cat_id):
     """Pasa los clasificados de las zonas al cuadro principal."""
     comp, cat = _mi_categoria(comp_id, cat_id)
-    if cdr.hay_resultados(cat):
+    if cdr.hay_resultados(cat) or cdr.hay_resultados(cat, cdr.PLATA):
         return _volver(comp, "El cuadro ya tiene resultados: no se puede volver a armar.", f"cuadro-{cat.id}")
     try:
         zns.pasar_al_cuadro(cat)
@@ -78,7 +78,7 @@ def zonas_pasar(comp_id, cat_id):
         db.session.rollback()
         return _volver(comp, str(e), f"cuadro-{cat.id}")
     db.session.commit()
-    avisos.partidos_nuevos(cdr.partidos(cat))
+    avisos.partidos_nuevos(cdr.partidos(cat) + cdr.partidos(cat, cdr.PLATA))
     return _volver(comp, ancla=f"cuadro-{cat.id}")
 
 
@@ -154,6 +154,9 @@ def opciones_cuadro(comp_id):
                            for k in ("gana", "pierde", "bonus_set", "gana_wo", "pierde_wo")},
                 "desempate": [c for c in (f.get(f"desempate_{n}") for n in range(1, 6))
                               if c in zns.CRITERIOS],
+                "plata": bool(f.get("zonas_plata")),
+                "nombre_oro": (f.get("nombre_oro") or "").strip()[:40] or "Copa de Oro",
+                "nombre_plata": (f.get("nombre_plata") or "").strip()[:40] or "Copa de Plata",
             }
             plazos = {}
             for clave, _nombre in cdr.ETAPAS:
@@ -199,6 +202,7 @@ def datos_cuadro(comp):
             "consuelo": cdr.estructura(cat, cdr.CONSUELO),
             "tercer": cdr.partidos(cat, cdr.TERCER),
             "campeon": cdr.campeon(cat), "podio": cdr.podio(cat),
+            "plata": cdr.estructura(cat, cdr.PLATA), "campeon_plata": cdr.campeon(cat, cdr.PLATA),
             "campeon_consuelo": cdr.campeon(cat, cdr.CONSUELO),
             "con_resultados": cdr.hay_resultados(cat),
             "consuelo_listo": not pendientes and len(entrantes) >= 2,

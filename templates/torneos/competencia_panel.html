@@ -31,6 +31,7 @@
           <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cancelar">Cancelar</button>
         </form>
       {% endif %}
+      <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.competencia_excel', comp_id=comp.id) }}">Bajar en Excel</a>
       <form method="post" action="{{ url_for('torneos.competencia_copiar', comp_id=comp.id) }}"
             onsubmit="return confirm('¿Crear una nueva edición con los mismos datos y categorías (sin inscriptos)?');">
         <button class="tn-boton tn-boton-sec tn-boton-chico">Copiar para una nueva edición</button>
@@ -237,6 +238,16 @@
                 <span>Ya pagó: queda con el pago confirmado</span></label>
             {% endif %}
             <div><button class="tn-boton tn-boton-chico" type="submit">Agregar</button></div>
+          </form>
+        </details>
+        <details style="margin-top:8px;">
+          <summary class="tn-boton tn-boton-sec tn-boton-chico" style="list-style:none; display:inline-flex;">Cargar desde una planilla (Excel)</summary>
+          <form method="post" enctype="multipart/form-data" action="{{ url_for('torneos.inscripcion_importar', comp_id=comp.id, cat_id=c.cat.id) }}" class="tn-form" style="margin-top:12px;">
+            <p class="tn-suave" style="margin:0;">Una fila por {{ "pareja" if c.cat.modalidad == "dobles" else "jugador" }} con títulos en la primera fila: <strong>Nombre, Apellido, DNI, Celular</strong>{% if c.cat.modalidad == "dobles" %} y los mismos con "2" para el compañero/a{% endif %}. Mail y "Pagó" (sí/no) son opcionales.
+              <a href="{{ url_for('torneos.planilla_modelo', dobles='1' if c.cat.modalidad == 'dobles' else none) }}">Bajar la planilla modelo</a>.</p>
+            <label>Planilla <small>(.xlsx o .csv)</small> <input type="file" name="planilla" accept=".xlsx,.csv" required></label>
+            {% if comp.precio %}<label class="tn-check"><input type="checkbox" name="pagado" value="1"> <span>Marcar a todos como pagados</span></label>{% endif %}
+            <div><button class="tn-boton tn-boton-chico">Cargar jugadores</button></div>
           </form>
         </details>
       {% endif %}

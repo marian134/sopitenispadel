@@ -25,7 +25,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import models  # noqa: F401  (registra las tablas antes de db.create_all)
 from .bp import bp, contexto, _estado
-from . import publico, cuentas, panel, panel_cuadro, panel_liga, desafios  # noqa: F401  (registran sus rutas en bp)
+from . import publico, cuentas, panel, panel_cuadro, panel_liga, panel_planillas, desafios  # noqa: F401  (registran sus rutas en bp)
 
 
 def torneos_visible():
@@ -79,6 +79,11 @@ def init_app(app, contexto_base):
         with app.test_request_context(base_url=os.environ.get("TORNEOS_URL_BASE", "https://sopitenispadel.com.ar")):
             partidos, mails = recordatorios()
         print(f"Recordatorios: {partidos} partidos, {mails} mails enviados.")
+
+    @app.context_processor
+    def _nombres_cuadros():
+        from .cuadro import nombres_cuadros
+        return {"cdr_nombres": nombres_cuadros}
 
     @app.template_filter("nombre_cat")
     def _nombre_cat(cat):

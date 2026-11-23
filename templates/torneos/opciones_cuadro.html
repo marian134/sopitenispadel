@@ -30,6 +30,12 @@
             </select>
           </label>
         </div>
+        <label class="tn-check"><input type="checkbox" name="zonas_plata" value="1" {% if zonas.plata %}checked{% endif %}>
+          <span><strong>Los que no clasifican juegan un segundo cuadro</strong><br><small>Ej. Copa de Oro para los que pasan y Copa de Plata para el resto (3ros y 4tos de cada zona).</small></span></label>
+        <div class="tn-dos">
+          <label>Nombre del cuadro principal <input name="nombre_oro" maxlength="40" value="{{ zonas.nombre_oro }}" placeholder="Copa de Oro"></label>
+          <label>Nombre del segundo cuadro <input name="nombre_plata" maxlength="40" value="{{ zonas.nombre_plata }}" placeholder="Copa de Plata"></label>
+        </div>
         <p style="margin:6px 0 0; font-weight:700;">Puntos en la zona</p>
         <div class="tn-dos">
           <label>Por ganar <input name="zp_gana" inputmode="decimal" value="{{ num(zonas.puntos.gana) }}"></label>

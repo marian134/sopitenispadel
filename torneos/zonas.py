@@ -30,6 +30,9 @@ POR_DEFECTO = {
     "clasifican": 2,
     "puntos": {"gana": 3, "pierde": 0, "bonus_set": 1, "gana_wo": 3, "pierde_wo": 0},
     "desempate": ["puntos", "ganados", "dif_sets", "dif_games", "directo"],
+    "plata": False,                 # los que no clasifican juegan un segundo cuadro
+    "nombre_oro": "Copa de Oro",
+    "nombre_plata": "Copa de Plata",
 }
 CRITERIOS = {
     "puntos": "Puntos",
@@ -110,6 +113,7 @@ def armar(cat, rng=None):
     cdr._borrar(cat, cdr.PRINCIPAL)
     cdr._borrar(cat, cdr.CONSUELO)
     cdr._borrar(cat, cdr.TERCER)
+    cdr._borrar(cat, cdr.PLATA)
     for numero, zona in enumerate(zonas, start=1):
         for insc in zona:
             insc.zona = numero
@@ -254,13 +258,16 @@ def estructura(cat):
 # ---------------------------------------------------------
 # CLASIFICADOS AL CUADRO
 # ---------------------------------------------------------
-def clasificados(cat):
-    """[[1ros...], [2dos...], ...] cada grupo ordenado por mejor campaña."""
+def clasificados(cat, no_clasificados=False):
+    """[[1ros...], [2dos...], ...] cada grupo ordenado por mejor campaña.
+    no_clasificados=True: los puestos que no pasan al cuadro principal
+    ([[3ros...], [4tos...]]), para la Copa de Plata."""
     comp = cat.competencia
     cuantos = int(reglas(comp)["clasifican"])
     zonas = estructura(cat)
     grupos = []
-    for puesto in range(cuantos):
+    puestos = range(cuantos, max((len(z["tabla"]) for z in zonas), default=0)) if no_clasificados else range(cuantos)
+    for puesto in puestos:
         filas = [(z["numero"], z["tabla"][puesto]) for z in zonas if len(z["tabla"]) > puesto]
         filas.sort(key=lambda zf: (-zf[1]["total"], -zf[1]["pg"], -zf[1]["dif_sets"], -zf[1]["dif_games"]))
         grupos.append([(numero, f["insc"]) for numero, f in filas])
@@ -307,4 +314,11 @@ def pasar_al_cuadro(cat, rng=None):
     lugares = lugares_cuadro(grupos, rng)
     cdr._borrar(cat, cdr.CONSUELO)
     cdr._borrar(cat, cdr.TERCER)
-    return cdr.armar(cat, jugadores, lugares=lugares, rng=rng)
+    cdr._borrar(cat, cdr.PLATA)
+    creados = cdr.armar(cat, jugadores, lugares=lugares, rng=rng)
+    if reglas(cat.competencia).get("plata"):
+        resto = clasificados(cat, no_clasificados=True)
+        otros = [insc for g in resto for _n, insc in g]
+        if len(otros) >= 2:
+            creados += cdr.armar(cat, otros, cuadro=cdr.PLATA, lugares=lugares_cuadro(resto, rng), rng=rng)
+    return creados

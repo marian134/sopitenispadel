@@ -19,6 +19,7 @@ from .models import (
 )
 
 PRINCIPAL, CONSUELO, TERCER, ZONA = "principal", "consuelo", "tercer", "zona"
+PLATA = "plata"   # segundo cuadro con los que no clasificaron en las zonas (ej. "Copa de Plata")
 NOMBRES_RONDA = {
     2: "Final", 4: "Semifinal", 8: "Cuartos de final", 16: "Octavos de final",
     32: "16avos de final", 64: "32avos de final", 128: "64avos de final",
@@ -168,9 +169,23 @@ def rondas_de(cat, cuadro=PRINCIPAL):
     return max((int(p.ronda) for p in lista), default=0)
 
 
+def nombres_cuadros(comp):
+    """Nombres para mostrar: {"principal": ..., "plata": ...}."""
+    z = (comp.reglas.get("zonas") or {})
+    plata = bool(z.get("activo") and z.get("plata"))
+    return {
+        PRINCIPAL: (z.get("nombre_oro") or "Copa de Oro") if plata else "Cuadro",
+        PLATA: z.get("nombre_plata") or "Copa de Plata",
+    }
+
+
 def nombre_ronda(cat, cuadro, ronda, partido=None):
     if cuadro == TERCER:
         return "Tercer puesto"
+    if cuadro == PLATA:
+        total = rondas_de(cat, cuadro)
+        jugadores = 2 ** (total - int(ronda) + 1)
+        return f"{nombres_cuadros(cat.competencia)[PLATA]} · {NOMBRES_RONDA.get(jugadores, f'Ronda {ronda}')}"
     if cuadro == ZONA:
         if partido is not None:
             return f"Zona {partido.posicion} · Fecha {partido.semana}"

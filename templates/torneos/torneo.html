@@ -148,7 +148,14 @@
               <h2 style="margin:0;">Cuadro · {{ c.cat.nombre }}</h2>
             </div>
             {% if c.podio %}{% with podio = c.podio %}{% include "torneos/_podio.html" %}{% endwith %}{% endif %}
+            {% set nombres = cdr_nombres(comp) %}
+            {% if c.plata %}<p style="margin:14px 0 0; font-weight:700;">{{ nombres.principal }}</p>{% endif %}
             <div style="margin-top:12px;">{% with rondas = c.principal, tercer = c.tercer %}{% include "torneos/_llave.html" %}{% endwith %}</div>
+            {% if c.plata %}
+              <p style="margin:18px 0 6px; font-weight:700;">{{ nombres.plata }}
+                {% if c.campeon_plata %}<span class="tn-campeon" style="margin-left:8px;">🏆 {{ c.campeon_plata.jugador1.nombre_completo }}{% if c.campeon_plata.jugador2 %} / {{ c.campeon_plata.jugador2.nombre_completo }}{% endif %}</span>{% endif %}</p>
+              {% with rondas = c.plata, tercer = none %}{% include "torneos/_llave.html" %}{% endwith %}
+            {% endif %}
             {% if c.consuelo %}
               <p style="margin:16px 0 6px; font-weight:700;">Consuelo</p>
               {% with rondas = c.consuelo %}{% include "torneos/_llave.html" %}{% endwith %}

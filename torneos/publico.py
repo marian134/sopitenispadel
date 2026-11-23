@@ -83,6 +83,8 @@ def torneo(slug):
          "tercer": cdr.partidos(c, cdr.TERCER) if comp.tipo == "cuadro" else [],
          "campeon": cdr.campeon(c) if comp.tipo == "cuadro" else None,
          "podio": cdr.podio(c) if comp.tipo == "cuadro" else None,
+         "plata": cdr.estructura(c, cdr.PLATA) if comp.tipo == "cuadro" else [],
+         "campeon_plata": cdr.campeon(c, cdr.PLATA) if comp.tipo == "cuadro" else None,
          "zonas": zns.estructura(c) if zns.activas(comp) else []}
         for c in sorted(comp.categorias, key=lambda c: c.orden)
     ]

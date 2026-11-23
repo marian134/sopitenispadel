@@ -59,7 +59,14 @@
       {% endif %}
 
       {% if c.principal %}
+        {% set nombres = cdr_nombres(comp) %}
+        {% if c.plata %}<p style="margin:14px 0 0; font-weight:700;">{{ nombres.principal }}</p>{% endif %}
         <div style="margin-top:12px;">{% with rondas = c.principal, tercer = c.tercer %}{% include "torneos/_llave.html" %}{% endwith %}</div>
+      {% endif %}
+      {% if c.plata %}
+        <p style="margin:16px 0 6px; font-weight:700;">{{ nombres.plata }}
+          {% if c.campeon_plata %}<span class="tn-campeon" style="margin-left:8px;">🏆 {{ c.campeon_plata.jugador1.nombre_completo }}</span>{% endif %}</p>
+        {% with rondas = c.plata, tercer = none %}{% include "torneos/_llave.html" %}{% endwith %}
       {% endif %}
 
       {% if comp.reglas.get('consuelo') and c.principal %}
