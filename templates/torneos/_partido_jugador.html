@@ -7,6 +7,7 @@
   {% else %}
   <strong>{{ f.ronda }}: vs {{ f.rival.jugador1.nombre_completo }}</strong>
   {% if p.fecha_hora %}<p class="tn-dato" style="margin:2px 0;">{{ ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m a las %H:%M") }}{% if p.cancha %} · cancha {{ p.cancha }}{% endif %}</p>
+  {% elif f.plazo and f.plazo.hasta %}<p class="tn-dato" style="margin:2px 0;">Coordiná con tu rival y juguen antes del <strong>{{ f.plazo.hasta.strftime("%d/%m") }}</strong>.</p>
   {% else %}<p class="tn-dato" style="margin:2px 0;">El organizador todavía no fijó el horario.</p>{% endif %}
   {% endif %}
 

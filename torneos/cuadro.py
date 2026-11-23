@@ -18,12 +18,57 @@ from .models import (
     EST_FINALIZADA, PAR_AGENDADO, PAR_BYE, PAR_JUGADO, PAR_PENDIENTE, PAR_WO,
 )
 
-PRINCIPAL, CONSUELO, TERCER = "principal", "consuelo", "tercer"
+PRINCIPAL, CONSUELO, TERCER, ZONA = "principal", "consuelo", "tercer", "zona"
 NOMBRES_RONDA = {
     2: "Final", 4: "Semifinal", 8: "Cuartos de final", 16: "Octavos de final",
     32: "16avos de final", 64: "32avos de final", 128: "64avos de final",
 }
 TERMINADOS = (PAR_JUGADO, PAR_WO, PAR_BYE)
+
+# Etapas con plazo (desde / hasta) que puede cargar el organizador.
+# La clave de las rondas es la cantidad de jugadores que la juegan.
+ETAPAS = [
+    ("zonas", "Fase de zonas"), ("64", "32avos de final"), ("32", "16avos de final"),
+    ("16", "Octavos de final"), ("8", "Cuartos de final"), ("4", "Semifinales"), ("2", "Final"),
+]
+
+
+def etapa_de(p):
+    """Clave de etapa de un partido para buscar su plazo."""
+    if p.cuadro == ZONA:
+        return "zonas"
+    if p.cuadro != PRINCIPAL:
+        return None
+    total = max((int(x.ronda) for x in Partido.query.filter_by(categoria_id=p.categoria_id, cuadro=PRINCIPAL)),
+                default=0)
+    return str(2 ** (total - int(p.ronda) + 1)) if total else None
+
+
+def plazo_de(comp, p):
+    """{"desde", "hasta"} (date) del partido, o None."""
+    from datetime import date
+    clave = etapa_de(p)
+    datos = (comp.reglas.get("plazos") or {}).get(clave) if clave else None
+    if not datos:
+        return None
+    convertir = lambda v: date.fromisoformat(v) if v else None   # noqa: E731
+    return {"desde": convertir(datos.get("desde")), "hasta": convertir(datos.get("hasta")),
+            "nombre": dict(ETAPAS).get(clave)}
+
+
+def plazos_vencidos(comp, hoy=None):
+    """[(nombre de etapa, hasta, cantidad de partidos sin resultado)]."""
+    from datetime import date
+    hoy = hoy or date.today()
+    pendientes = {}
+    for p in Partido.query.filter_by(competencia_id=comp.id).all():
+        if p.estado not in (PAR_AGENDADO,):
+            continue
+        plazo = plazo_de(comp, p)
+        if plazo and plazo["hasta"] and plazo["hasta"] < hoy:
+            clave = (plazo["nombre"], plazo["hasta"])
+            pendientes[clave] = pendientes.get(clave, 0) + 1
+    return [(n, h, c) for (n, h), c in sorted(pendientes.items(), key=lambda x: x[0][1])]
 
 
 def tamano(n):
@@ -72,20 +117,25 @@ def _borrar(cat, cuadro):
     db.session.flush()
 
 
-def armar(cat, jugadores, cuadro=PRINCIPAL, usar_siembra=True, rng=None):
-    """Arma el cuadro con esos jugadores (inscripciones). Devuelve los partidos."""
+def armar(cat, jugadores, cuadro=PRINCIPAL, usar_siembra=True, rng=None, lugares=None):
+    """Arma el cuadro con esos jugadores (inscripciones). Devuelve los partidos.
+    lugares: {número de lugar: inscripción} ya decidido (ej. clasificados de
+    las zonas); si no viene, se ubican cabezas de serie y se sortea el resto."""
     rng = rng or random.Random()
     n = len(jugadores)
     if n < 2:
         raise ValueError("Hacen falta al menos 2 jugadores para armar el cuadro.")
     _borrar(cat, cuadro)
     t = tamano(n)
-    cabezas = []
-    if usar_siembra:
-        cabezas = sorted([i for i in jugadores if i.siembra], key=lambda i: i.siembra)[:max_cabezas(t)]
-    resto = [i for i in jugadores if i not in cabezas]
-    rng.shuffle(resto)
-    lugar = {k + 1: insc for k, insc in enumerate(cabezas + resto)}   # n+1..t quedan vacíos (byes)
+    if lugares:
+        lugar = dict(lugares)
+    else:
+        cabezas = []
+        if usar_siembra:
+            cabezas = sorted([i for i in jugadores if i.siembra], key=lambda i: i.siembra)[:max_cabezas(t)]
+        resto = [i for i in jugadores if i not in cabezas]
+        rng.shuffle(resto)
+        lugar = {k + 1: insc for k, insc in enumerate(cabezas + resto)}   # n+1..t quedan vacíos (byes)
     lineas = [lugar.get(numero) for numero in orden_lineas(t)]
 
     rondas = int(math.log2(t))
@@ -118,9 +168,13 @@ def rondas_de(cat, cuadro=PRINCIPAL):
     return max((int(p.ronda) for p in lista), default=0)
 
 
-def nombre_ronda(cat, cuadro, ronda):
+def nombre_ronda(cat, cuadro, ronda, partido=None):
     if cuadro == TERCER:
         return "Tercer puesto"
+    if cuadro == ZONA:
+        if partido is not None:
+            return f"Zona {partido.posicion} · Fecha {partido.semana}"
+        return "Fase de zonas"
     total = rondas_de(cat, cuadro)
     jugadores = 2 ** (total - int(ronda) + 1)
     return NOMBRES_RONDA.get(jugadores, f"Ronda {ronda}")
@@ -140,6 +194,8 @@ def perdedor_id(p):
 
 def avanzar(p):
     """Pasa el ganador de p al partido siguiente (y arma el tercer puesto)."""
+    if p.cuadro == ZONA:          # en las zonas no se avanza: cuenta para la tabla
+        return
     if p.cuadro == TERCER:
         _revisar_final_torneo(p)
         return

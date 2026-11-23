@@ -1,0 +1,44 @@
+{# Zonas de una categoría: tabla y partidos por fecha.
+   Recibe: zonas (zonas.estructura), comp; admin=true muestra "Definir este partido". #}
+{% macro num(x) %}{{ x|int if x == x|int else x }}{% endmacro %}
+<div class="tn-grilla" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+  {% for z in zonas %}
+    <div class="tn-caja" style="margin:0; background:var(--bg);" id="zona-{{ z.numero }}">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <h3 style="margin:0;">Zona {{ z.numero }}</h3>
+        {% if z.completa %}<span class="tn-estado tn-est-confirmado">Terminada</span>
+        {% else %}<span class="tn-estado tn-est-pendiente">{{ z.pendientes }} por jugar</span>{% endif %}
+      </div>
+      <div class="tn-scroll">
+        <table class="tn-tabla" style="margin-top:8px;">
+          <thead><tr><th>#</th><th>Jugador</th><th>PJ</th><th>PG</th><th>PP</th><th title="Bonus por set ganado">B</th><th>Pts</th></tr></thead>
+          <tbody>
+            {% for f in z.tabla %}
+              {% set clasifica = f.posicion <= clasifican and f.pj > 0 %}
+              <tr{% if clasifica %} style="font-weight:700;"{% endif %}>
+                <td>{{ f.posicion }}{% if clasifica %} <span style="color:var(--verde);" title="{{ 'Clasifica' if z.completa else 'Por ahora clasifica' }}">{{ "●" if z.completa else "○" }}</span>{% endif %}</td>
+                <td>{{ f.insc.jugador1.nombre_completo }}{% if f.insc.jugador2 %} / {{ f.insc.jugador2.apellido }}{% endif %}</td>
+                <td>{{ f.pj }}</td><td>{{ f.pg }}</td><td>{{ f.pp }}</td><td>{{ num(f.bonus) }}</td>
+                <td><strong>{{ num(f.total) }}</strong></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% for fecha, lista in z.fechas %}
+        <p style="margin:10px 0 2px; font-size:12px; font-weight:700; color:var(--amarillo);">Fecha {{ fecha }}</p>
+        {% for p in lista %}
+          {% set res = (p.resultados|selectattr("confirmado")|rejectattr("ausente_id")|list)|last if p.resultados else none %}
+          <div style="padding:4px 0; font-size:14px;">
+            <span{% if p.ganador_id == p.lado_a_id %} style="font-weight:800;"{% endif %}>{{ p.lado_a.jugador1.nombre_completo }}</span>
+            <span class="tn-suave">vs</span>
+            <span{% if p.ganador_id == p.lado_b_id %} style="font-weight:800;"{% endif %}>{{ p.lado_b.jugador1.nombre_completo }}</span>
+            <span class="tn-suave">·
+              {% if p.estado == "wo" %}W.O.{% elif p.estado == "anulado" %}no jugado{% elif res %}{{ res.sets }}{% else %}por jugar{% endif %}</span>
+            {% if admin and p.estado in ("agendado", "en_disputa") %}{% include "torneos/_resolver_partido.html" %}{% endif %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>

@@ -14,11 +14,20 @@
     <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
       <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_a">W.O. a favor de {{ p.lado_b.jugador1.nombre }}</button>
     </form>
-    {% if comp.tipo == "escalera" %}
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" onsubmit="return confirm('¿Anular el partido? No suma puntos a nadie.');">
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="anular">Anular</button>
+    {% if comp.tipo != "cuadro" or p.cuadro == "zona" %}
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" onsubmit="return confirm('¿Marcar como no jugado? No suma puntos a nadie.');">
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="anular">{{ "No jugado" if p.cuadro == "zona" else "Anular" }}</button>
     </form>
     {% endif %}
   </div>
-  <small class="tn-suave">El resultado va con los games de {{ p.lado_a.jugador1.nombre }} primero.</small>
+  {% if comp.tipo == "cuadro" %}
+    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-acciones" style="align-items:center; margin-top:8px;">
+      <span class="tn-suave" style="font-size:13px;">Abandono: score hasta el retiro</span>
+      <input name="parcial" placeholder="6-1 2-0" aria-label="Score parcial hasta el abandono"
+             style="width:110px; padding:6px 10px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_a">Se retiró {{ p.lado_a.jugador1.nombre }}</button>
+      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_b">Se retiró {{ p.lado_b.jugador1.nombre }}</button>
+    </form>
+  {% endif %}
+  <small class="tn-suave">El resultado va con los games de {{ p.lado_a.jugador1.nombre }} primero. El súper tie-break se puede escribir 10-7 o 10/7.</small>
 </details>

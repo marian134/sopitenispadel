@@ -179,14 +179,18 @@ def desafiables(insc, grupos, semana):
 # ---------------------------------------------------------
 # RESULTADOS
 # ---------------------------------------------------------
-def _partir_sets(texto):
+def _partir_sets(texto, parcial=False):
+    """'6-4 3-6 10/8' -> [(6, 4), (3, 6), (10, 8)]. "ret." (abandono) se ignora.
+    Con parcial=True acepta un set sin terminar empatado (ej. 2-2)."""
     sets = []
-    for parte in (texto or "").replace(",", " ").split():
+    for parte in (texto or "").replace(",", " ").replace("/", "-").split():   # "10/5" = súper tie-break
+        if parte.lower().rstrip(".") == "ret":
+            continue
         try:
             a, b = (int(x) for x in parte.split("-"))
         except ValueError:
             raise ValueError("Escribí cada set como 6-4, separados por espacios.")
-        if a == b or a < 0 or b < 0:
+        if a < 0 or b < 0 or (a == b and not parcial):
             raise ValueError("Ningún set puede terminar empatado.")
         sets.append((a, b))
     return sets
@@ -216,7 +220,8 @@ def sets_texto(sets):
 
 def invertir(texto):
     """Resultado visto desde el otro lado: '6-4 3-6' -> '4-6 6-3'."""
-    return sets_texto([(b, a) for a, b in _partir_sets(texto)])
+    invertido = sets_texto([(b, a) for a, b in _partir_sets(texto, parcial=True)])
+    return invertido + (" ret." if "ret" in (texto or "") else "")
 
 
 def _mov(comp, insc, partido, puntos, motivo, semana=None):

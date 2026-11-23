@@ -327,7 +327,24 @@ def partido_resolver(partido_id):
         esc.aplicar_resultado(p, sets)
     elif accion in ("wo_a", "wo_b"):
         esc.aplicar_wo(p, p.lado_a_id if accion == "wo_a" else p.lado_b_id)
-    elif accion == "anular" and comp.tipo != TIPO_CUADRO:   # en un cuadro no se anula: rompería la llave
+    elif accion in ("abandono_a", "abandono_b") and comp.tipo == TIPO_CUADRO:
+        # Se retiró un jugador a mitad de partido: gana el otro y queda el score parcial
+        parcial = " ".join((request.form.get("parcial") or "").replace(",", " ").split())[:40]
+        try:
+            esc._partir_sets(parcial, parcial=True)
+        except ValueError:
+            return redirect(url_for("torneos.competencia_panel", comp_id=comp.id,
+                                    error="Escribí el score parcial como 6-1 2-0") + "#partidos")
+        se_retira = p.lado_a_id if accion == "abandono_a" else p.lado_b_id
+        db.session.add(Resultado(partido_id=p.id, cargado_por="organizador", cargado_por_id=comp.organizador_id,
+                                 sets=(parcial + " ret.").strip(), confirmado=True))
+        p.estado = PAR_JUGADO
+        p.ganador_id = p.lado_b_id if se_retira == p.lado_a_id else p.lado_a_id
+        db.session.flush()
+        from . import cuadro as cdr
+        cdr.avanzar(p)
+    elif accion == "anular" and (comp.tipo != TIPO_CUADRO or p.cuadro == "zona"):
+        # "No jugado": no suma para nadie (en la llave no se puede: rompería el cuadro)
         p.estado = PAR_ANULADO
     db.session.commit()
     return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + "#partidos")

@@ -17,7 +17,7 @@
                 </span>
                 {% if res and lado %}
                   <span class="tn-llave-sets">
-                    {% for s in res.sets.split() %}{% set g = s.split('-') %}{{ g[0] if lado.id == p.lado_a_id else g[1] }} {% endfor %}
+                    {% for s in res.sets.replace('/', '-').split() %}{% if '-' in s %}{% set g = s.split('-') %}{{ g[0] if lado.id == p.lado_a_id else g[1] }} {% elif lado.id != p.ganador_id %}{{ s }}{% endif %}{% endfor %}
                   </span>
                 {% elif p.estado == 'wo' and gano %}<span class="tn-llave-sets">W.O.</span>{% endif %}
               </div>

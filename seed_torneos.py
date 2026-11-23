@@ -207,6 +207,44 @@ def cargar():
     db.session.commit()
     jl = liga.participantes(lg)[0].jugador1
 
+    # --- Torneo con zonas y cuadro: 15 jugadores en zonas de 3, pasan 1ro y 2do
+    from torneos import zonas as zns
+    zc = Competencia(organizador_id=org.id, tipo="cuadro", nombre="Copa de Primavera", slug="copa-de-primavera",
+                     estado="en_curso", precio=25000, localidad="Quilmes", sede="Club Demo Tenis",
+                     fecha_inicio=hoy - timedelta(days=10), fecha_fin=hoy + timedelta(days=25),
+                     descripcion="Fase de zonas de 3 jugadores; pasan 1ro y 2do de cada zona al cuadro.")
+    reglas = por_defecto("cuadro")
+    reglas.update(tercer_puesto=True, zonas={**zns.POR_DEFECTO, "activo": True},
+                  plazos={"zonas": {"desde": (hoy - timedelta(days=10)).isoformat(),
+                                    "hasta": (hoy + timedelta(days=4)).isoformat()},
+                          "16": {"desde": (hoy + timedelta(days=5)).isoformat(),
+                                 "hasta": (hoy + timedelta(days=12)).isoformat()},
+                          "8": {"desde": (hoy + timedelta(days=13)).isoformat(),
+                                "hasta": (hoy + timedelta(days=18)).isoformat()},
+                          "4": {"desde": (hoy + timedelta(days=19)).isoformat(),
+                                "hasta": (hoy + timedelta(days=22)).isoformat()},
+                          "2": {"desde": (hoy + timedelta(days=23)).isoformat(),
+                                "hasta": (hoy + timedelta(days=25)).isoformat()}})
+    zc.reglas = reglas
+    db.session.add(zc)
+    db.session.flush()
+    cat4 = Categoria(competencia_id=zc.id, nombre="Caballeros A", modalidad="singles")
+    db.session.add(cat4)
+    db.session.flush()
+    for k, j in enumerate(jugadores(15, desde=8)):
+        db.session.add(Inscripcion(categoria_id=cat4.id, jugador1_id=j.id, estado_pago="confirmado",
+                                   siembra=k + 1 if k < 5 else None, creado_en=hace_mucho))
+    db.session.flush()
+    zns.armar(cat4, rng=random.Random(11))
+    rng = random.Random(4)
+    for p in [p for p in zns.partidos(cat4)][:9]:
+        sets = rng.choice(["6-3 6-4", "7-5 2-6 10/5", "6-2 6-1", "4-6 6-3 10-8"])
+        db.session.add(Resultado(partido_id=p.id, cargado_por="organizador", cargado_por_id=org.id,
+                                 sets=sets, confirmado=True))
+        db.session.flush()
+        esc.aplicar_resultado(p, sets)
+    db.session.commit()
+
     print("Listo. Torneos de ejemplo cargados.")
     print("Panel del jugador (liga):", f"/torneos/jugador/{jl.enlace}  ({jl.nombre_completo})")
     print("Panel del jugador (escalera):", f"/torneos/jugador/{ins[3].jugador1.enlace}  ({ins[3].jugador1.nombre_completo})")

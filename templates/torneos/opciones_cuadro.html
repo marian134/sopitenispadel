@@ -5,23 +5,79 @@
 
 {% block content %}
 {% include "torneos/_estilos.html" %}
+{% macro num(x) %}{{ x|int if x == x|int else x }}{% endmacro %}
 <section class="tn-wrap tn-seccion">
   {% include "torneos/_barra_org.html" %}
   {% with migas = [("Mis torneos", url_for("torneos.panel")), (comp.nombre, url_for("torneos.competencia_panel", comp_id=comp.id)), ("Opciones del cuadro", none)] %}{% include "torneos/_migas.html" %}{% endwith %}
   <div class="tn-angosto">
     <h1 class="tn-titulo">Opciones del cuadro</h1>
     {% if guardado %}<p class="tn-ok">Guardado.</p>{% endif %}
-    <form method="post" class="tn-form tn-caja">
-      <label>Formato de los partidos <small>(se muestra a los jugadores)</small>
-        <input name="formato_partido" value="{{ reglas.get('formato_partido', '') }}" placeholder="Mejor de 3 sets con súper tie-break">
-      </label>
-      <label class="tn-check"><input type="checkbox" name="consuelo" value="1" {% if reglas.get('consuelo') %}checked{% endif %}>
-        <span><strong>Cuadro consuelo</strong><br><small>Para los que pierden su primer partido. Se arma cuando todos jugaron el suyo.</small></span></label>
-      <label class="tn-check"><input type="checkbox" name="tercer_puesto" value="1" {% if reglas.get('tercer_puesto') %}checked{% endif %}>
-        <span><strong>Partido por el tercer puesto</strong><br><small>Entre los que pierden las semifinales.</small></span></label>
-      <label class="tn-check"><input type="checkbox" name="selfie_obligatoria" value="1" {% if reglas.get('selfie_obligatoria') %}checked{% endif %}>
-        <span><strong>Selfie obligatoria</strong> cuando un jugador carga su resultado</span></label>
-      <p class="tn-suave" style="margin:0;">Los resultados aceptan 2 o 3 sets, o un solo set (pro set).</p>
+    {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+    <form method="post" class="tn-form">
+      <div class="tn-caja tn-form">
+        <h2 style="margin:0;">Fase de zonas</h2>
+        <label class="tn-check"><input type="checkbox" name="zonas_activo" value="1" {% if zonas.activo %}checked{% endif %}>
+          <span><strong>Empezar con zonas</strong><br><small>Grupos todos contra todos; los mejores de cada zona pasan al cuadro. Si los jugadores no alcanzan, algunas zonas quedan con uno menos.</small></span></label>
+        <div class="tn-dos">
+          <label>Jugadores por zona
+            <select name="zonas_tamano">
+              {% for n in [3, 4, 5, 6] %}<option value="{{ n }}" {% if zonas.tamano|int == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Pasan al cuadro por zona
+            <select name="zonas_clasifican">
+              {% for n in [1, 2, 3, 4] %}<option value="{{ n }}" {% if zonas.clasifican|int == n %}selected{% endif %}>{{ n }} ({{ ["el 1ro", "1ro y 2do", "1ro, 2do y 3ro", "los 4 primeros"][n - 1] }})</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+        <p style="margin:6px 0 0; font-weight:700;">Puntos en la zona</p>
+        <div class="tn-dos">
+          <label>Por ganar <input name="zp_gana" inputmode="decimal" value="{{ num(zonas.puntos.gana) }}"></label>
+          <label>Por perder <input name="zp_pierde" inputmode="decimal" value="{{ num(zonas.puntos.pierde) }}"></label>
+          <label>Bonus por cada set que gana el que pierde <input name="zp_bonus_set" inputmode="decimal" value="{{ num(zonas.puntos.bonus_set) }}"></label>
+          <label>Por ganar por W.O. <input name="zp_gana_wo" inputmode="decimal" value="{{ num(zonas.puntos.gana_wo) }}"></label>
+          <label>Por perder por W.O. <input name="zp_pierde_wo" inputmode="decimal" value="{{ num(zonas.puntos.pierde_wo) }}"></label>
+        </div>
+        <p style="margin:6px 0 0; font-weight:700;">Si quedan empatados, se define por</p>
+        <div class="tn-dos">
+          {% for n in range(1, 6) %}
+            {% set actual = zonas.desempate[n - 1] if zonas.desempate|length >= n else "" %}
+            <label>{{ n }}° criterio
+              <select name="desempate_{{ n }}">
+                <option value="">—</option>
+                {% for clave, nombre in criterios.items() %}<option value="{{ clave }}" {% if actual == clave %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+              </select>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2 style="margin:0;">Plazos por etapa</h2>
+        <p class="tn-suave" style="margin:0;">Opcional. Si no fijás horarios, los jugadores arreglan el partido dentro de cada plazo. Completá solo las etapas que tenga tu torneo.</p>
+        {% for clave, nombre in etapas %}
+          {% set pl = plazos.get(clave, {}) %}
+          <div class="tn-dos" style="grid-template-columns: 1.2fr 1fr 1fr; align-items:end;">
+            <span style="font-weight:600; padding-bottom:12px;">{{ nombre }}</span>
+            <label>Desde <input type="date" name="plazo_desde_{{ clave }}" value="{{ pl.get('desde', '') }}"></label>
+            <label>Hasta <input type="date" name="plazo_hasta_{{ clave }}" value="{{ pl.get('hasta', '') }}"></label>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="tn-caja tn-form">
+        <h2 style="margin:0;">Cuadro</h2>
+        <label>Formato de los partidos <small>(se muestra a los jugadores)</small>
+          <input name="formato_partido" value="{{ reglas.get('formato_partido', '') }}" placeholder="Mejor de 3 sets con súper tie-break">
+        </label>
+        <label class="tn-check"><input type="checkbox" name="consuelo" value="1" {% if reglas.get('consuelo') %}checked{% endif %}>
+          <span><strong>Cuadro consuelo</strong><br><small>Para los que pierden su primer partido. Se arma cuando todos jugaron el suyo.</small></span></label>
+        <label class="tn-check"><input type="checkbox" name="tercer_puesto" value="1" {% if reglas.get('tercer_puesto') %}checked{% endif %}>
+          <span><strong>Partido por el tercer puesto</strong><br><small>Entre los que pierden las semifinales.</small></span></label>
+        <label class="tn-check"><input type="checkbox" name="selfie_obligatoria" value="1" {% if reglas.get('selfie_obligatoria') %}checked{% endif %}>
+          <span><strong>Selfie obligatoria</strong> cuando un jugador carga su resultado</span></label>
+        <p class="tn-suave" style="margin:0;">Los resultados aceptan 2 o 3 sets (el súper tie-break como 10-7 o 10/7), un solo set (pro set), W.O. y abandono.</p>
+      </div>
       <button class="tn-boton" type="submit">Guardar</button>
     </form>
   </div>

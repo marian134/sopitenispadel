@@ -99,6 +99,37 @@
     </div>
   {% endif %}
 
+  {% if plazos %}
+    <div class="tn-caja">
+      <h2 style="margin-top:0;">Calendario</h2>
+      <div class="tn-scroll">
+        <table class="tn-tabla">
+          <thead><tr><th>Etapa</th><th>Desde</th><th>Hasta</th></tr></thead>
+          <tbody>
+            {% for nombre, pl in plazos %}
+              <tr><td>{{ nombre }}</td>
+                  <td>{% if pl.desde %}{{ pl.desde[8:] }}/{{ pl.desde[5:7] }}{% endif %}</td>
+                  <td>{% if pl.hasta %}{{ pl.hasta[8:] }}/{{ pl.hasta[5:7] }}{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="tn-suave" style="margin-bottom:0; font-size:13px;">Cada partido se juega dentro del plazo de su etapa: coordinalo con tu rival.</p>
+    </div>
+  {% endif %}
+
+  {% if reglas_zonas and categorias|selectattr("zonas")|list %}
+    {% for c in categorias %}
+      {% if c.zonas %}
+        <div class="tn-caja" id="zonas-{{ c.cat.id }}">
+          <h2 style="margin-top:0;">Zonas · {{ c.cat.nombre }}</h2>
+          <p class="tn-suave" style="margin-top:0;">Todos contra todos. Ganar suma {{ reglas_zonas.puntos.gana|int }}{% if reglas_zonas.puntos.bonus_set %}; el que pierde suma {{ reglas_zonas.puntos.bonus_set|int }} por cada set que gane{% endif %}. Pasan al cuadro {{ ["el 1ro", "1ro y 2do", "los 3 primeros", "los 4 primeros"][reglas_zonas.clasifican|int - 1] }} de cada zona (●).</p>
+          {% with zonas = c.zonas, admin = false, clasifican = reglas_zonas.clasifican|int %}{% include "torneos/_zonas.html" %}{% endwith %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
   {% if comp.tipo == "cuadro" and categorias|selectattr("principal")|list %}
     <div id="cuadros">
       {% for c in categorias %}

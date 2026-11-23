@@ -10,6 +10,17 @@
     {% if comp.reglas.get('consuelo') %}Con consuelo.{% endif %} {% if comp.reglas.get('tercer_puesto') %}Con tercer puesto.{% endif %}
   </p>
   {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
+  {% if cuadro.zonas_activas %}
+    <p class="tn-ok" style="margin-top:0;">Empieza con zonas de {{ cuadro.reglas_zonas.tamano }} · pasan {{ cuadro.reglas_zonas.clasifican }} por zona al cuadro.
+      Puntos: {{ cuadro.reglas_zonas.puntos.gana|int }} por ganar{% if cuadro.reglas_zonas.puntos.bonus_set %}, +{{ cuadro.reglas_zonas.puntos.bonus_set|int }} por set ganado al que pierde{% endif %}.</p>
+  {% endif %}
+  {% for nombre, hasta, cant in cuadro.vencidos %}
+    <p class="tn-error">Venció el plazo de {{ nombre }} ({{ hasta.strftime("%d/%m") }}) y quedan {{ cant }} partido{{ "s" if cant != 1 }} sin resultado.</p>
+  {% endfor %}
+  {% if cuadro.plazos %}
+    <p class="tn-dato" style="margin:0 0 6px;">Plazos:
+      {% for nombre, pl in cuadro.plazos %}{{ nombre }} {% if pl.desde %}del {{ pl.desde[8:] }}/{{ pl.desde[5:7] }} {% endif %}{% if pl.hasta %}al {{ pl.hasta[8:] }}/{{ pl.hasta[5:7] }}{% endif %}{{ " · " if not loop.last }}{% endfor %}</p>
+  {% endif %}
 
   {% for c in cuadro.categorias %}
     <div id="cuadro-{{ c.cat.id }}" style="border-top:1px solid var(--line); padding-top:14px; margin-top:14px;">
@@ -21,7 +32,24 @@
         {{ c.participantes }} jugador{{ "es" if c.participantes != 1 }} confirmado{{ "s" if c.participantes != 1 }}
         {% if c.tamano %} · cuadro de {{ c.tamano }}{% if c.byes %} con {{ c.byes }} pase{{ "s" if c.byes != 1 }} libre{{ "s" if c.byes != 1 }}{% endif %}{% if c.max_cabezas %} · hasta {{ c.max_cabezas }} cabezas de serie{% endif %}{% endif %}
       </p>
-      {% if not c.con_resultados %}
+      {% if cuadro.zonas_activas %}
+        {% if not c.zonas_con_resultados and not c.con_resultados %}
+          <form method="post" action="{{ url_for('torneos.zonas_armar', comp_id=comp.id, cat_id=c.cat.id) }}"
+                {% if c.zonas_armadas %}onsubmit="return confirm('¿Volver a sortear las zonas? Se pierden las actuales.');"{% endif %}>
+            <button class="tn-boton tn-boton-chico" {% if c.participantes < 2 %}disabled{% endif %}>{{ "Volver a sortear las zonas" if c.zonas_armadas else "Armar zonas" }}</button>
+          </form>
+        {% endif %}
+        {% if c.zonas %}
+          <div style="margin-top:12px;">{% with zonas = c.zonas, admin = true, clasifican = cuadro.reglas_zonas.clasifican %}{% include "torneos/_zonas.html" %}{% endwith %}</div>
+          {% if not c.con_resultados %}
+            <form method="post" action="{{ url_for('torneos.zonas_pasar', comp_id=comp.id, cat_id=c.cat.id) }}" style="margin-top:12px;"
+                  onsubmit="return confirm('{{ 'Quedan ' ~ c.zonas_pendientes ~ ' partidos de zona sin jugar. ' if c.zonas_pendientes }}¿Armar el cuadro con los clasificados?');">
+              <button class="tn-boton tn-boton-chico">{{ "Volver a armar el cuadro con los clasificados" if c.principal else "Pasar los clasificados al cuadro" }}</button>
+              {% if c.zonas_pendientes %}<span class="tn-suave" style="font-size:13px;"> · quedan {{ c.zonas_pendientes }} partidos de zona</span>{% endif %}
+            </form>
+          {% endif %}
+        {% endif %}
+      {% elif not c.con_resultados %}
         <form method="post" action="{{ url_for('torneos.cuadro_armar', comp_id=comp.id, cat_id=c.cat.id) }}"
               {% if c.principal %}onsubmit="return confirm('¿Volver a sortear el cuadro? Se pierde el actual.');"{% endif %}>
           <button class="tn-boton tn-boton-chico" {% if c.participantes < 2 %}disabled{% endif %}>{{ "Volver a sortear" if c.principal else "Armar cuadro" }}</button>

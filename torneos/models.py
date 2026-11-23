@@ -173,6 +173,7 @@ class Inscripcion(db.Model):
     division = db.Column(db.String(40))          # escalera: división actual (Oro, Plata...)
     rechazos_seguidos = db.Column(db.Integer, nullable=False, default=0)  # escalera
     siembra = db.Column(db.Integer)              # cuadro: número de cabeza de serie
+    zona = db.Column(db.Integer)                 # cuadro con zonas: número de zona
     restricciones = db.Column(db.Text, default="")   # cuándo no puede jugar
     baja = db.Column(db.Boolean, nullable=False, default=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -284,4 +285,5 @@ COLUMNAS_NUEVAS = [
     ("torneo_ranking_semana", "inscripcion_id", "INTEGER"),
     ("torneo_inscripcion", "siembra", "INTEGER"),
     ("torneo_partido", "cuadro", "VARCHAR(12)"),
+    ("torneo_inscripcion", "zona", "INTEGER"),
 ]

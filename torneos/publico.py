@@ -5,6 +5,7 @@ from flask import abort, redirect, render_template, request, session, url_for
 
 from models import db
 from . import cuadro as cdr
+from . import zonas as zns
 from . import escalera as esc
 from .bp import bp, contexto, WHATSAPP_SOPI
 from .models import (
@@ -79,7 +80,8 @@ def torneo(slug):
          "principal": cdr.estructura(c) if comp.tipo == "cuadro" else [],
          "consuelo": cdr.estructura(c, cdr.CONSUELO) if comp.tipo == "cuadro" else [],
          "tercer": cdr.partidos(c, cdr.TERCER) if comp.tipo == "cuadro" else [],
-         "campeon": cdr.campeon(c) if comp.tipo == "cuadro" else None}
+         "campeon": cdr.campeon(c) if comp.tipo == "cuadro" else None,
+         "zonas": zns.estructura(c) if zns.activas(comp) else []}
         for c in sorted(comp.categorias, key=lambda c: c.orden)
     ]
     proximos = []
@@ -100,7 +102,10 @@ def torneo(slug):
         "torneos/torneo.html",
         **contexto(comp=comp, categorias=categorias, abierta=inscripcion_abierta(comp),
                    escalera=escalera, proximos=proximos, nombre_ronda=cdr.nombre_ronda, lp=lp,
-                   ediciones=_otras_ediciones(comp)),
+                   ediciones=_otras_ediciones(comp),
+                   plazos=[(nombre, (comp.reglas.get("plazos") or {})[clave]) for clave, nombre in cdr.ETAPAS
+                           if (comp.reglas.get("plazos") or {}).get(clave)] if comp.tipo == "cuadro" else [],
+                   reglas_zonas=zns.reglas(comp) if zns.activas(comp) else None),
     )
 
 
@@ -365,7 +370,8 @@ def _bloque_cuadro(insc, j):
     partidos, esperando, historial = [], [], []
     for p in sorted(mios, key=lambda p: (p.cuadro != "principal", int(p.ronda or 0))):
         rival = p.lado_b if p.lado_a_id == insc.id else p.lado_a
-        ronda = cdr.nombre_ronda(cat, p.cuadro, p.ronda) + (" (consuelo)" if p.cuadro == "consuelo" else "")
+        ronda = cdr.nombre_ronda(cat, p.cuadro, p.ronda, p) + (" (consuelo)" if p.cuadro == "consuelo" else "")
+        plazo = cdr.plazo_de(comp, p)
         if p.estado in ("agendado", "en_disputa") and rival:
             def ver(res, p=p):
                 if not res:
@@ -376,7 +382,7 @@ def _bloque_cuadro(insc, j):
             mio, suyo = esc.resultado_de_jugador(p, insc), esc.resultado_de_jugador(p, rival)
             texto = f"Hola {rival.jugador1.nombre}! Somos rivales en {comp.nombre} ({ronda}). ¿Cómo estás?"
             partidos.append({
-                "p": p, "rival": rival, "soy_desafiante": False, "ronda": ronda,
+                "p": p, "rival": rival, "soy_desafiante": False, "ronda": ronda, "plazo": plazo,
                 "mio": mio, "suyo": suyo, "mio_txt": ver(mio), "suyo_txt": ver(suyo),
                 "wa": link_whatsapp(rival.jugador1.celular, texto),
             })
