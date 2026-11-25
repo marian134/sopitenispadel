@@ -8,8 +8,12 @@ Se conecta desde app.py con:
                                                       antes de db.create_all)
     torneos.init_app(app, obtener_contexto_base)     (después de definir obtener_contexto_base)
 
-La pestaña "Torneos" del menú queda oculta hasta el lanzamiento. Para
-mostrarla, poner la variable de entorno TORNEOS_VISIBLE=1.
+ACCESO PRIVADO (para probarlo en la web real antes del lanzamiento):
+en el servidor (cuando hay DATABASE_URL) o si existe TORNEOS_LLAVE, todo
+/torneos y /admin/torneos responde "no encontrado" salvo para quien entró una
+vez por /torneos/llave/<TORNEOS_LLAVE> (queda guardado en ese navegador un
+año). Sin TORNEOS_LLAVE cargada no entra nadie. Para abrirlo a todos:
+TORNEOS_PUBLICO=1. TORNEOS_VISIBLE=0 sigue sirviendo para ocultar la pestaña.
 
 Partes:
     models.py    tablas
@@ -18,9 +22,11 @@ Partes:
     cuentas.py   alta e ingreso de organizadores, perfil
     panel.py     competencias e inscriptos del organizador
 """
+import hashlib
+import hmac
 import os
 
-from flask import current_app, render_template
+from flask import abort, current_app, has_request_context, redirect, render_template, request
 from werkzeug.exceptions import HTTPException
 
 from . import models  # noqa: F401  (registra las tablas antes de db.create_all)
@@ -28,9 +34,33 @@ from .bp import bp, contexto, _estado
 from . import publico, cuentas, panel, panel_cuadro, panel_liga, panel_planillas, desafios  # noqa: F401  (registran sus rutas en bp)
 
 
+COOKIE_LLAVE = "torneos_llave"
+
+
+def es_privado():
+    """En el servidor los torneos son privados hasta que se ponga TORNEOS_PUBLICO=1."""
+    if os.environ.get("TORNEOS_PUBLICO") == "1":
+        return False
+    return bool(os.environ.get("DATABASE_URL") or os.environ.get("TORNEOS_LLAVE"))
+
+
+def _firma(llave):
+    return hashlib.sha256(("sopi-torneos:" + llave).encode()).hexdigest()[:40]
+
+
+def tiene_acceso():
+    """True si los torneos son públicos o si este navegador entró con el enlace secreto."""
+    if not es_privado():
+        return True
+    llave = os.environ.get("TORNEOS_LLAVE", "").strip()
+    if not llave or not has_request_context():
+        return False
+    return hmac.compare_digest(request.cookies.get(COOKIE_LLAVE, ""), _firma(llave))
+
+
 def torneos_visible():
-    """La pestaña Torneos se muestra salvo que TORNEOS_VISIBLE=0 (para ocultarla rápido)."""
-    return os.environ.get("TORNEOS_VISIBLE", "1") != "0"
+    """La pestaña Torneos se muestra salvo que TORNEOS_VISIBLE=0, y solo a quien tiene acceso."""
+    return os.environ.get("TORNEOS_VISIBLE", "1") != "0" and tiene_acceso()
 
 
 def torneos_abiertos(cantidad=3):
@@ -58,6 +88,26 @@ def rutas_sitemap():
 def init_app(app, contexto_base):
     """Registra las rutas. contexto_base es obtener_contexto_base de app.py."""
     _estado["contexto_base"] = contexto_base
+
+    @app.before_request
+    def _solo_con_llave():
+        """Acceso privado: sin el enlace secreto, torneos no existe."""
+        ruta = request.path
+        if not (ruta.startswith("/torneos") or ruta.startswith("/admin/torneos")):
+            return None
+        if ruta.startswith("/torneos/llave/"):
+            llave = os.environ.get("TORNEOS_LLAVE", "").strip()
+            dada = ruta[len("/torneos/llave/"):].strip("/")
+            if not llave or not hmac.compare_digest(dada, llave):
+                abort(404)
+            resp = redirect("/torneos/")
+            resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
+                            secure=request.is_secure or bool(os.environ.get("DATABASE_URL")), samesite="Lax")
+            return resp
+        if not tiene_acceso():
+            abort(404)
+        return None
+
     app.register_blueprint(bp)
     from .admin import admin_bp
     app.register_blueprint(admin_bp)   # /admin/torneos, con la clave de admin de la tienda
