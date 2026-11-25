@@ -9,7 +9,7 @@ from . import avisos
 from . import cuadro as cdr
 from . import zonas as zns
 from .bp import bp, contexto
-from .models import Categoria, Partido, TIPO_CUADRO, PAR_AGENDADO, PAR_PENDIENTE
+from .models import Categoria, Partido, TIPO_CUADRO, PAR_AGENDADO, PAR_BYE, PAR_PENDIENTE
 from .panel import _mi_competencia
 from .util import link_whatsapp, organizador_requerido
 
@@ -112,6 +112,8 @@ def partido_horario(partido_id):
     comp = _mi_competencia(p.competencia_id)
     f = request.form
     dia, hora, cancha = (f.get("dia") or "").strip(), (f.get("hora") or "").strip(), (f.get("cancha") or "").strip()[:40]
+    if dia == "otro":   # eligió "Otro día…" en la lista de días habilitados
+        dia = (f.get("dia_otro") or "").strip()
     if f.get("fecha_hora") and not dia:   # formato anterior (un solo campo)
         dia, _, hora = f.get("fecha_hora").partition("T")
     faltan = [n for n, v in (("el día", dia), ("la hora", hora), ("la cancha", cancha)) if not v]
@@ -181,6 +183,93 @@ def opciones_cuadro(comp_id):
     )
 
 
+def dias_habilitados(comp, p):
+    """Días en que se puede jugar el partido: el plazo de su ronda (Opciones del cuadro)
+    o, si no hay, las fechas del torneo. Devuelve (lista de date, texto) o ([], "")."""
+    from datetime import timedelta
+    plazo = cdr.plazo_de(comp, p)
+    desde = (plazo or {}).get("desde") or comp.fecha_inicio
+    hasta = (plazo or {}).get("hasta") or comp.fecha_fin
+    if not desde or not hasta or hasta < desde or (hasta - desde).days > 60:
+        return [], ""
+    dias = [desde + timedelta(days=k) for k in range((hasta - desde).days + 1)]
+    de_que = f"plazo de {plazo['nombre']}" if plazo and (plazo.get("desde") or plazo.get("hasta")) else "fechas del torneo"
+    texto = f"Días habilitados ({de_que}): del {desde.strftime('%d/%m')} al {hasta.strftime('%d/%m')}"
+    previo = _ultimo_dia_previo(p)
+    if previo:
+        dias = [d for d in dias if d > previo]
+        if not dias:
+            rango = "ninguno"
+        elif len(dias) == 1:
+            rango = "el " + dias[0].strftime("%d/%m")
+        else:
+            rango = "del " + dias[0].strftime("%d/%m") + " al " + dias[-1].strftime("%d/%m")
+        texto = (f"Días habilitados: {rango}"
+                 f" (la ronda anterior se juega hasta el {previo.strftime('%d/%m')}"
+                 f"{'' if dias else '; elegí Otro día o cambiá los días de cada ronda'})")
+    return dias, texto
+
+
+def _ultimo_dia_previo(p):
+    """Último día cargado en las rondas anteriores de la misma categoría: la ronda
+    siguiente solo se puede jugar después."""
+    if p.cuadro == cdr.ZONA:
+        return None
+    otros = Partido.query.filter(Partido.categoria_id == p.categoria_id, Partido.fecha_hora.isnot(None),
+                                 Partido.id != p.id).all()
+    if p.cuadro == cdr.TERCER:
+        total = max((int(x.ronda) for x in otros if x.cuadro == cdr.PRINCIPAL), default=0)
+        previos = [x for x in otros if x.cuadro == cdr.PRINCIPAL and int(x.ronda) < total]
+    else:
+        previos = [x for x in otros if x.cuadro == p.cuadro and int(x.ronda or 0) < int(p.ronda or 0)]
+        if p.cuadro in (cdr.PRINCIPAL, cdr.PLATA):
+            previos += [x for x in otros if x.cuadro == cdr.ZONA]
+    return max((x.fecha_hora.date() for x in previos), default=None)
+
+
+def siguiente_id(comp):
+    """El partido que conviene hacer ahora: primero los que no tienen horario,
+    después los que faltan cargar (por fecha). Fuera de las zonas."""
+    ps = [p for p in Partido.query.filter(Partido.competencia_id == comp.id, Partido.estado == PAR_AGENDADO,
+                                          Partido.cuadro != cdr.ZONA).all() if p.lado_a_id or p.lado_b_id]
+    orden = lambda p: (p.categoria_id, p.cuadro or "", int(p.ronda or 0), p.posicion or 0)  # noqa: E731
+    sin = sorted([p for p in ps if not p.fecha_hora], key=orden)
+    con = sorted([p for p in ps if p.fecha_hora], key=lambda p: (p.fecha_hora, p.cancha or "") + orden(p))
+    return (sin + con)[0].id if sin or con else None
+
+
+def resumen_juego(comp, categorias):
+    """Para los pasos del panel con el torneo en juego."""
+    todos = Partido.query.filter_by(competencia_id=comp.id).all()
+    agendados = [p for p in todos if p.estado == PAR_AGENDADO]
+    progreso = []
+    for c in categorias:
+        cat = c["cat"]
+        zona = [p for p in todos if p.categoria_id == cat.id and p.cuadro == cdr.ZONA]
+        principal = cdr.partidos(cat)
+        if zona and not principal:
+            jugados = sum(1 for p in zona if p.estado in cdr.TERMINADOS)
+            progreso.append(f"{cat.nombre}: zonas, {jugados} de {len(zona)} partidos jugados")
+            continue
+        if c["campeon"]:
+            progreso.append(f"{cat.nombre}: terminado 🏆 {c['campeon'].jugador1.nombre_completo}")
+            continue
+        for ronda in sorted({int(p.ronda) for p in principal}):
+            de_ronda = [p for p in principal if int(p.ronda) == ronda and p.estado != PAR_BYE]
+            jugados = sum(1 for p in de_ronda if p.estado in cdr.TERMINADOS)
+            if de_ronda and jugados < len(de_ronda):
+                progreso.append(f"{cat.nombre}: {cdr.nombre_ronda(cat, cdr.PRINCIPAL, str(ronda))}, "
+                                f"{jugados} de {len(de_ronda)} jugados")
+                break
+    return {
+        "armado": bool(todos),
+        "sin_horario": sum(1 for p in agendados if not p.fecha_hora),
+        "para_resultado": sum(1 for p in agendados if p.fecha_hora),
+        "terminado": bool(categorias) and all(c["campeon"] or not c["participantes"] for c in categorias),
+        "progreso": progreso,
+    }
+
+
 def datos_cuadro(comp):
     """Lo que el panel necesita de cada categoría con cuadro."""
     avisos = cdr.avisos_horarios(comp)
@@ -218,6 +307,10 @@ def datos_cuadro(comp):
     filas = []
     for p in por_jugar:
         cat = p.lado_a.categoria if p.lado_a else p.lado_b.categoria
+        if p.estado == PAR_AGENDADO:
+            etapa = "resultado" if p.fecha_hora else "horario"
+        else:
+            etapa = "espera"   # falta saber quién es el rival
         avisos_wa = []
         if p.estado == PAR_AGENDADO and p.fecha_hora:
             cuando = p.fecha_hora.strftime("%d/%m a las %H:%M")
@@ -226,11 +319,17 @@ def datos_cuadro(comp):
                          f"{cdr.nombre_ronda(cat, p.cuadro, p.ronda)}) es el {cuando}"
                          f"{' en la cancha ' + p.cancha if p.cancha else ''} contra {rival.jugador1.nombre_completo}.")
                 avisos_wa.append((yo.jugador1.nombre, link_whatsapp(yo.jugador1.celular, texto)))
+        dias, dias_texto = dias_habilitados(comp, p)
         filas.append({
+            "dias": dias, "dias_texto": dias_texto,
             "p": p, "cat": cat, "ronda": cdr.nombre_ronda(cat, p.cuadro, p.ronda),
-            "avisos": avisos.get(p.id, []), "wa": avisos_wa,
+            "avisos": avisos.get(p.id, []), "wa": avisos_wa, "etapa": etapa,
         })
+    # primero lo que hay que hacer ya: sin horario, después por jugar (por fecha), al final los que esperan rival
+    filas.sort(key=lambda f: {"horario": 0, "resultado": 1, "espera": 2}[f["etapa"]])
+    siguiente = siguiente_id(comp)
     return {
+        "siguiente": siguiente, "resumen": resumen_juego(comp, categorias),
         "categorias": categorias, "por_jugar": filas, "zonas_activas": zns.activas(comp),
         "reglas_zonas": zns.reglas(comp), "vencidos": cdr.plazos_vencidos(comp),
         "plazos": [(nombre, (comp.reglas.get("plazos") or {}).get(clave)) for clave, nombre in cdr.ETAPAS

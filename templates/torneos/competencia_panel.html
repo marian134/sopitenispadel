@@ -22,13 +22,13 @@
       {% if comp.estado == "inscripcion" %}
         <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}"
               onsubmit="return confirm('¿Cerrar la inscripción? Nadie más se va a poder anotar.');">
-          <button class="tn-boton tn-boton-chico" name="accion" value="cerrar">Cerrar inscripción y empezar</button>
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cerrar">Cerrar inscripción y empezar</button>
         </form>
       {% endif %}
       {% if comp.estado in ("borrador", "inscripcion") %}
         <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}"
               onsubmit="return confirm('¿Cancelar este torneo?');">
-          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cancelar">Cancelar</button>
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cancelar">Cancelar el torneo</button>
         </form>
       {% endif %}
       <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.competencia_excel', comp_id=comp.id) }}">Bajar en Excel</a>
@@ -38,7 +38,12 @@
       </form>
     </div>
 
-    {% if comp.estado in ("inscripcion", "en_curso", "finalizada") %}
+    {% if comp.estado == "borrador" %}
+      <div class="tn-acciones" style="margin-top:14px;">
+        <a class="tn-boton tn-boton-chico" href="{{ url_publica }}" target="_blank" rel="noopener">Ver cómo va a quedar la página</a>
+      </div>
+    {% endif %}
+    {% if comp.estado in ("inscripcion", "en_curso", "finalizada") and not publicado %}
       <div class="tn-acciones" style="margin-top:14px;">
         <a class="tn-boton tn-boton-chico" href="{{ url_publica }}" target="_blank" rel="noopener">Ver la página del torneo</a>
         <a class="tn-boton tn-wa tn-boton-chico" href="{{ wa_compartir }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Compartir por WhatsApp</a>
@@ -83,10 +88,30 @@
     </div>
   {% endif %}
 
-  {% if comp.estado in ("borrador", "inscripcion") %}
-    <div class="tn-caja">
-      <h2 style="margin-top:0;">Pasos</h2>
-      {% set actual = (pasos|map(attribute='hecho')|list).index(false) %}
+  {% if comp.estado in ("borrador", "inscripcion") or (cuadro and comp.estado in ("en_curso", "finalizada")) %}
+    {% set marcas = pasos|map(attribute='hecho')|list %}
+    {% set actual = marcas.index(false) if false in marcas else -1 %}
+    <div class="tn-caja" id="pasos">
+      <h2 style="margin-top:0;">{{ "Pasos" if actual != -1 else "¡Torneo terminado! 🏆" }}</h2>
+      {% if actual == -1 %}
+        {% for c in cuadro.categorias if c.campeon %}
+          <p style="margin:4px 0;"><strong>{{ c.cat.nombre }}:</strong> campeón {{ c.campeon.jugador1.nombre_completo }}{% if c.campeon.jugador2 %} / {{ c.campeon.jugador2.nombre_completo }}{% endif %}</p>
+        {% endfor %}
+        <p class="tn-suave" style="margin:10px 0 6px;">Lo que podés hacer ahora:</p>
+        <div class="tn-acciones">
+          <a class="tn-boton tn-wa tn-boton-chico" href="{{ wa_podio }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Compartir el podio</a>
+          <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_publica }}" target="_blank" rel="noopener">Ver la página del torneo</a>
+          <a class="tn-boton tn-boton-sec tn-boton-chico" href="{{ url_for('torneos.competencia_excel', comp_id=comp.id) }}">Bajar en Excel</a>
+        </div>
+        <p class="tn-dato" style="margin-top:8px;">Para la próxima edición usá "Copiar para una nueva edición" (arriba): copia datos y categorías, sin inscriptos.</p>
+        <details style="margin-top:8px;"><summary class="tn-suave" style="cursor:pointer; font-size:13px;">Ver los pasos</summary>
+      {% endif %}
+      {% if actual != -1 %}
+        {# en el celular: barra fija abajo con lo que sigue #}
+        <a class="tn-barra-ahora" href="{{ pasos[actual].ir or '#pasos' }}">
+          <span>👉 <small>Ahora</small><br><strong>{{ pasos[actual].titulo }}</strong></span><span class="tn-barra-ir">Ir ↓</span></a>
+      {% endif %}
+      {% if actual != -1 and actual >= 3 %}<p class="tn-ahora">👉 Ahora: <strong>{{ pasos[actual].titulo }}</strong></p>{% endif %}
       <ol class="tn-pasos">
         {% for paso in pasos %}
           <li class="{{ 'tn-paso-hecho' if paso.hecho else ('tn-paso-actual' if loop.index0 == actual else '') }}">
@@ -101,10 +126,13 @@
                       onsubmit="return confirm('¿Cerrar la inscripción? Nadie más se va a poder anotar.');">
                   <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="cerrar">Cuando estén todos: cerrar inscripción</button>
                 </form>
+              {% elif loop.index0 == actual and paso.ir %}
+                <div style="margin-top:6px;"><a class="tn-boton tn-boton-chico" href="{{ paso.ir }}">{{ paso.boton }} ↓</a></div>
               {% endif %}</span>
           </li>
         {% endfor %}
       </ol>
+      {% if actual == -1 %}</details>{% endif %}
     </div>
   {% endif %}
 

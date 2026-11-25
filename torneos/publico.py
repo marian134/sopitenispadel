@@ -13,7 +13,7 @@ from .models import (
     Categoria, Competencia, Inscripcion, Jugador, Partido,
     ESTADOS_PUBLICOS, EST_EN_CURSO, EST_FINALIZADA, EST_INSCRIPCION,
 )
-from .util import enviar_mail, guardar_archivo, link_whatsapp, pesos, solo_digitos
+from .util import enviar_mail, guardar_archivo, link_whatsapp, organizador_actual, pesos, solo_digitos
 
 WHATSAPP_ORGANIZAR = (
     f"https://wa.me/{WHATSAPP_SOPI}?text="
@@ -55,16 +55,21 @@ def calendario():
     )
 
 
-def _competencia_publica(slug):
+def _competencia_publica(slug, vista_previa=False):
+    """vista_previa=True: el organizador puede ver su torneo en borrador."""
     comp = Competencia.query.filter_by(slug=slug).first()
-    if not comp or comp.estado not in ESTADOS_PUBLICOS:
+    if not comp:
         abort(404)
+    if comp.estado not in ESTADOS_PUBLICOS:
+        org = organizador_actual()
+        if not (vista_previa and org and org.id == comp.organizador_id):
+            abort(404)
     return comp
 
 
 @bp.route("/<slug>")
 def torneo(slug):
-    comp = _competencia_publica(slug)
+    comp = _competencia_publica(slug, vista_previa=True)
     escalera = None
     if comp.tipo == "escalera":
         esc.procesar(comp)
@@ -407,7 +412,15 @@ def _bloque_cuadro(insc, j):
         elif p.estado == "bye":
             historial.append({"ronda": ronda, "rival": None, "gane": True, "sets": "pase libre"})
     campeon = cdr.campeon(cat)
+    podio = cdr.podio(cat)
+    puesto = None
+    if podio and not (campeon and campeon.id == insc.id):
+        if podio["subcampeon"] and podio["subcampeon"].id == insc.id:
+            puesto = "🥈 ¡Subcampeón" + ("es" if insc.jugador2 else "") + "!"
+        elif any(t.id == insc.id for t in podio["terceros"]):
+            puesto = "🥉 Tercer puesto"
     return {
+        "puesto": puesto, "terminado": bool(podio),
         "partidos": partidos, "esperando": esperando, "historial": historial,
         "armado": bool(mios) or bool(cdr.partidos(cat)), "campeon": campeon and campeon.id == insc.id,
         "bloque": None,

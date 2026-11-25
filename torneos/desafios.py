@@ -15,6 +15,20 @@ from .models import (
 )
 from .util import CARPETA_ARCHIVOS, guardar_archivo, organizador_actual
 
+def _msj_confirmado(comp):
+    return {"cuadro": "confirmado_cuadro", "liga": "confirmado_liga"}.get(comp.tipo, "confirmado")
+
+
+def esperando_horario(comp, p):
+    """En el cuadro, el resultado se carga recién cuando el organizador fijó el horario
+    (salvo que la ronda tenga plazo y los jugadores lo arreglen solos)."""
+    if comp.tipo != "cuadro" or p.fecha_hora:
+        return False
+    from . import cuadro as cdr
+    plazo = cdr.plazo_de(comp, p)
+    return not (plazo and plazo.get("hasta"))
+
+
 MENSAJES = {
     "comprobante": "Listo, mandaste el comprobante. El organizador lo revisa y te confirma.",
     "desafio": "Desafío enviado. Avisale a tu rival por WhatsApp para que lo responda.",
@@ -23,6 +37,8 @@ MENSAJES = {
     "no_rechazo": "No podés rechazar dos desafíos seguidos: tenés que aceptar este.",
     "resultado": "Resultado cargado. Falta que tu rival lo confirme.",
     "confirmado": "¡Resultado confirmado! Los puntos se suman al ranking del lunes.",
+    "confirmado_cuadro": "¡Resultado confirmado! Ya quedó cargado en el cuadro.",
+    "confirmado_liga": "¡Resultado confirmado! Ya suma en la tabla.",
     "disputa": "Los resultados no coinciden: lo va a definir el organizador.",
     "wo": "Avisamos al organizador que tu rival no se presentó. Él lo define.",
     "libre": "Listo, tenés la semana que viene libre: no vas a perder puntos por inactividad.",
@@ -156,6 +172,10 @@ def cargar_resultado(enlace):
     comp = p.lado_a.categoria.competencia
     if p.estado != PAR_AGENDADO or esc.resultado_de_jugador(p, mia):
         return _volver(enlace, error="invalido")
+    if esperando_horario(comp, p):
+        return redirect(url_for("torneos.jugador", enlace=enlace,
+                                error_texto="Vas a poder cargar el resultado cuando el organizador fije día, hora y cancha.")
+                        + f"#partido-{p.id}")
     try:
         desde_mi_lado = _sets_del_form(request.form, un_set=comp.tipo == "cuadro")
     except ValueError as e:
@@ -177,7 +197,7 @@ def cargar_resultado(enlace):
     if otro:
         if otro.sets == lado_a:
             esc.aplicar_resultado(p, lado_a)
-            msj = "confirmado"
+            msj = _msj_confirmado(comp)
         else:
             p.estado = PAR_EN_DISPUTA
             msj = "disputa"
@@ -215,7 +235,7 @@ def confirmar_resultado(enlace):
         return _volver(enlace, error="invalido")
     if request.form.get("accion") == "confirmar":
         esc.aplicar_resultado(p, otro.sets)
-        msj = "confirmado"
+        msj = _msj_confirmado(p.lado_a.categoria.competencia)
     else:
         p.estado = PAR_EN_DISPUTA
         msj = "disputa"

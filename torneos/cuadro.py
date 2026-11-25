@@ -90,6 +90,7 @@ def orden_lineas(t):
 
 
 def max_cabezas(t):
+    """Cantidad de cabezas de serie que se suele usar (sugerencia, no límite)."""
     return 0 if t < 4 else max(2, t // 4)
 
 
@@ -133,7 +134,9 @@ def armar(cat, jugadores, cuadro=PRINCIPAL, usar_siembra=True, rng=None, lugares
     else:
         cabezas = []
         if usar_siembra:
-            cabezas = sorted([i for i in jugadores if i.siembra], key=lambda i: i.siembra)[:max_cabezas(t)]
+            # se respetan todos los números que puso el organizador (si numera a
+            # los 8 de un cuadro de 8: 1 contra 8, 4 contra 5, 2 contra 7, 3 contra 6)
+            cabezas = sorted([i for i in jugadores if i.siembra], key=lambda i: (i.siembra, i.id))[:t]
         resto = [i for i in jugadores if i not in cabezas]
         rng.shuffle(resto)
         lugar = {k + 1: insc for k, insc in enumerate(cabezas + resto)}   # n+1..t quedan vacíos (byes)

@@ -111,10 +111,30 @@
   .tn-paso-hecho .tn-paso-num { background: var(--verde, #8fb487); border-color: var(--verde, #8fb487); color: #0b1530; }
   .tn-paso-hecho strong { opacity: .7; }
   .tn-paso-actual .tn-paso-num { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+  .tn-paso-actual { background: rgba(229,126,60,.10); border: 1px solid rgba(229,126,60,.55); border-radius: 12px; padding: 10px 12px; margin: 0 -12px; }
+  .tn-ahora { margin: -4px 0 12px; font-size: 15px; }
+  .tn-ahora strong { color: var(--lime, #E57E3C); }
+  .tn-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-right: 6px;
+    background: rgba(159,176,204,.15); color: var(--muted, #9fb0cc); white-space: nowrap; }
+  .tn-chip-horario { background: rgba(240,196,80,.18); color: #f0c450; }
+  .tn-chip-resultado { background: rgba(110,168,254,.18); color: #8db8ff; }
+  .tn-partido-panel { border-top: 1px solid var(--line); padding: 12px 0; scroll-margin-top: 140px; }
+  .tn-siguiente { border: 2px solid var(--lime, #E57E3C); border-radius: 12px; padding: 12px 14px; margin: 10px -14px;
+    background: rgba(229,126,60,.08); }
+  .tn-siguiente-et { margin: 0 0 6px; font-weight: 800; color: var(--lime, #E57E3C); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  .tn-cambiar-horario { margin-top: 4px; }
+  .tn-cambiar-horario summary, .tn-resortear summary { cursor: pointer; font-size: 13px; color: var(--muted, #9fb0cc); }
+  .tn-resortear { margin: 4px 0 8px; }
+  #pasos, #cuadros, #horarios { scroll-margin-top: 140px; }
+  @media (max-width: 760px) { .tn-siguiente { margin: 10px -6px; padding: 10px; } .tn-paso-actual { margin: 0 -6px; padding: 8px; } }
   .tn-horario { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-top: 8px; }
   .tn-horario label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted, #9fb0cc); }
   .tn-horario input, .tn-horario select { padding: 7px 8px; border-radius: 8px; background: var(--bg, #060d1c); color: var(--text, #fff); border: 1px solid var(--line-2, #2a3d63); font: inherit; font-size: 14px; min-width: 0; }
-  @media (max-width: 560px) { .tn-horario { grid-template-columns: 1fr 1fr; } .tn-horario button { grid-column: 1 / -1; } }
+  @media (max-width: 560px) {
+    .tn-horario { grid-template-columns: 1fr 1fr; }
+    .tn-horario button, .tn-horario label:has([name=cancha]), .tn-horario .tn-dia-otro { grid-column: 1 / -1; }
+    .tn-horario input, .tn-horario select, .tn-horario button { min-height: 44px; font-size: 16px; }
+  }
   .tn-alerta-pagos { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; background: rgba(234, 227, 57, .12); border: 2px solid var(--amarillo, #EAE339); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
   .tn-estado-grande { border-radius: 12px; padding: 14px 16px; margin: 12px 0; border: 2px solid; }
   .tn-estado-grande h3 { margin: 0 0 4px; font-size: 17px; }
@@ -134,6 +154,37 @@
   .tn-req { color: #ff8a93; font-weight: 800; }
   .tn-nota-req { font-size: 13px; color: var(--muted, #9fb0cc); margin: 0; }
   .tn-form :is(input, select, textarea).tn-falta { border-color: #e63946; box-shadow: 0 0 0 2px rgba(230, 57, 70, .35); }
+  .tn-bloqueado { margin: 8px 0 0; padding: 8px 12px; border: 1px dashed var(--line-2, #2a3d63); border-radius: 10px;
+    color: var(--muted, #9fb0cc); font-size: 14px; opacity: .85; }
+  .tn-bloqueado small { display: block; margin-top: 2px; }
+  form.tn-resultado-fila { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin: 8px 0 4px; }
+  .tn-resultado-fila label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted, #9fb0cc); flex: 1 1 200px; max-width: 320px; }
+  .tn-resultado-fila input { padding: 8px 10px; border-radius: 8px; background: var(--bg, #060d1c); color: var(--text, #fff);
+    border: 1px solid var(--line-2, #2a3d63); font: inherit; font-size: 15px; }
+  .tn-otros-casos { margin-top: 10px; }
+  .tn-otros-casos > summary { cursor: pointer; font-size: 13px; color: var(--muted, #9fb0cc); }
+  @media (max-width: 560px) {
+    .tn-resultado-fila label { max-width: none; flex-basis: 100%; }
+    .tn-resultado-fila input { min-height: 44px; font-size: 16px; }
+    .tn-resultado-fila > .tn-boton { width: 100%; min-height: 44px; }
+  }
+  .tn-bloqueado-chico { border: 0; padding: 2px 0 0; font-size: 13px; }
+  .tn-deslizar { display: none; margin: 0 0 6px; font-size: 13px; color: var(--muted, #9fb0cc); }
+  .tn-barra-ahora { display: none; }
+  /* las burbujas de la tienda tapan el panel en el celular */
+  #wa-burbuja { display: none !important; }
+  @media (max-width: 760px) {
+    .tn-deslizar { display: block; }
+    .wa-float { display: none !important; }
+    .tn-barra-ahora { display: flex; position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 900; align-items: center;
+      justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; text-decoration: none;
+      background: #13203d; border: 2px solid var(--lime, #E57E3C); color: var(--text, #fff); box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+    .tn-barra-ahora small { color: var(--muted, #9fb0cc); font-size: 12px; }
+    .tn-barra-ahora strong { color: var(--lime, #E57E3C); font-size: 15px; }
+    .tn-barra-ir { flex: none; background: var(--lime, #E57E3C); color: #0b1530; font-weight: 800; padding: 8px 14px; border-radius: 10px; }
+    body:has(.tn-barra-ahora) { padding-bottom: 84px; }
+  }
+  .tn-guardar-horario.tn-apagado { opacity: .45; filter: grayscale(.6); }
   .tn-aviso-falta { background: rgba(230, 57, 70, .14); border: 1px solid #e63946; color: #ffd3d6; padding: 10px 12px; border-radius: 10px; font-size: 14px; margin: 0; }
 </style>
 <script>
@@ -178,6 +229,19 @@
     });
   }
   window.tnPreparar = preparar;
+  /* Horario: el botón se enciende recién con día, hora y cancha completos */
+  function estadoHorario(f) {
+    var b = f.querySelector('.tn-guardar-horario');
+    if (!b) return;
+    var listo = Array.prototype.every.call(f.querySelectorAll('[required]'), function (c) { return c.value.trim() !== ''; });
+    b.classList.toggle('tn-apagado', !listo);
+    b.textContent = listo ? 'Guardar horario' : 'Completá día, hora y cancha';
+  }
+  function horarios() { document.querySelectorAll('form.tn-horario').forEach(estadoHorario); }
+  ['input', 'change'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { var f = e.target.form; if (f && f.classList.contains('tn-horario')) estadoHorario(f); }, true);
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', horarios); else horarios();
   function limpiar(e) {
     var c = e.target;
     if (c.classList && c.classList.contains('tn-falta') && c.checkValidity()) c.classList.remove('tn-falta');

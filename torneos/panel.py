@@ -371,17 +371,36 @@ def competencia_panel(comp_id, agregar=None):
             divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro, liga=liga_datos,
             error=request.args.get("error"), aviso_mezcla=mezcla_modalidades(comp),
             publicado=request.args.get("publicado"), guardado=request.args.get("guardado", type=int),
+            cargado=request.args.get("cargado", type=int),
             error_horario=request.args.get("error_horario"), partido_error=request.args.get("partido_error", type=int),
+            error_resultado=request.args.get("error_resultado"),
             agregar_abierto=agregar.get("cat"), agregar_error=agregar.get("error"),
             agregar_form=agregar.get("form") or {}, agregado=request.args.get("agregado"),
             wa_compartir=link_whatsapp("", f"{comp.nombre}: inscribite y seguí el torneo acá {url_publica}"),
-            pasos=_pasos_torneo(comp, categorias),
+            pasos=_pasos_torneo(comp, categorias, cuadro), wa_podio=_wa_podio(comp, cuadro, url_publica),
             a_revisar=a_revisar(comp), deben=deben(comp), aviso_pago=request.args.get("aviso_pago"),
         ),
     )
 
 
-def _pasos_torneo(comp, categorias):
+def _wa_podio(comp, cuadro, url_publica):
+    """Texto para compartir el podio por WhatsApp al terminar."""
+    if not cuadro:
+        return ""
+    lineas = [f"🏆 Terminó {comp.nombre}"]
+    for c in cuadro["categorias"]:
+        pod = c.get("podio")
+        if not pod:
+            continue
+        nombre = lambda i: i.jugador1.nombre_completo + (f" / {i.jugador2.nombre_completo}" if i.jugador2 else "")  # noqa: E731
+        lineas.append(f"{c['cat'].nombre}: 🥇 {nombre(pod['campeon'])}"
+                      + (f" · 🥈 {nombre(pod['subcampeon'])}" if pod.get("subcampeon") else "")
+                      + "".join(f" · 🥉 {nombre(t)}" for t in pod.get("terceros", [])))
+    lineas.append(f"Cuadro y resultados: {url_publica}")
+    return link_whatsapp("", "\n".join(lineas))
+
+
+def _pasos_torneo(comp, categorias, cuadro=None):
     """Pasos en orden del torneo, para el organizador (cambio 20)."""
     inscriptos = sum(c["activos"] for c in categorias)
     confirmados = sum(c["confirmados"] for c in categorias)
@@ -406,6 +425,28 @@ def _pasos_torneo(comp, categorias):
     ]
     if comp.tipo != TIPO_CUADRO:
         pasos[2]["texto"] = "Opcional: los jugadores se pueden seguir sumando mientras dura."
+    if cuadro and abierto:
+        r = cuadro["resumen"]
+        sig = f"#partido-{cuadro['siguiente']}" if cuadro.get("siguiente") else "#horarios"
+        pasos[3].update(hecho=r["armado"], ir="#cuadros", boton="Ir a armar")
+        n = r["sin_horario"]
+        pasos.append({
+            "titulo": "Poner día, hora y cancha",
+            "texto": (f"Hay {n} partido{'s' if n != 1 else ''} sin horario." if n
+                      else "Todos los partidos que ya tienen rivales tienen horario. "
+                           "Cuando se definan los de la ronda siguiente, aparecen acá."),
+            "hecho": r["armado"] and not n, "ir": sig, "boton": "Ir al próximo partido",
+        })
+        pasos.append({
+            "titulo": "Cargar los resultados",
+            "texto": " · ".join(r["progreso"]) or "Cargá el resultado de cada partido: el ganador pasa solo a la ronda siguiente.",
+            "hecho": r["terminado"], "ir": sig, "boton": "Ir al próximo partido",
+        })
+        pasos.append({
+            "titulo": "Podio y cierre",
+            "texto": "Con la final jugada se ve el podio en la página del torneo.",
+            "hecho": r["terminado"], "ir": "#cuadros", "boton": "Ver el cuadro",
+        })
     return pasos
 
 
@@ -482,6 +523,10 @@ def partido_resolver(partido_id):
         try:
             sets = esc.sets_texto(esc.leer_sets(request.form.get("sets"), un_set=comp.tipo == TIPO_CUADRO))
         except ValueError as e:
+            if comp.tipo == TIPO_CUADRO and p.cuadro != "zona":
+                # el aviso aparece en el mismo partido
+                return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, error_resultado=str(e),
+                                        partido_error=p.id) + f"#partido-{p.id}")
             return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, error=str(e)) + "#partidos")
         db.session.add(Resultado(partido_id=p.id, cargado_por="organizador",
                                  cargado_por_id=comp.organizador_id, sets=sets, confirmado=True))
@@ -496,7 +541,8 @@ def partido_resolver(partido_id):
             esc._partir_sets(parcial, parcial=True)
         except ValueError:
             return redirect(url_for("torneos.competencia_panel", comp_id=comp.id,
-                                    error="Escribí el score parcial como 6-1 2-0") + "#partidos")
+                                    error_resultado="Escribí el score hasta el retiro como 6-1 2-0", partido_error=p.id)
+                            + f"#partido-{p.id}")
         se_retira = p.lado_a_id if accion == "abandono_a" else p.lado_b_id
         db.session.add(Resultado(partido_id=p.id, cargado_por="organizador", cargado_por_id=comp.organizador_id,
                                  sets=(parcial + " ret.").strip(), confirmado=True))
@@ -509,6 +555,12 @@ def partido_resolver(partido_id):
         # "No jugado": no suma para nadie (en la llave no se puede: rompería el cuadro)
         p.estado = PAR_ANULADO
     db.session.commit()
+    if comp.tipo == TIPO_CUADRO and p.cuadro != "zona":
+        # seguimos con el partido que viene
+        from .panel_cuadro import siguiente_id
+        sig = siguiente_id(comp)
+        return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, cargado=p.id)
+                        + (f"#partido-{sig}" if sig else "#pasos"))
     return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + "#partidos")
 
 

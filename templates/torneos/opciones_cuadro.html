@@ -58,9 +58,10 @@
         </div>
       </div>
 
-      <div class="tn-caja tn-form">
-        <h2 style="margin:0;">Plazos por etapa</h2>
-        <p class="tn-suave" style="margin:0;">Opcional. Si no fijás horarios, los jugadores arreglan el partido dentro de cada plazo. Completá solo las etapas que tenga tu torneo.</p>
+      <div class="tn-caja tn-form" id="plazos" style="scroll-margin-top:140px;">
+        <h2 style="margin:0;">Días de cada ronda</h2>
+        <p class="tn-suave" style="margin:0;">Opcional. Son los días habilitados para jugar cada ronda: al poner horarios elegís el día de esa lista.
+          Si no completás una ronda, se usan las fechas del torneo. Si no fijás horarios, los jugadores arreglan el partido dentro de cada plazo.</p>
         {% for clave, nombre in etapas %}
           {% set pl = plazos.get(clave, {}) %}
           <div class="tn-dos" style="grid-template-columns: 1.2fr 1fr 1fr; align-items:end;">

@@ -142,7 +142,7 @@ def _columna(encabezado):
         return "celular" + sufijo
     if "mail" in h or "correo" in h:
         return "email" + sufijo
-    if h.startswith("pag") or "pago" in h:
+    if h.startswith(("pag", "abon")) or "pago" in h or "cobr" in h:
         return "pagado"
     if "serie" in h or "siembra" in h or "cabeza" in h:
         return "siembra"
@@ -211,7 +211,8 @@ def inscripcion_importar(comp_id, cat_id):
             errores.append(f"fila {numero}: {error.rstrip('.')}")
             continue
         pago = _normal(datos.get("pagado", ""))
-        pagado = pagado_todos or not comp.precio or pago in ("si", "s", "x", "1", "pago", "pagado", "ok")
+        pagado = pagado_todos or not comp.precio or pago in ("si", "s", "x", "1", "pago", "pagado", "pagada", "ok",
+                                                          "abono", "abonado", "abonada", "cobrado", "si pago")
         siembra = datos.get("siembra", "")
         db.session.add(Inscripcion(categoria_id=cat.id, jugador1_id=j1.id, jugador2_id=j2.id if j2 else None,
                                    estado_pago=PAGO_CONFIRMADO if pagado else PAGO_PENDIENTE,
@@ -220,7 +221,11 @@ def inscripcion_importar(comp_id, cat_id):
         db.session.refresh(cat)
         agregados += 1
     db.session.commit()
-    texto = f"Cargamos {agregados} jugador{'es' if agregados != 1 else ''} en {cat.nombre} desde la planilla."
+    quien = ("pareja", "parejas") if cat.modalidad == "dobles" else ("jugador", "jugadores")
+    if agregados:
+        texto = f"Cargamos {agregados} {quien[0] if agregados == 1 else quien[1]} en {cat.nombre} desde la planilla."
+    else:
+        texto = f"No se cargó ningún{'a' if quien[0] == 'pareja' else ''} {quien[0]} en {cat.nombre}."
     if errores:
-        texto += f" No se cargaron {len(errores)}: " + "; ".join(errores[:8]) + ("…" if len(errores) > 8 else "") + "."
+        texto += f" Revisá {len(errores)} fila{'s' if len(errores) != 1 else ''}: " + "; ".join(errores[:8]) + ("…" if len(errores) > 8 else "") + "."
     return volver(texto)

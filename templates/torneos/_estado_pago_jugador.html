@@ -1,7 +1,9 @@
 {# Cartel grande del estado de la inscripción para el jugador (cambio 11). Recibe i, comp, j. #}
 {% set org = comp.organizador %}
 {% set wa_org = "https://wa.me/" ~ (org.whatsapp|default('', true)|replace(' ', '')|replace('-', '')) %}
-{% if i.estado_pago == "confirmado" or not comp.precio and i.estado_pago != "rechazado" %}
+{% if (i.estado_pago == "confirmado" or not comp.precio and i.estado_pago != "rechazado") and comp.estado in ("en_curso", "finalizada") %}
+  <p class="tn-dato" style="margin:6px 0;">✓ Inscripción confirmada.</p>
+{% elif i.estado_pago == "confirmado" or not comp.precio and i.estado_pago != "rechazado" %}
   <div class="tn-estado-grande tn-eg-ok">
     <h3>✓ Estás dado de alta en el torneo</h3>
     <p class="tn-dato">{% if comp.precio %}{{ org.nombre }} confirmó tu pago.{% else %}La inscripción es gratis.{% endif %} Cuando se armen los partidos te avisamos por mail.</p>

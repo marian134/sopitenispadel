@@ -1,33 +1,41 @@
 {# El organizador define un partido (p): resultado, W.O. o anularlo #}
-<details style="margin-top:6px;">
-  <summary style="cursor:pointer;">Definir este partido</summary>
-  <div class="tn-acciones" style="margin-top:8px; align-items:center;">
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-acciones" style="align-items:center;">
-      <input type="hidden" name="accion" value="resultado">
-      <input name="sets" placeholder="6-4 3-6 10-8" required aria-label="Resultado, games de {{ p.lado_a.jugador1.nombre }} primero"
-             style="width:150px; padding:6px 10px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-      <button class="tn-boton tn-boton-chico">Cargar resultado</button>
-    </form>
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_b">W.O. a favor de {{ p.lado_a.jugador1.nombre }}</button>
-    </form>
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_a">W.O. a favor de {{ p.lado_b.jugador1.nombre }}</button>
-    </form>
-    {% if comp.tipo != "cuadro" or p.cuadro == "zona" %}
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" onsubmit="return confirm('¿Marcar como no jugado? No suma puntos a nadie.');">
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="anular">{{ "No jugado" if p.cuadro == "zona" else "Anular" }}</button>
-    </form>
+{% if error_resultado and partido_error == p.id %}<p class="tn-error" style="margin:8px 0 0; padding:6px 10px;">{{ error_resultado }}</p>{% endif %}
+<details class="tn-resolver" style="margin-top:6px;" {% if abierto or (error_resultado and partido_error == p.id) %}open{% endif %}>
+  <summary style="cursor:pointer;">{{ "Resultado" if abierto else "Cargar resultado, W.O. o abandono" }}</summary>
+  <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-resultado-fila">
+    <input type="hidden" name="accion" value="resultado">
+    <label><span>Resultado (games de {{ p.lado_a.jugador1.nombre }} primero)</span>
+      <input name="sets" placeholder="6-4 3-6 10-8" required inputmode="numeric" autocomplete="off"
+             aria-label="Resultado, games de {{ p.lado_a.jugador1.nombre }} primero"></label>
+    <button class="tn-boton tn-boton-chico">Cargar resultado</button>
+  </form>
+  <small class="tn-suave">Ej. 6-4 3-6 10-8. El súper tie-break se puede escribir 10-7 o 10/7.</small>
+
+  <details class="tn-otros-casos">
+    <summary>¿No se jugó o alguien se retiró?</summary>
+    <p class="tn-dato" style="margin:8px 0 4px;">No se presentó (W.O.): gana el otro.</p>
+    <div class="tn-acciones">
+      <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
+        <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_b">Gana {{ p.lado_a.jugador1.nombre }} por W.O.</button>
+      </form>
+      <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}">
+        <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="wo_a">Gana {{ p.lado_b.jugador1.nombre }} por W.O.</button>
+      </form>
+      {% if comp.tipo != "cuadro" or p.cuadro == "zona" %}
+      <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" onsubmit="return confirm('¿Marcar como no jugado? No suma puntos a nadie.');">
+        <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="anular">{{ "No jugado" if p.cuadro == "zona" else "Anular" }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% if comp.tipo == "cuadro" %}
+      <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-resultado-fila" style="margin-top:10px;">
+        <label><span>Se retiró a mitad de partido: score hasta el retiro</span>
+          <input name="parcial" placeholder="6-1 2-0" inputmode="numeric" autocomplete="off" aria-label="Score parcial hasta el abandono"></label>
+        <div class="tn-acciones">
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_a">Se retiró {{ p.lado_a.jugador1.nombre }}</button>
+          <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_b">Se retiró {{ p.lado_b.jugador1.nombre }}</button>
+        </div>
+      </form>
     {% endif %}
-  </div>
-  {% if comp.tipo == "cuadro" %}
-    <form method="post" action="{{ url_for('torneos.partido_resolver', partido_id=p.id) }}" class="tn-acciones" style="align-items:center; margin-top:8px;">
-      <span class="tn-suave" style="font-size:13px;">Abandono: score hasta el retiro</span>
-      <input name="parcial" placeholder="6-1 2-0" aria-label="Score parcial hasta el abandono"
-             style="width:110px; padding:6px 10px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_a">Se retiró {{ p.lado_a.jugador1.nombre }}</button>
-      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="abandono_b">Se retiró {{ p.lado_b.jugador1.nombre }}</button>
-    </form>
-  {% endif %}
-  <small class="tn-suave">El resultado va con los games de {{ p.lado_a.jugador1.nombre }} primero. El súper tie-break se puede escribir 10-7 o 10/7.</small>
+  </details>
 </details>

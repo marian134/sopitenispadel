@@ -1,9 +1,25 @@
 {# Formulario de horario de un partido. Recibe p, comp, guardado y opcional dia_sugerido (date). #}
 {% set canchas = comp.reglas.get('canchas') or 0 %}
 {% if error_horario and partido_error == p.id %}<p class="tn-error" style="margin:8px 0 0; padding:6px 10px;">{{ error_horario }}</p>{% endif %}
+{% if dias_texto %}<p class="tn-dato" style="margin:6px 0 0;">📆 {{ dias_texto }}.
+  <a href="{{ url_for('torneos.opciones_cuadro', comp_id=comp.id) }}#plazos" style="font-size:13px;">Cambiar los días de cada ronda</a></p>{% endif %}
 <form method="post" action="{{ url_for('torneos.partido_horario', partido_id=p.id) }}" class="tn-horario">
+  {% if dias %}
+    {% set nombres_dia = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] %}
+    {% set actual = p.fecha_hora.date() if p.fecha_hora else none %}
+    <label><span>Día <span class="tn-req">*</span></span>
+      <select name="dia" required onchange="var o=this.form.querySelector('.tn-dia-otro'); o.hidden=this.value!=='otro'; o.querySelector('input').required=this.value==='otro';">
+        <option value="">Elegí…</option>
+        {% for d in dias %}<option value="{{ d.isoformat() }}" {% if actual == d %}selected{% endif %}>{{ nombres_dia[d.weekday()] }} {{ d.strftime("%d/%m") }}</option>{% endfor %}
+        {% if actual and actual not in dias %}<option value="{{ actual.isoformat() }}" selected>{{ nombres_dia[actual.weekday()] }} {{ actual.strftime("%d/%m") }} (fuera de plazo)</option>{% endif %}
+        <option value="otro">Otro día…</option>
+      </select></label>
+    <label class="tn-dia-otro" hidden><span>Otro día</span>
+      <input type="date" name="dia_otro"></label>
+  {% else %}
   <label><span>Día <span class="tn-req">*</span></span>
     <input type="date" name="dia" required value="{{ p.fecha_hora.strftime('%Y-%m-%d') if p.fecha_hora else (dia_sugerido.isoformat() if dia_sugerido else '') }}"></label>
+  {% endif %}
   <label><span>Hora <span class="tn-req">*</span></span>
     <input type="time" name="hora" required step="900" value="{{ p.fecha_hora.strftime('%H:%M') if p.fecha_hora else '' }}"></label>
   <label><span>Cancha <span class="tn-req">*</span></span>
@@ -17,6 +33,6 @@
       <input name="cancha" required maxlength="40" value="{{ p.cancha or '' }}" placeholder="Ej. 1">
     {% endif %}
   </label>
-  <button class="tn-boton tn-boton-sec tn-boton-chico">Guardar horario</button>
+  <button class="tn-boton tn-boton-chico tn-guardar-horario">Guardar horario</button>
 </form>
 {% if guardado == p.id %}<p class="tn-guardado">✓ Horario guardado{% if p.fecha_hora %}: {{ ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m a las %H:%M") }}, cancha {{ p.cancha }}{% endif %}.</p>{% endif %}

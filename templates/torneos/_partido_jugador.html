@@ -52,6 +52,9 @@
           <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="no">No coincide</button>
         </form>
       </div>
+    {% elif comp.tipo == "cuadro" and not p.fecha_hora and not (f.plazo and f.plazo.hasta) %}
+      <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle</a>
+      <p class="tn-bloqueado">🔒 Vas a poder cargar el resultado cuando el organizador fije día, hora y cancha. Te avisamos por mail.</p>
     {% else %}
       <p class="tn-dato">{% if comp.tipo == "escalera" %}Coordinen día y cancha. {% endif %}Cuando terminen, cualquiera de los dos carga el resultado.</p>
       <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle</a>

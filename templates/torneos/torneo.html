@@ -7,6 +7,9 @@
 {% block content %}
 {% include "torneos/_estilos.html" %}
 <div class="tn-wrap">{% with migas = [(comp.nombre, none)] %}{% include "torneos/_migas.html" %}{% endwith %}
+  {% if comp.estado == "borrador" %}
+    <div class="tn-alerta-pagos" style="margin-top:10px; display:block;"><strong>Vista previa:</strong> el torneo todavía es un borrador y solo lo ves vos. Cuando lo publiques desde el panel, se abre la inscripción.</div>
+  {% endif %}
   {% if organizador and organizador.id == comp.organizador_id %}
     <div class="tn-acciones" style="margin-top:10px;">
       <a class="tn-boton tn-boton-chico" href="{{ url_for('torneos.competencia_panel', comp_id=comp.id) }}">Administrar este torneo</a>
@@ -40,6 +43,11 @@
       <p class="tn-suave" style="margin-bottom:0;">La inscripción ya cerró.</p>
     {% elif comp.estado == "en_curso" %}
       <p class="tn-suave" style="margin-bottom:0;">El torneo está en juego.</p>
+    {% elif comp.estado == "borrador" %}
+      <span class="tn-boton" style="opacity:.5; pointer-events:none;">Inscribirme</span>
+      <p class="tn-suave" style="margin:6px 0 0;">El botón se activa cuando publiques el torneo.</p>
+    {% elif comp.estado == "cancelada" %}
+      <p class="tn-suave" style="margin-bottom:0;">El torneo se canceló.</p>
     {% else %}
       <p class="tn-suave" style="margin-bottom:0;">El torneo terminó.</p>
     {% endif %}
@@ -171,7 +179,7 @@
     {% for c in categorias %}
       <div class="tn-tarjeta">
         <h3>{{ c.cat.nombre }}</h3>
-        <p class="tn-dato">{{ c.cat.modalidad|capitalize }} · {{ c.inscriptos|length }} anotado{{ "s" if c.inscriptos|length != 1 }}{% if c.libres is not none %} · {{ c.libres }} lugar{{ "es" if c.libres != 1 }} libre{{ "s" if c.libres != 1 }}{% endif %}</p>
+        <p class="tn-dato">{{ c.cat.modalidad|capitalize }} · {{ c.inscriptos|length }} anotado{{ "s" if c.inscriptos|length != 1 }}{% if c.libres is not none and abierta %} · {{ c.libres }} lugar{{ "es" if c.libres != 1 }} libre{{ "s" if c.libres != 1 }}{% endif %}</p>
         {% if c.inscriptos %}
           <ul class="tn-dato" style="padding-left:18px; margin:8px 0 0;">
             {% for i in c.inscriptos %}

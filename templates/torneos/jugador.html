@@ -166,7 +166,9 @@
 
         {% set bc = bloques_cuadro.get(i.id) %}
         {% if bc %}
-          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}!</span></p>{% endif %}
+          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}!</span></p>
+          {% elif bc.puesto %}<p style="margin-top:12px;"><span class="tn-campeon">{{ bc.puesto }}</span></p>
+          {% elif bc.terminado %}<p class="tn-dato" style="margin-top:12px;">El torneo terminó. ¡Gracias por jugar!</p>{% endif %}
           {% for f in bc.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}
           {% for x in bc.esperando %}
             <div class="tn-partido"><strong>{{ x.ronda }}</strong>
@@ -174,7 +176,7 @@
             </div>
           {% endfor %}
           {% if not bc.partidos and not bc.esperando and not bc.historial %}
-            <p class="tn-dato">{{ "El organizador todavía no armó el cuadro." if not bc.armado else "Ya no tenés partidos por jugar." }}</p>
+            {% if not bc.terminado %}<p class="tn-dato">{{ "El organizador todavía no armó el cuadro." if not bc.armado else "Ya no tenés partidos por jugar." }}</p>{% endif %}
           {% endif %}
           {% if bc.historial %}
             <details class="tn-partido">
@@ -186,7 +188,7 @@
               </ul>
             </details>
           {% endif %}
-          <p style="margin:12px 0 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}#cuadros">Ver el cuadro completo</a></p>
+          <p style="margin:12px 0 0;"><a href="{{ url_for('torneos.torneo', slug=comp.slug) }}{{ '#cuadros' if bc.armado else '' }}">{{ "Ver el cuadro completo" if bc.armado else "Ver la página del torneo" }}</a></p>
         {% endif %}
       </div>
     {% endfor %}

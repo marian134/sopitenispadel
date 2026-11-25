@@ -23,6 +23,7 @@
             {% endif %}
           </div>
 {% endmacro %}
+{% if rondas|length > 2 %}<p class="tn-deslizar">Deslizá para ver las otras rondas →</p>{% endif %}
 <div class="tn-llave">
   {% for r in rondas %}
     <div class="tn-ronda">
