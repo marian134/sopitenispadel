@@ -1,0 +1,343 @@
+<title>Guía del organizador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Krona+One&family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: una columna de lectura; el recorrido es una línea de tiempo vertical agrupada en 4 etapas, con el ciclo de cada partido como diagrama aparte. */
+:root {
+  --bg: #060d1c;          /* noche azul de la marca */
+  --surface: #0e1a33;
+  --surface-2: #13223f;
+  --line: #22355c;
+  --fg: #eef2fa;
+  --muted: #9fb0cc;
+  --naranja: #E57E3C;     /* acento de la marca */
+  --verde: #8fb487;
+  --amarillo: #f0c450;
+  --azul: #8db8ff;
+  --naranja-suave: rgba(229,126,60,.12);
+  --display: "Krona One", "Arial Black", system-ui, sans-serif;
+  --text: "Archivo", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f5f7fb; --surface: #ffffff; --surface-2: #eef2f9; --line: #d5ddec;
+    --fg: #0b1530; --muted: #4f5f7d; --naranja: #c9621f; --verde: #3f7a37;
+    --amarillo: #8a6400; --azul: #1f5fbf; --naranja-suave: rgba(201,98,31,.10);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f5f7fb; --surface: #ffffff; --surface-2: #eef2f9; --line: #d5ddec;
+  --fg: #0b1530; --muted: #4f5f7d; --naranja: #c9621f; --verde: #3f7a37;
+  --amarillo: #8a6400; --azul: #1f5fbf; --naranja-suave: rgba(201,98,31,.10);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--text); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+.envoltura { max-width: 880px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(26px, 5vw, 40px); }
+h2 { font-size: clamp(19px, 3.2vw, 24px); margin-bottom: 14px; }
+h3 { font-size: 15px; letter-spacing: .01em; }
+p { margin: 0; }
+a { color: var(--naranja); }
+.etiqueta { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--naranja); }
+.suave { color: var(--muted); }
+section { padding-block: 34px; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; }
+
+/* Portada */
+.portada { padding-block: 40px 28px; display: grid; gap: 14px; }
+.portada .bajada { font-size: 18px; color: var(--muted); max-width: 62ch; }
+
+/* Mapa de etapas */
+.mapa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+.etapa { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 6px; align-content: start; position: relative; }
+.etapa .num { font-family: var(--display); font-size: 13px; color: var(--naranja); }
+.etapa h3 { font-size: 14px; }
+.etapa p { font-size: 14px; color: var(--muted); }
+.etapa:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--naranja); font-weight: 800; z-index: 1; }
+@media (max-width: 680px) {
+  .mapa { grid-template-columns: 1fr; }
+  .etapa:not(:last-child)::after { content: "↓"; right: auto; left: 22px; top: auto; bottom: -15px; transform: none; }
+}
+
+/* Línea de tiempo */
+.linea { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.fase { margin: 26px 0 10px; display: flex; align-items: center; gap: 10px; }
+.fase:first-child { margin-top: 0; }
+.fase span { font-family: var(--display); font-size: 12px; color: var(--bg); background: var(--naranja); border-radius: 999px; padding: 4px 12px; }
+.paso { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 22px; }
+.paso::before { content: ""; position: absolute; left: 19px; top: 40px; bottom: 0; width: 2px; background: var(--line); }
+.paso.ultimo::before { display: none; }
+.circulo { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; border: 2px solid var(--naranja); color: var(--naranja); background: var(--bg); font-variant-numeric: tabular-nums; }
+.cuerpo { display: grid; gap: 8px; min-width: 0; }
+.cuerpo h3 { font-size: 16px; padding-top: 9px; }
+.donde { font-size: 14px; color: var(--muted); }
+.boton { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--naranja); color: #0b1530; white-space: nowrap; }
+.boton.sec { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.boton.wa { background: #25d366; color: #06301a; }
+.detalle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.cuadrito { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; min-width: 0; }
+.cuadrito b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.cuadrito.jugador b { color: var(--azul); }
+.tip { font-size: 14px; border-left: 3px solid var(--amarillo); padding: 4px 0 4px 10px; color: var(--fg); }
+.tip strong { color: var(--amarillo); }
+@media (max-width: 600px) { .detalle { grid-template-columns: 1fr; } }
+
+/* Ciclo de cada partido */
+.ciclo { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.eslabon { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.eslabon.foco { border: 2px solid var(--naranja); background: var(--naranja-suave); }
+.eslabon p { font-size: 14px; color: var(--muted); }
+.flecha { align-self: center; color: var(--naranja); font-weight: 800; }
+.vuelta { margin-top: 10px; font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.vuelta::before { content: "↺"; color: var(--naranja); font-size: 20px; font-weight: 800; }
+@media (max-width: 680px) { .ciclo { flex-direction: column; } .flecha { transform: rotate(90deg); align-self: flex-start; margin-left: 18px; } }
+
+/* Señales */
+.senales { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.senal { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-width: 0; }
+.senal p { font-size: 14px; color: var(--muted); }
+.chip { flex: none; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.chip.am { background: rgba(240,196,80,.18); color: var(--amarillo); }
+.chip.az { background: rgba(110,168,254,.18); color: var(--azul); }
+.chip.na { background: var(--naranja-suave); color: var(--naranja); border: 1px solid var(--naranja); }
+.chip.gr { background: var(--surface-2); color: var(--muted); }
+@media (max-width: 600px) { .senales { grid-template-columns: 1fr; } }
+
+/* Casos especiales y formatos */
+.tabla-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+
+/* Guion de demo */
+.demo { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; counter-reset: d; }
+.demo li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.demo .min { font-family: var(--display); font-size: 12px; color: var(--naranja); padding-top: 3px; font-variant-numeric: tabular-nums; }
+.demo p { font-size: 14px; color: var(--muted); margin-top: 2px; }
+.lista-chequeo { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.lista-chequeo li { padding-left: 28px; position: relative; font-size: 15px; }
+.lista-chequeo li::before { content: "☐"; position: absolute; left: 0; color: var(--naranja); }
+
+.pie { margin-top: 30px; font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="envoltura">
+
+<header class="portada">
+  <p class="etiqueta">SOPI Torneos · Manual para clubes</p>
+  <h1>Cómo organizar un torneo, paso a paso</h1>
+  <p class="bajada">Todo lo que hace un organizador, desde crear el torneo hasta compartir el podio. El sistema te marca siempre qué sigue: el paso actual y el próximo partido aparecen en naranja, y en el celular hay una barra abajo con un botón “Ir”.</p>
+  <div class="mapa" role="list" aria-label="Las cuatro etapas">
+    <div class="etapa" role="listitem"><span class="num">1</span><h3>Armar</h3><p>Crear el torneo, categorías y opciones del cuadro.</p></div>
+    <div class="etapa" role="listitem"><span class="num">2</span><h3>Inscribir</h3><p>Publicar, recibir anotados y confirmar pagos.</p></div>
+    <div class="etapa" role="listitem"><span class="num">3</span><h3>Jugar</h3><p>Armar el cuadro, poner horarios y cargar resultados.</p></div>
+    <div class="etapa" role="listitem"><span class="num">4</span><h3>Cerrar</h3><p>Podio, compartir y copiar para la próxima edición.</p></div>
+  </div>
+</header>
+
+<section aria-labelledby="t-recorrido">
+  <h2 id="t-recorrido">El recorrido completo</h2>
+  <p class="suave" style="margin-bottom:18px;">Ejemplo con un torneo con cuadro (eliminación directa). Al lado de cada paso: dónde está el botón y qué ve el jugador.</p>
+
+  <ol class="linea">
+    <li class="fase"><span>1 · Armar</span></li>
+
+    <li class="paso"><div class="circulo">1</div><div class="cuerpo">
+      <h3>Entrar a tu panel</h3>
+      <p class="donde">En <b>sopitenispadel.com.ar/torneos</b> → <span class="boton sec">Organizar un torneo</span> para crear la cuenta del club, o <span class="boton sec">Ingresar</span> si ya la tenés.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Lo que ves</b>“Mis torneos”, con los primeros pasos y el botón <span class="boton">+ Nuevo torneo</span>.</div>
+        <div class="cuadrito"><b>Datos del club</b>En “Mis datos” cargá el alias o CBU para cobrar y tu WhatsApp.</div>
+      </div>
+    </div></li>
+
+    <li class="paso"><div class="circulo">2</div><div class="cuerpo">
+      <h3>Crear el torneo</h3>
+      <p class="donde"><span class="boton">+ Nuevo torneo</span> → elegí <b>Cuadro</b>, <b>Liga</b> o <b>Escalera</b> y completá nombre, sede, fechas, canchas del club y precio.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Categorías</b>Elegí de la lista (Caballeros A, Damas B, +45…) o “Otra”. Para cada una: singles o dobles y el cupo.</div>
+        <div class="cuadrito"><b>Si falta algo</b>Los campos con <span style="color:#ff8a93">*</span> son obligatorios: al tocar “Crear” se marcan en rojo los que faltan.</div>
+      </div>
+      <p class="tip"><strong>Tip:</strong> “Sumar el costo del sistema a la inscripción” hace que cada jugador pague los $2.000 del sistema. Si no lo marcás, los pagás vos.</p>
+    </div></li>
+
+    <li class="paso"><div class="circulo">3</div><div class="cuerpo">
+      <h3>Elegir cómo se juega</h3>
+      <p class="donde"><span class="boton sec">Opciones del cuadro</span>, antes de cerrar la inscripción.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Opciones</b>Partido por el tercer puesto, consuelo, zonas antes del cuadro y Copa de Plata para los que no clasifican.</div>
+        <div class="cuadrito"><b>Días de cada ronda</b>Opcional. Si los cargás, al poner horarios solo se ofrecen esos días.</div>
+      </div>
+    </div></li>
+
+    <li class="fase"><span>2 · Inscribir</span></li>
+
+    <li class="paso"><div class="circulo">4</div><div class="cuerpo">
+      <h3>Revisar y publicar</h3>
+      <p class="donde"><span class="boton">Ver cómo va a quedar la página</span> → <span class="boton">Publicar y abrir inscripción</span>.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Lo que ves</b>“¡Publicado!” con <span class="boton wa">Compartir por WhatsApp</span> para mandar el link del torneo.</div>
+        <div class="cuadrito jugador"><b>Lo que ve el jugador</b>La página del torneo con el botón “Inscribirme”.</div>
+      </div>
+    </div></li>
+
+    <li class="paso"><div class="circulo">5</div><div class="cuerpo">
+      <h3>Recibir inscriptos</h3>
+      <p class="donde">Se anotan solos desde el link. También podés sumarlos vos: <span class="boton sec">+ Agregar jugador</span> o <span class="boton sec">Cargar desde una planilla (Excel)</span>.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Planilla</b>Bajá la planilla modelo o usá la tuya: reconoce las columnas aunque estén en otro orden. Avisa en qué fila hay un error.</div>
+        <div class="cuadrito jugador"><b>Lo que ve el jugador</b>Le llega por mail su enlace personal. Desde ahí sigue todo el torneo.</div>
+      </div>
+    </div></li>
+
+    <li class="paso"><div class="circulo">6</div><div class="cuerpo">
+      <h3>Confirmar los pagos</h3>
+      <p class="donde">Arriba del panel: “Tenés N pagos para revisar”. En la lista: <span class="boton sec">Ver comprobante</span> → <span class="boton">Confirmar pago</span> o <span class="boton sec">Rechazar</span>.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Si alguien no pagó</b><span class="boton sec">Recordar pago</span> le manda un mail; también hay un botón de WhatsApp.</div>
+        <div class="cuadrito jugador"><b>Lo que ve el jugador</b>Pago pendiente → en revisión (subió el comprobante) → dado de alta.</div>
+      </div>
+      <p class="tip"><strong>Importante:</strong> al cuadro entran solo los que tienen el pago confirmado.</p>
+    </div></li>
+
+    <li class="paso"><div class="circulo">7</div><div class="cuerpo">
+      <h3>Marcar cabezas de serie y cerrar</h3>
+      <p class="donde">En la columna “Cabeza de serie” escribí 1, 2, 3… Después, en los pasos: <span class="boton sec">Cuando estén todos: cerrar inscripción</span>.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Cómo se ubican</b>El 1 y el 2 solo se cruzan en la final. Si numerás a los 8 de un cuadro de 8: 1 vs 8, 4 vs 5, 2 vs 7 y 3 vs 6.</div>
+        <div class="cuadrito"><b>Los que no tienen número</b>Se sortean. Si sobran lugares, los mejores cabezas de serie pasan libre.</div>
+      </div>
+    </div></li>
+
+    <li class="fase"><span>3 · Jugar</span></li>
+
+    <li class="paso"><div class="circulo">8</div><div class="cuerpo">
+      <h3>Armar el cuadro</h3>
+      <p class="donde">En “Cuadros”: <span class="boton">Armar cuadro</span>. Aparece la llave con todas las rondas.</p>
+      <p class="tip"><strong>¿Te equivocaste?</strong> “¿Querés volver a sortear el cuadro?” está disponible solo mientras no haya resultados, y borra los horarios cargados.</p>
+    </div></li>
+
+    <li class="paso"><div class="circulo">9</div><div class="cuerpo">
+      <h3>Jugar cada partido</h3>
+      <p class="donde">Seguí lo que está en naranja: <b>👉 Seguí por acá</b>. Cada partido tiene siempre el mismo ciclo (abajo, en el diagrama).</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Lo que ves</b>Al guardar, te lleva solo al partido que sigue. El ganador pasa solo a la ronda siguiente.</div>
+        <div class="cuadrito jugador"><b>Lo que ve el jugador</b>Su partido con día, hora y cancha. Puede cargar el resultado y el rival lo confirma.</div>
+      </div>
+    </div></li>
+
+    <li class="fase"><span>4 · Cerrar</span></li>
+
+    <li class="paso ultimo"><div class="circulo">10</div><div class="cuerpo">
+      <h3>Podio y cierre</h3>
+      <p class="donde">Con la final cargada aparece “¡Torneo terminado! 🏆” con <span class="boton wa">Compartir el podio</span>, <span class="boton sec">Ver la página del torneo</span> y <span class="boton sec">Bajar en Excel</span>.</p>
+      <div class="detalle">
+        <div class="cuadrito"><b>Próxima edición</b><span class="boton sec">Copiar para una nueva edición</span> copia datos y categorías, sin inscriptos.</div>
+        <div class="cuadrito jugador"><b>Lo que ve el jugador</b>“🏆 ¡Campeón!”, “🥈 ¡Subcampeón!” o “🥉 Tercer puesto” en su enlace.</div>
+      </div>
+    </div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="t-ciclo">
+  <h2 id="t-ciclo">El ciclo de cada partido</h2>
+  <p class="suave" style="margin-bottom:16px;">Se habilita de a un paso: no se puede cargar el resultado hasta guardar el horario.</p>
+  <div class="ciclo">
+    <div class="eslabon"><span class="chip am" style="justify-self:start;">1 · Falta horario</span><p>Elegí el día de la lista, la hora y la cancha.</p></div>
+    <span class="flecha" aria-hidden="true">→</span>
+    <div class="eslabon foco"><h3>Guardar horario</h3><p>El botón se enciende recién con los tres datos completos.</p></div>
+    <span class="flecha" aria-hidden="true">→</span>
+    <div class="eslabon"><h3>Avisar</h3><p>Botones de WhatsApp para cada jugador. También les llega un mail.</p></div>
+    <span class="flecha" aria-hidden="true">→</span>
+    <div class="eslabon"><span class="chip az" style="justify-self:start;">2 · Falta resultado</span><p>Escribí el resultado, por ej. 6-4 3-6 10-8.</p></div>
+    <span class="flecha" aria-hidden="true">→</span>
+    <div class="eslabon foco"><h3>Cargar resultado</h3><p>El ganador pasa solo y el panel te lleva al partido que sigue.</p></div>
+  </div>
+  <p class="vuelta">Se repite en cada ronda. Las semis solo ofrecen días posteriores a los cuartos, y la final, posteriores a las semis.</p>
+</section>
+
+<section aria-labelledby="t-senales">
+  <h2 id="t-senales">Cómo leer el panel</h2>
+  <div class="senales">
+    <div class="senal"><span class="chip na">👉 Seguí por acá</span><p>El partido o el paso que conviene hacer ahora.</p></div>
+    <div class="senal"><span class="chip am">1 · Falta horario</span><p>Todavía no tiene día, hora y cancha.</p></div>
+    <div class="senal"><span class="chip az">2 · Falta resultado</span><p>Ya tiene horario: falta cargar cómo salió.</p></div>
+    <div class="senal"><span class="chip gr">🔒 Bloqueado</span><p>Se habilita cuando termines el paso anterior.</p></div>
+    <div class="senal"><span class="chip gr">Esperando rival</span><p>Ronda siguiente: todavía no se sabe quién juega.</p></div>
+    <div class="senal"><span class="chip na">Ahora · Ir ↓</span><p>En el celular, barra fija abajo con el paso actual.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="t-casos">
+  <h2 id="t-casos">Casos especiales</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Qué pasó</th><th>Qué hacés</th></tr></thead>
+      <tbody>
+        <tr><td>No se presentó</td><td>En el partido: “¿No se jugó o alguien se retiró?” → <b>Gana [nombre] por W.O.</b></td></tr>
+        <tr><td>Se retiró jugando</td><td>Mismo lugar: escribí el score hasta el retiro (6-1 2-0) y tocá <b>Se retiró [nombre]</b>.</td></tr>
+        <tr><td>Llueve o se pasa</td><td>“Cambiar horario” y en el día elegí <b>Otro día…</b> para cualquier fecha.</td></tr>
+        <tr><td>Pagó en mano</td><td><b>+ Agregar jugador</b> y marcá “Ya pagó”: queda confirmado.</td></tr>
+        <tr><td>Resultado mal escrito</td><td>El aviso aparece en el mismo partido; corregilo y volvé a cargar.</td></tr>
+        <tr><td>Los jugadores no coinciden</td><td>Si cada uno carga algo distinto, queda “en revisión” y lo definís vos.</td></tr>
+        <tr><td>Cambiaste cabezas de serie</td><td>“¿Querés volver a sortear el cuadro?”, solo antes del primer resultado.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="t-formatos">
+  <h2 id="t-formatos">Los tres formatos</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Formato</th><th>Para qué sirve</th><th>Qué cambia</th></tr></thead>
+      <tbody>
+        <tr><td>Cuadro</td><td>Torneo de fin de semana o de una semana, eliminación directa.</td><td>Opcional: zonas antes del cuadro, Copa de Oro y Copa de Plata, consuelo, tercer puesto.</td></tr>
+        <tr><td>Liga</td><td>Fechas fijas (por ej. los domingos) con tabla de posiciones.</td><td>Los jugadores avisan qué fechas pueden y el club arma los partidos de cada fecha.</td></tr>
+        <tr><td>Escalera</td><td>Ranking permanente por desafíos.</td><td>Los jugadores se desafían entre ellos; el resultado se carga con selfie.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="t-demo">
+  <h2 id="t-demo">Guion para una demo de 10 minutos</h2>
+  <p class="suave" style="margin-bottom:14px;">Con la cuenta de prueba y los torneos de ejemplo. Conviene tener abiertos el panel en la compu y un enlace de jugador en el celular.</p>
+  <ol class="demo">
+    <li><span class="min">0:00</span><div><h3>El problema</h3><p>Planillas, grupos de WhatsApp y cobros a mano. Mostrar la página pública de un torneo terminado: podio y llave.</p></div></li>
+    <li><span class="min">1:00</span><div><h3>Crear un torneo en 1 minuto</h3><p>+ Nuevo torneo, categorías de la lista y “Crear” vacío para mostrar los campos en rojo.</p></div></li>
+    <li><span class="min">2:30</span><div><h3>Publicar y compartir</h3><p>Ver cómo va a quedar, publicar y “Compartir por WhatsApp”.</p></div></li>
+    <li><span class="min">3:30</span><div><h3>Inscripción y pago desde el celular</h3><p>Anotarse como jugador y subir el comprobante. En la compu aparece “1 pago para revisar”: confirmarlo.</p></div></li>
+    <li><span class="min">5:00</span><div><h3>Cargar una lista en Excel</h3><p>Subir la planilla del club: carga a todos y avisa las filas con errores.</p></div></li>
+    <li><span class="min">6:00</span><div><h3>Armar el cuadro</h3><p>Cabezas de serie, cerrar inscripción y armar: 1 vs 8, 2 vs 7…</p></div></li>
+    <li><span class="min">7:00</span><div><h3>Un partido completo</h3><p>Seguir lo naranja: horario (botón gris hasta completar), avisar por WhatsApp, resultado y salto al siguiente.</p></div></li>
+    <li><span class="min">8:30</span><div><h3>El jugador carga el resultado</h3><p>Desde su enlace en el celular: carga, el rival confirma y la llave se actualiza.</p></div></li>
+    <li><span class="min">9:30</span><div><h3>Cierre</h3><p>Podio, compartir por WhatsApp y Excel. Precio: plan gratis o $2.000 por inscripto.</p></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="t-chequeo">
+  <h2 id="t-chequeo">Antes de abrir la inscripción</h2>
+  <ul class="lista-chequeo">
+    <li>Alias o CBU cargado en “Mis datos”.</li>
+    <li>Fechas del torneo y cantidad de canchas.</li>
+    <li>Categorías con modalidad y cupo.</li>
+    <li>Precio y si el jugador paga los $2.000 del sistema.</li>
+    <li>Opciones del cuadro: tercer puesto, zonas, Copa de Plata, días de cada ronda.</li>
+    <li>Revisaste la página con “Ver cómo va a quedar la página”.</li>
+  </ul>
+  <p class="pie">SOPI Torneos · guía basada en la versión de prueba del 25/11/2026. Los nombres de botones son los que aparecen en el panel.</p>
+</section>
+
+</div>
