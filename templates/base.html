@@ -116,6 +116,10 @@
     /* Un solo lugar para mandar eventos a Google Analytics y a Meta */
     window.sopiEvento = function (nombre, datos) {
       datos = datos || {};
+      try {  /* medición propia de la tienda (dashboard del admin) */
+        navigator.sendBeacon('/evento', new Blob([JSON.stringify({nombre: nombre, datos: datos})],
+                                                 {type: 'application/json'}));
+      } catch (e) {}
       var meta = {view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout',
                   purchase: 'Purchase', search: 'Search', generate_lead: 'Contact',
                   contacto_whatsapp: 'Contact'}[nombre];

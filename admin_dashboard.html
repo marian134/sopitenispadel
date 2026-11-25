@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Admin{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block content %}
+
+<style>
+  .db { width: min(1100px, 94%); margin: 32px auto 64px; }
+  .db-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .db-top h1 { margin: 0; }
+  .db-nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; font-weight: 700; }
+  .db-nav a { color: inherit; }
+  .db-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 4px; }
+  .db-filtros a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-2, #ccc); color: inherit; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .db-filtros a.on { background: var(--lime, #E57E3C); border-color: var(--lime, #E57E3C); color: #fff; }
+  .db-nota { font-size: 13px; color: var(--muted, #777); margin: 6px 0 18px; }
+  .db-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  .db-kpi { background: var(--surface, #fff); border: 1px solid var(--line, #ddd); border-radius: 14px; padding: 14px 16px; }
+  .db-kpi span { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #777); }
+  .db-kpi b { display: block; font-size: 26px; margin: 4px 0 2px; }
+  .db-kpi small { color: var(--muted, #777); font-size: 13px; }
+  .db-card { background: var(--surface, #fff); border: 1px solid var(--line, #ddd); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+  .db-card h2 { margin: 0 0 12px; font-size: 18px; }
+  .db-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .db-chart { display: flex; align-items: flex-end; gap: 3px; height: 180px; border-bottom: 1px solid var(--line, #ddd); }
+  .db-bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .db-bar i { display: block; background: var(--lime, #E57E3C); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .9; }
+  .db-bar i.cero { background: var(--line, #ddd); }
+  .db-ejes { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted, #777); margin-top: 6px; }
+  .db-tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .db-tabla th { text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #777); font-weight: 700; padding: 6px 4px; border-bottom: 1px solid var(--line, #ddd); }
+  .db-tabla td { padding: 7px 4px; border-bottom: 1px solid var(--line, #eee); }
+  .db-tabla .num { text-align: right; white-space: nowrap; }
+  .db-barra { height: 8px; border-radius: 999px; background: var(--line, #eee); overflow: hidden; margin-top: 4px; }
+  .db-barra i { display: block; height: 100%; background: var(--lime, #E57E3C); }
+  .db-titulo { margin: 26px 0 12px; font-size: 22px; }
+  .db-vacio { color: var(--muted, #777); font-size: 14px; margin: 0; }
+  .t-ok { color: #8fb487; font-weight: 700; } .t-pend { color: #E57E3C; font-weight: 700; } .t-mal { color: #ff8080; font-weight: 700; }
+  @media (max-width: 820px) {
+    .db-kpis { grid-template-columns: 1fr 1fr; }
+    .db-grid { grid-template-columns: 1fr; }
+    .db-kpi b { font-size: 21px; }
+  }
+</style>
+
+<div class="db">
+
+  <div class="db-top">
+    <h1>Dashboard</h1>
+    <nav class="db-nav">
+      <a href="{{ url_for('admin_pedidos') }}">Pedidos{% if estados.para_preparar %} ({{ estados.para_preparar }} para preparar){% endif %}</a>
+      <a href="{{ url_for('admin_productos') }}">Productos</a>
+      <a href="{{ url_for('admin_precios') }}">Cargar CSV</a>
+    </nav>
+  </div>
+
+  <nav class="db-filtros">
+    {% for clave, titulo in periodos.items() %}
+      <a href="{{ url_for('admin_dashboard', dias=clave) }}" class="{{ 'on' if periodo == clave }}">{{ titulo }}</a>
+    {% endfor %}
+  </nav>
+  <p class="db-nota">Del {{ desde.strftime('%d/%m/%Y') }} al {{ hasta.strftime('%d/%m/%Y') }}. Solo cuentan los pedidos pagados.</p>
+
+  <section class="db-kpis">
+    <div class="db-kpi">
+      <span>Ventas</span>
+      <b>{{ ingresos|pesos }}</b>
+      <small>{{ cant_pagados }} pedidos · {{ unidades }} unidades</small>
+    </div>
+    <div class="db-kpi">
+      <span>Ganancia estimada</span>
+      <b>{{ ganancia|pesos }}</b>
+      <small>{% if ventas_productos %}{{ (ganancia * 100 / ventas_productos)|round|int }}% de margen{% else %}sin ventas{% endif %}</small>
+    </div>
+    <div class="db-kpi">
+      <span>Ticket promedio</span>
+      <b>{{ ticket|pesos }}</b>
+      <small>por pedido pagado</small>
+    </div>
+    <div class="db-kpi">
+      <span>Pedidos que se pagan</span>
+      <b>{{ conversion }}%</b>
+      <small>{{ estados.pendientes }} esperando · {{ estados.cancelados }} cancelados</small>
+    </div>
+  </section>
+
+  {% if sin_costo %}
+  <p class="db-nota">Ojo: {{ sin_costo }} unidades vendidas no tienen costo cargado, así que la ganancia está inflada. Cargá el costo por CSV.</p>
+  {% endif %}
+
+  <h2 class="db-titulo">Visitas</h2>
+  <section class="db-kpis">
+    <div class="db-kpi">
+      <span>Personas que entraron</span>
+      <b>{{ v_visitantes }}</b>
+      <small>{{ v_vistas }} páginas vistas</small>
+    </div>
+    <div class="db-kpi">
+      <span>Clics a WhatsApp</span>
+      <b>{{ v_whatsapp }}</b>
+      <small>de {{ v_whatsapp_personas }} personas</small>
+    </div>
+    <div class="db-kpi">
+      <span>Visitantes que compran</span>
+      <b>{{ conversion_visitas }}%</b>
+      <small>{{ v_pagados }} compras / {{ v_visitantes }} personas</small>
+    </div>
+    <div class="db-kpi">
+      <span>Llegan más desde</span>
+      <b>{{ v_origenes[0][0] if v_origenes else '—' }}</b>
+      <small>{% if v_origenes %}{{ v_origenes[0][1] }} personas{% else %}sin datos todavía{% endif %}</small>
+    </div>
+  </section>
+
+  <section class="db-card">
+    <h2>Del clic a la compra</h2>
+    {% set base_embudo = v_embudo[0][1] or 1 %}
+    {% for paso, cant in v_embudo %}
+      <p style="margin:0 0 10px">
+        <b>{{ paso }}</b> — {{ cant }} {{ 'persona' if cant == 1 else 'personas' }}
+        {% if not loop.first %}<small style="color:var(--muted,#777)">({{ (cant * 100 / base_embudo)|round(1) }}%)</small>{% endif %}
+        <span class="db-barra"><i style="width: {{ (cant * 100 / base_embudo)|round(1) }}%"></i></span>
+      </p>
+    {% endfor %}
+    <p class="db-nota">Se cuentan desde que instalaste la medición. No incluye tus propias visitas mientras estás logueado como admin, ni bots.</p>
+  </section>
+
+  <div class="db-grid">
+    <section class="db-card">
+      <h2>De dónde llegan</h2>
+      {% set total_or = v_origenes|sum(attribute=1) or 1 %}
+      {% for origen, cant in v_origenes[:8] %}
+        <p style="margin:0 0 10px">
+          <b>{{ origen }}</b> — {{ cant }} ({{ (cant * 100 / total_or)|round|int }}%)
+          <span class="db-barra"><i style="width: {{ (cant * 100 / total_or)|round(1) }}%"></i></span>
+        </p>
+      {% else %}<p class="db-vacio">Todavía no hay visitas registradas.</p>{% endfor %}
+      {% if v_dispositivos %}
+      <p class="db-nota">
+        {% for disp, cant in v_dispositivos %}{{ disp }}: <b>{{ cant }}</b>{% if not loop.last %} · {% endif %}{% endfor %}
+      </p>
+      {% endif %}
+      <p class="db-nota">Tip: en tus links de Instagram agregá <b>?utm_source=instagram</b> para que se cuenten bien.</p>
+    </section>
+
+    <section class="db-card">
+      <h2>Productos más vistos</h2>
+      {% if v_productos %}
+      <table class="db-tabla">
+        <tr><th>Producto</th><th class="num">Vistas</th><th class="num">Personas</th></tr>
+        {% for p in v_productos %}
+        <tr><td>{{ p.nombre }}</td><td class="num">{{ p.vistas }}</td><td class="num">{{ p.personas }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">Todavía no hay visitas a productos.</p>{% endif %}
+    </section>
+
+    <section class="db-card">
+      <h2>Clics a WhatsApp por botón</h2>
+      {% if v_whatsapp_botones %}
+      <table class="db-tabla">
+        {% for boton, cant in v_whatsapp_botones %}
+        <tr><td>{{ boton|capitalize }}</td><td class="num">{{ cant }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">Sin clics todavía.</p>{% endif %}
+    </section>
+
+    <section class="db-card">
+      <h2>Qué buscan en la tienda</h2>
+      {% if v_busquedas %}
+      <table class="db-tabla">
+        {% for texto, cant in v_busquedas %}
+        <tr><td>{{ texto }}</td><td class="num">{{ cant }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">Nadie usó el buscador todavía.</p>{% endif %}
+      {% if v_paginas %}
+      <h2 style="margin-top:18px">Páginas más vistas</h2>
+      <table class="db-tabla">
+        {% for ruta, cant in v_paginas %}
+        <tr><td>{{ ruta }}</td><td class="num">{{ cant }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </section>
+  </div>
+
+  <h2 class="db-titulo">Ventas</h2>
+  <section class="db-card">
+    <h2>Ventas {{ 'por semana' if periodo in ('90', '365') else 'por día' }}</h2>
+    <div class="db-chart">
+      {% for s in serie %}
+        <div class="db-bar" title="{{ s.etiqueta }}: {{ s.monto|pesos }} · {{ s.pedidos }} pedidos">
+          <i class="{{ 'cero' if not s.monto }}" style="height: {{ (s.monto * 100 / maximo)|round(1) }}%"></i>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="db-ejes">
+      <span>{{ serie[0].etiqueta }}</span>
+      <span>Máximo: {{ maximo|pesos if maximo > 1 else '$0' }}</span>
+      <span>{{ serie[-1].etiqueta }}</span>
+    </div>
+  </section>
+
+  <div class="db-grid">
+
+    <section class="db-card">
+      <h2>Más vendidos</h2>
+      {% if top %}
+      <table class="db-tabla">
+        <tr><th>Producto</th><th class="num">Unid.</th><th class="num">Monto</th></tr>
+        {% for f in top %}
+        <tr><td>{{ f.nombre }}</td><td class="num">{{ f.unidades }}</td><td class="num">{{ f.monto|pesos }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">Todavía no hay ventas en este período.</p>{% endif %}
+    </section>
+
+    <section class="db-card">
+      <h2>Tenis vs pádel</h2>
+      {% set total_dep = por_deporte|sum(attribute=1) %}
+      {% for deporte, monto in por_deporte %}
+        <p style="margin:0 0 10px">
+          <b>{{ deporte }}</b> — {{ monto|pesos }} ({{ (monto * 100 / total_dep)|round|int }}%)
+          <span class="db-barra"><i style="width: {{ (monto * 100 / total_dep)|round(1) }}%"></i></span>
+        </p>
+      {% else %}<p class="db-vacio">Sin ventas.</p>{% endfor %}
+
+      <h2 style="margin-top:18px">Medios de pago</h2>
+      {% if medios %}
+      <table class="db-tabla">
+        {% for medio, v in medios %}
+        <tr><td>{{ medio|capitalize }}</td><td class="num">{{ v.pedidos }} pedidos</td><td class="num">{{ v.monto|pesos }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">Sin ventas.</p>{% endif %}
+    </section>
+
+    <section class="db-card">
+      <h2>Stock bajo ({{ stock_bajo_limite }} o menos)</h2>
+      {% if stock_bajo %}
+      <table class="db-tabla">
+        <tr><th>Producto</th><th class="num">Stock</th></tr>
+        {% for p in stock_bajo[:15] %}
+        <tr><td>{{ p.nombre }}</td><td class="num {{ 't-mal' if p.stock <= 0 else 't-pend' }}">{{ p.stock }}</td></tr>
+        {% endfor %}
+      </table>
+      {% if stock_bajo|length > 15 %}<p class="db-nota">Y {{ stock_bajo|length - 15 }} más. Los de catálogo (sin stock propio) también aparecen acá.</p>{% endif %}
+      {% else %}<p class="db-vacio">Todo con stock.</p>{% endif %}
+      <p class="db-nota">Plata invertida en stock (a costo): <b>{{ valor_stock|pesos }}</b></p>
+    </section>
+
+    <section class="db-card">
+      <h2>Últimos pedidos</h2>
+      {% if ultimos %}
+      <table class="db-tabla">
+        {% for p in ultimos %}
+        <tr>
+          <td>#{{ p.id }} · {{ p.creado_en|hora_ar }}<br><small>{{ p.nombre_cliente or '—' }}</small></td>
+          <td class="{{ 't-ok' if p.estado == 'pagado' else ('t-pend' if p.estado == 'pendiente' else 't-mal') }}">{{ {'pagado': 'Pagado', 'pendiente': 'Esperando pago'}.get(p.estado, 'Cancelado') }}</td>
+          <td class="num">{{ p.total|pesos }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="db-vacio">No hubo pedidos en este período.</p>{% endif %}
+
+      {% if cupones %}
+      <h2 style="margin-top:18px">Cupones usados</h2>
+      <table class="db-tabla">
+        {% for codigo, usos, descuento in cupones %}
+        <tr><td>{{ codigo }}</td><td class="num">{{ usos }} usos</td><td class="num">−{{ descuento|pesos }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </section>
+
+  </div>
+</div>
+{% endblock %}
