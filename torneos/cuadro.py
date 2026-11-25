@@ -38,9 +38,11 @@ def etapa_de(p):
     """Clave de etapa de un partido para buscar su plazo."""
     if p.cuadro == ZONA:
         return "zonas"
-    if p.cuadro != PRINCIPAL:
+    if p.cuadro == TERCER:   # el tercer puesto se juega en los días de la final
+        return "2"
+    if p.cuadro not in (PRINCIPAL, PLATA):   # la Copa de Plata usa los mismos días por ronda que la de Oro
         return None
-    total = max((int(x.ronda) for x in Partido.query.filter_by(categoria_id=p.categoria_id, cuadro=PRINCIPAL)),
+    total = max((int(x.ronda) for x in Partido.query.filter_by(categoria_id=p.categoria_id, cuadro=p.cuadro)),
                 default=0)
     return str(2 ** (total - int(p.ronda) + 1)) if total else None
 
@@ -195,7 +197,11 @@ def nombre_ronda(cat, cuadro, ronda, partido=None):
         return "Fase de zonas"
     total = rondas_de(cat, cuadro)
     jugadores = 2 ** (total - int(ronda) + 1)
-    return NOMBRES_RONDA.get(jugadores, f"Ronda {ronda}")
+    nombre = NOMBRES_RONDA.get(jugadores, f"Ronda {ronda}")
+    z = cat.competencia.reglas.get("zonas") or {}
+    if cuadro == PRINCIPAL and z.get("activo") and z.get("plata"):   # con dos copas, que no se confundan
+        return f"{nombres_cuadros(cat.competencia)[PRINCIPAL]} · {nombre}"
+    return nombre
 
 
 def _siguiente(p):

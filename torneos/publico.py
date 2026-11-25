@@ -379,7 +379,8 @@ def _bloque_cuadro(insc, j):
     mios = [p for p in Partido.query.filter_by(categoria_id=cat.id).all()
             if insc.id in (p.lado_a_id, p.lado_b_id)]
     partidos, esperando, historial = [], [], []
-    for p in sorted(mios, key=lambda p: (p.cuadro != "principal", int(p.ronda or 0))):
+    # zonas primero (por fecha), después el cuadro por ronda
+    for p in sorted(mios, key=lambda p: (p.cuadro != "zona", int(p.ronda or 0), p.semana or 0, p.cuadro != "principal")):
         rival = p.lado_b if p.lado_a_id == insc.id else p.lado_a
         ronda = cdr.nombre_ronda(cat, p.cuadro, p.ronda, p) + (" (consuelo)" if p.cuadro == "consuelo" else "")
         plazo = cdr.plazo_de(comp, p)
@@ -414,13 +415,24 @@ def _bloque_cuadro(insc, j):
     campeon = cdr.campeon(cat)
     podio = cdr.podio(cat)
     puesto = None
+    plural = "es" if insc.jugador2 else ""
+    nombres = cdr.nombres_cuadros(comp)
+    dos_copas = bool(cdr.partidos(cat, cdr.PLATA))
+    de_oro = f" de la {nombres[cdr.PRINCIPAL]}" if dos_copas else ""
     if podio and not (campeon and campeon.id == insc.id):
         if podio["subcampeon"] and podio["subcampeon"].id == insc.id:
-            puesto = "🥈 ¡Subcampeón" + ("es" if insc.jugador2 else "") + "!"
+            puesto = f"🥈 ¡Subcampeón{plural}{de_oro}!"
         elif any(t.id == insc.id for t in podio["terceros"]):
-            puesto = "🥉 Tercer puesto"
+            puesto = f"🥉 Tercer puesto{de_oro}"
+    if dos_copas and not puesto and not (campeon and campeon.id == insc.id):
+        final_plata = max(cdr.partidos(cat, cdr.PLATA), key=lambda x: int(x.ronda))
+        if final_plata.estado in cdr.TERMINADOS and final_plata.ganador_id:
+            if final_plata.ganador_id == insc.id:
+                puesto = f"🏆 ¡Campeón{plural} de la {nombres[cdr.PLATA]}!"
+            elif insc.id in (final_plata.lado_a_id, final_plata.lado_b_id):
+                puesto = f"🥈 ¡Subcampeón{plural} de la {nombres[cdr.PLATA]}!"
     return {
-        "puesto": puesto, "terminado": bool(podio),
+        "puesto": puesto, "terminado": bool(podio), "de_oro": de_oro,
         "partidos": partidos, "esperando": esperando, "historial": historial,
         "armado": bool(mios) or bool(cdr.partidos(cat)), "campeon": campeon and campeon.id == insc.id,
         "bloque": None,

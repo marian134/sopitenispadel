@@ -35,7 +35,7 @@
             <span{% if p.ganador_id == p.lado_b_id %} style="font-weight:800;"{% endif %}>{{ p.lado_b.jugador1.nombre_completo }}</span>
             <span class="tn-suave">·
               {% if p.estado == "wo" %}W.O.{% elif p.estado == "anulado" %}no jugado{% elif res %}{{ res.sets }}{% else %}por jugar{% endif %}</span>
-            {% if admin and p.estado in ("agendado", "en_disputa") %}{% include "torneos/_resolver_partido.html" %}{% endif %}
+            {% if admin and p.estado in ("agendado", "en_disputa") %}<a href="#partido-{{ p.id }}" style="font-size:13px; white-space:nowrap;">{{ "Cargar ↓" if p.fecha_hora else "Poner horario ↓" }}</a>{% endif %}
           </div>
         {% endfor %}
       {% endfor %}

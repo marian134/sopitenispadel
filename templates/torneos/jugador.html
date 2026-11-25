@@ -166,7 +166,7 @@
 
         {% set bc = bloques_cuadro.get(i.id) %}
         {% if bc %}
-          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}!</span></p>
+          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}{{ bc.de_oro }}!</span></p>
           {% elif bc.puesto %}<p style="margin-top:12px;"><span class="tn-campeon">{{ bc.puesto }}</span></p>
           {% elif bc.terminado %}<p class="tn-dato" style="margin-top:12px;">El torneo terminó. ¡Gracias por jugar!</p>{% endif %}
           {% for f in bc.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}

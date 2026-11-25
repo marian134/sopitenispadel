@@ -95,7 +95,9 @@
       <h2 style="margin-top:0;">{{ "Pasos" if actual != -1 else "¡Torneo terminado! 🏆" }}</h2>
       {% if actual == -1 %}
         {% for c in cuadro.categorias if c.campeon %}
-          <p style="margin:4px 0;"><strong>{{ c.cat.nombre }}:</strong> campeón {{ c.campeon.jugador1.nombre_completo }}{% if c.campeon.jugador2 %} / {{ c.campeon.jugador2.nombre_completo }}{% endif %}</p>
+          {% set nombres = cdr_nombres(comp) %}
+          <p style="margin:4px 0;"><strong>{{ c.cat.nombre }}:</strong> campeón{% if c.plata %} de la {{ nombres.principal }}{% endif %} {{ c.campeon.jugador1.nombre_completo }}{% if c.campeon.jugador2 %} / {{ c.campeon.jugador2.nombre_completo }}{% endif %}
+            {% if c.campeon_plata %}· campeón de la {{ nombres.plata }} {{ c.campeon_plata.jugador1.nombre_completo }}{% if c.campeon_plata.jugador2 %} / {{ c.campeon_plata.jugador2.nombre_completo }}{% endif %}{% endif %}</p>
         {% endfor %}
         <p class="tn-suave" style="margin:10px 0 6px;">Lo que podés hacer ahora:</p>
         <div class="tn-acciones">

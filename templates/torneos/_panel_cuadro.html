@@ -124,7 +124,8 @@
         <p class="tn-siguiente-et">👉 Seguí por acá</p>
       {% endif %}
       <p style="margin:0;">
-        {% if f.etapa == "horario" %}<span class="tn-chip tn-chip-horario">1 · Falta horario</span>
+        {% if f.etapa == "disputa" %}<span class="tn-chip tn-chip-disputa">Revisar resultado</span>
+        {% elif f.etapa == "horario" %}<span class="tn-chip tn-chip-horario">1 · Falta horario</span>
         {% elif f.etapa == "resultado" %}<span class="tn-chip tn-chip-resultado">2 · Falta resultado</span>
         {% else %}<span class="tn-chip">Esperando rival</span>{% endif %}
         <strong>{{ p.lado_a.jugador1.nombre_completo if p.lado_a else "A definir" }}</strong> vs
@@ -155,7 +156,12 @@
           {% for nombre, link in f.wa %}<a class="tn-boton tn-wa tn-boton-chico" href="{{ link }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisar a {{ nombre }}</a>{% endfor %}
         </div>
       {% endif %}
-      {% if p.estado == 'agendado' and f.etapa == "resultado" %}
+      {% if f.etapa == "disputa" %}
+        <p class="tn-dato" style="margin:6px 0 0;">Los jugadores cargaron resultados distintos:
+          {% for r in p.resultados if r.cargado_por == "jugador" %}{{ (r.cargado_por_id == p.lado_a_id) and p.lado_a.jugador1.nombre or p.lado_b.jugador1.nombre }} cargó {{ r.sets }}{{ "; " if not loop.last }}{% endfor %}
+          (games de {{ p.lado_a.jugador1.nombre }} primero). Cargá el resultado correcto.</p>
+        {% with abierto = true %}{% include "torneos/_resolver_partido.html" %}{% endwith %}
+      {% elif p.estado == 'agendado' and f.etapa == "resultado" %}
         {% with abierto = es_siguiente %}{% include "torneos/_resolver_partido.html" %}{% endwith %}
       {% elif p.estado == 'agendado' and es_siguiente %}
         <p class="tn-bloqueado">🔒 <strong>2 · Cargar resultado</strong>: se habilita cuando guardes día, hora y cancha.
