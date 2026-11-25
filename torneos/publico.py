@@ -253,9 +253,10 @@ def _avisar_inscripcion(comp, cat, insc):
                 f"Hola {jugador.nombre}!",
                 "",
                 f"Recibimos tu inscripción en {comp.nombre} ({cat.nombre}).",
-                "El organizador va a revisar el pago y te confirma.",
+                "El organizador va a revisar el pago y te confirma." if comp.precio else "La inscripción es gratis.",
                 "",
-                "Desde este enlace personal seguís tus torneos, tus partidos y tu ranking:",
+                "Desde este enlace personal seguís tus torneos y tus partidos"
+                + (" y tu ranking:" if comp.tipo == "escalera" else ":"),
                 enlace,
                 "",
                 "Guardalo: es tuyo y no hace falta contraseña.",
@@ -415,22 +416,26 @@ def _bloque_cuadro(insc, j):
     campeon = cdr.campeon(cat)
     podio = cdr.podio(cat)
     puesto = None
-    plural = "es" if insc.jugador2 else ""
+    campeon_txt, sub_txt = ("Campeones", "Subcampeones") if insc.jugador2 else ("Campeón", "Subcampeón")
     nombres = cdr.nombres_cuadros(comp)
     dos_copas = bool(cdr.partidos(cat, cdr.PLATA))
     de_oro = f" de la {nombres[cdr.PRINCIPAL]}" if dos_copas else ""
     if podio and not (campeon and campeon.id == insc.id):
         if podio["subcampeon"] and podio["subcampeon"].id == insc.id:
-            puesto = f"🥈 ¡Subcampeón{plural}{de_oro}!"
+            puesto = f"🥈 ¡{sub_txt}{de_oro}!"
         elif any(t.id == insc.id for t in podio["terceros"]):
             puesto = f"🥉 Tercer puesto{de_oro}"
     if dos_copas and not puesto and not (campeon and campeon.id == insc.id):
         final_plata = max(cdr.partidos(cat, cdr.PLATA), key=lambda x: int(x.ronda))
         if final_plata.estado in cdr.TERMINADOS and final_plata.ganador_id:
             if final_plata.ganador_id == insc.id:
-                puesto = f"🏆 ¡Campeón{plural} de la {nombres[cdr.PLATA]}!"
+                puesto = f"🏆 ¡{campeon_txt} de la {nombres[cdr.PLATA]}!"
             elif insc.id in (final_plata.lado_a_id, final_plata.lado_b_id):
-                puesto = f"🥈 ¡Subcampeón{plural} de la {nombres[cdr.PLATA]}!"
+                puesto = f"🥈 ¡{sub_txt} de la {nombres[cdr.PLATA]}!"
+    if not puesto and not (campeon and campeon.id == insc.id):
+        cons = cdr.campeon(cat, cdr.CONSUELO)
+        if cons and cons.id == insc.id:
+            puesto = f"🏆 ¡{campeon_txt} de la consuelo!"
     return {
         "puesto": puesto, "terminado": bool(podio), "de_oro": de_oro,
         "partidos": partidos, "esperando": esperando, "historial": historial,

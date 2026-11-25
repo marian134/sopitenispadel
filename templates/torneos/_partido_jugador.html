@@ -5,7 +5,7 @@
   <strong>{{ "Desafiaste a" if f.soy_desafiante else "Te desafió" }} {{ f.rival.jugador1.nombre_completo }}</strong>
   <span class="tn-suave" style="font-size:13px;"> · semana {{ p.semana }}</span>
   {% else %}
-  <strong>{{ f.ronda }}: vs {{ f.rival.jugador1.nombre_completo }}</strong>
+  <strong>{{ f.ronda }}: vs {{ f.rival.jugador1.nombre_completo }}{% if f.rival.jugador2 %} y {{ f.rival.jugador2.nombre_completo }}{% endif %}</strong>
   {% if p.fecha_hora %}<p class="tn-dato" style="margin:2px 0;">{{ ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][p.fecha_hora.weekday()] }} {{ p.fecha_hora.strftime("%d/%m a las %H:%M") }}{% if p.cancha %} · cancha {{ p.cancha }}{% endif %}</p>
   {% elif f.plazo and f.plazo.hasta %}<p class="tn-dato" style="margin:2px 0;">Coordiná con tu rival y juguen antes del <strong>{{ f.plazo.hasta.strftime("%d/%m") }}</strong>.</p>
   {% else %}<p class="tn-dato" style="margin:2px 0;">El organizador todavía no fijó el horario.</p>{% endif %}
@@ -63,7 +63,7 @@
         <form method="post" enctype="multipart/form-data" action="{{ url_for('torneos.cargar_resultado', enlace=j.enlace) }}" class="tn-form" style="margin-top:10px;">
           <input type="hidden" name="partido" value="{{ p.id }}">
           <div class="tn-sets">
-            <span></span><small>Vos</small><small>{{ f.rival.jugador1.nombre }}</small>
+            <span></span><small>{{ "Ustedes" if f.rival.jugador2 else "Vos" }}</small><small>{{ f.rival.jugador1.nombre }}{% if f.rival.jugador2 %} y {{ f.rival.jugador2.nombre }}{% endif %}</small>
             <span>Set 1</span><input name="s1a" inputmode="numeric" required><input name="s1b" inputmode="numeric" required>
             <span>Set 2</span><input name="s2a" inputmode="numeric" required><input name="s2b" inputmode="numeric" required>
             <span>Súper TB</span><input name="s3a" inputmode="numeric"><input name="s3b" inputmode="numeric">

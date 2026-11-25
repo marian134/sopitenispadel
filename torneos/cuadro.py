@@ -10,6 +10,7 @@
 - Tercer puesto (opcional): entre los que pierden las semifinales.
 """
 import math
+from datetime import timedelta
 import random
 
 from models import db
@@ -361,4 +362,15 @@ def avisos_horarios(comp, margen_minutos=90):
             if p.cancha and q.cancha and p.cancha.strip().lower() == q.cancha.strip().lower() and minutos < margen_minutos:
                 for x in (p, q):
                     avisos.setdefault(x.id, []).append(f"La cancha {p.cancha} ya tiene otro partido a esa hora")
+    # un partido no puede jugarse antes (o casi a la vez) que los partidos de los que salen sus jugadores
+    todos = Partido.query.filter_by(competencia_id=comp.id).all()
+    for p in programados:
+        if p.cuadro not in (PRINCIPAL, PLATA, CONSUELO) or int(p.ronda or 0) < 2:
+            continue
+        previos = [x for x in todos if x.categoria_id == p.categoria_id and x.cuadro == p.cuadro
+                   and x.ronda == str(int(p.ronda) - 1) and x.posicion in (2 * p.posicion, 2 * p.posicion + 1)
+                   and x.fecha_hora]
+        if any(x.fecha_hora > p.fecha_hora - timedelta(minutes=margen_minutos) for x in previos):
+            avisos.setdefault(p.id, []).append(
+                "Este partido está antes (o muy cerca) del partido de la ronda anterior de donde salen sus jugadores")
     return avisos

@@ -190,6 +190,7 @@ def inscripcion_importar(comp_id, cat_id):
     columnas = [_columna(c) for c in filas[inicio]]
     pagado_todos = bool(request.form.get("pagado"))
     agregados, errores = 0, []
+    vistos = {}   # dni -> fila, para avisar los repetidos dentro de la misma planilla
     for numero, fila in enumerate(filas[inicio + 1:], start=inicio + 2):
         if not any(c.strip() for c in fila):
             continue
@@ -199,6 +200,13 @@ def inscripcion_importar(comp_id, cat_id):
         error = _validar_persona(p1, "")
         if not error and p2:
             error = _validar_persona(p2, "del compañero/a")
+        if not error:
+            repetido = next((vistos[d] for d in (p1.get("dni"), (p2 or {}).get("dni")) if d and d in vistos), None)
+            if repetido:
+                error = f"repetido en la planilla (igual que la fila {repetido})"
+            for d in (p1.get("dni"), (p2 or {}).get("dni")):
+                if d:
+                    vistos.setdefault(d, numero)
         if not error and lugares_libres(cat) == 0:
             error = f"la categoría llegó al cupo ({cat.cupo})"
         if not error:

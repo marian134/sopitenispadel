@@ -166,7 +166,7 @@
 
         {% set bc = bloques_cuadro.get(i.id) %}
         {% if bc %}
-          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡Campeón{{ "es" if i.jugador2 }}{{ bc.de_oro }}!</span></p>
+          {% if bc.campeon %}<p style="margin-top:12px;"><span class="tn-campeon">🏆 ¡{{ "Campeones" if i.jugador2 else "Campeón" }}{{ bc.de_oro }}!</span></p>
           {% elif bc.puesto %}<p style="margin-top:12px;"><span class="tn-campeon">{{ bc.puesto }}</span></p>
           {% elif bc.terminado %}<p class="tn-dato" style="margin-top:12px;">El torneo terminó. ¡Gracias por jugar!</p>{% endif %}
           {% for f in bc.partidos %}{% include "torneos/_partido_jugador.html" %}{% endfor %}
@@ -183,7 +183,7 @@
               <summary style="cursor:pointer; font-weight:700;">Tus partidos</summary>
               <ul class="tn-dato" style="padding-left:18px;">
                 {% for h in bc.historial %}
-                  <li>{{ h.ronda }}: {{ "ganaste" if h.gane else "perdiste" }}{% if h.rival %} con {{ h.rival.jugador1.nombre_completo }}{% endif %}{% if h.sets %} · {{ h.sets }}{% endif %}</li>
+                  <li>{{ h.ronda }}: {{ ("ganaron" if h.gane else "perdieron") if i.jugador2 else ("ganaste" if h.gane else "perdiste") }}{% if h.rival %} con {{ h.rival.jugador1.nombre_completo }}{% if h.rival.jugador2 %} y {{ h.rival.jugador2.nombre_completo }}{% endif %}{% endif %}{% if h.sets %} · {{ h.sets }}{% endif %}</li>
                 {% endfor %}
               </ul>
             </details>

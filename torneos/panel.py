@@ -431,6 +431,19 @@ def _pasos_torneo(comp, categorias, cuadro=None):
         r = cuadro["resumen"]
         sig = f"#partido-{cuadro['siguiente']}" if cuadro.get("siguiente") else "#cuadros"
         pasos[3].update(hecho=r["armado"], ir="#cuadros", boton="Ir a armar")
+        if comp.reglas.get("consuelo"):
+            # aparece cuando se puede armar (todos jugaron su primer partido) y queda hecho al armarla
+            listas = [c for c in cuadro["categorias"] if c.get("consuelo_listo") and not c.get("consuelo")]
+            armadas = [c for c in cuadro["categorias"] if c.get("consuelo")]
+            if listas or armadas:
+                pasos.append({
+                    "titulo": "Armar la copa de consuelo",
+                    "texto": ("Ya jugaron todos su primer partido: armá la consuelo con los que perdieron ("
+                              + ", ".join(c["cat"].nombre for c in listas) + ").") if listas
+                             else "La consuelo ya está armada: sus partidos aparecen en la lista.",
+                    "hecho": not listas, "ir": f"#cuadro-{listas[0]['cat'].id}" if listas else "#cuadros",
+                    "boton": "Ir a armar la consuelo",
+                })
         n = r["sin_horario"]
         pasos.append({
             "titulo": "Poner día, hora y cancha",

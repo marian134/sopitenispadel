@@ -30,7 +30,8 @@
       </div>
       {% if c.podio %}{% with podio = c.podio %}{% include "torneos/_podio.html" %}{% endwith %}{% endif %}
       <p class="tn-dato">
-        {{ c.participantes }} jugador{{ "es" if c.participantes != 1 }} confirmado{{ "s" if c.participantes != 1 }}
+        {% if c.cat.modalidad == "dobles" %}{{ c.participantes }} pareja{{ "s" if c.participantes != 1 }} confirmada{{ "s" if c.participantes != 1 }}
+        {% else %}{{ c.participantes }} jugador{{ "es" if c.participantes != 1 }} confirmado{{ "s" if c.participantes != 1 }}{% endif %}
         {% if c.tamano %} · cuadro de {{ c.tamano }}{% if c.byes %} con {{ c.byes }} pase{{ "s" if c.byes != 1 }} libre{{ "s" if c.byes != 1 }}{% endif %}{% if c.max_cabezas %} · se suelen marcar {{ c.max_cabezas }} cabezas de serie{% endif %}{% endif %}
       </p>
       {% if comp.estado in ("borrador", "inscripcion") %}
@@ -128,8 +129,7 @@
         {% elif f.etapa == "horario" %}<span class="tn-chip tn-chip-horario">1 · Falta horario</span>
         {% elif f.etapa == "resultado" %}<span class="tn-chip tn-chip-resultado">2 · Falta resultado</span>
         {% else %}<span class="tn-chip">Esperando rival</span>{% endif %}
-        <strong>{{ p.lado_a.jugador1.nombre_completo if p.lado_a else "A definir" }}</strong> vs
-        <strong>{{ p.lado_b.jugador1.nombre_completo if p.lado_b else "A definir" }}</strong>
+        {% for lado in [p.lado_a, p.lado_b] %}<strong>{% if lado %}{{ lado.jugador1.nombre_completo }}{% if lado.jugador2 %} / {{ lado.jugador2.nombre_completo }}{% endif %}{% else %}A definir{% endif %}</strong>{% if loop.first %} vs {% endif %}{% endfor %}
         <span class="tn-suave"> · {{ f.cat.nombre }} · {{ f.ronda }}{% if p.cuadro == 'consuelo' %} (consuelo){% endif %}</span></p>
       {% for lado in [p.lado_a, p.lado_b] %}{% if lado and lado.restricciones %}<p class="tn-dato" style="margin:2px 0;">{{ lado.jugador1.nombre }} no puede: {{ lado.restricciones }}</p>{% endif %}{% endfor %}
       {% for a in f.avisos %}<p class="tn-error" style="margin:6px 0; padding:6px 10px;">{{ a }}</p>{% endfor %}

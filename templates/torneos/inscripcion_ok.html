@@ -17,7 +17,7 @@
   {% if enlace_jugador %}
     <div class="tn-caja">
       <h2>Tu enlace personal</h2>
-      <p class="tn-suave">Desde acá seguís tus torneos, partidos y ranking. Guardalo: es tuyo y no necesita contraseña.</p>
+      <p class="tn-suave">Desde acá seguís tus torneos y partidos{% if comp.tipo == "escalera" %} y tu ranking{% endif %}.{% if insc.jugador2 and insc.jugador2.email %} A tu compañero/a también le mandamos el suyo por mail.{% elif insc.jugador2 %} Tu compañero/a tiene su propio enlace: pedíselo al organizador o anotá su mail la próxima vez.{% endif %} Guardalo: es tuyo y no necesita contraseña.</p>
       <div class="tn-copiar">
         <input id="enlace" value="{{ enlace_jugador }}" readonly>
         <button type="button" class="tn-boton tn-boton-chico" onclick="navigator.clipboard.writeText(document.getElementById('enlace').value); this.textContent='¡Copiado!';">Copiar</button>

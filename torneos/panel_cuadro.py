@@ -197,7 +197,9 @@ def dias_habilitados(comp, p):
     texto = f"Días habilitados ({de_que}): del {desde.strftime('%d/%m')} al {hasta.strftime('%d/%m')}"
     previo = _ultimo_dia_previo(p)
     if previo:
-        dias = [d for d in dias if d > previo]
+        # desde el último día de la ronda anterior (el mismo día también: en un torneo de fin de semana
+        # se juegan varias rondas el mismo día); los días anteriores ya no se ofrecen
+        dias = [d for d in dias if d >= previo]
         if not dias:
             rango = "ninguno"
         elif len(dias) == 1:
@@ -205,7 +207,7 @@ def dias_habilitados(comp, p):
         else:
             rango = "del " + dias[0].strftime("%d/%m") + " al " + dias[-1].strftime("%d/%m")
         texto = (f"Días habilitados: {rango}"
-                 f" (la ronda anterior se juega hasta el {previo.strftime('%d/%m')}"
+                 f" (la ronda anterior termina el {previo.strftime('%d/%m')}: si es el mismo día, poné un horario posterior"
                  f"{'' if dias else '; elegí Otro día o cambiá los días de cada ronda'})")
     return dias, texto
 
@@ -337,10 +339,12 @@ def datos_cuadro(comp):
         if p.estado == PAR_AGENDADO and p.fecha_hora:
             cuando = p.fecha_hora.strftime("%d/%m a las %H:%M")
             for yo, rival in ((p.lado_a, p.lado_b), (p.lado_b, p.lado_a)):
-                texto = (f"Hola {yo.jugador1.nombre}! Tu partido de {comp.nombre} ({cat.nombre}, "
-                         f"{cdr.nombre_ronda(cat, p.cuadro, p.ronda, p)}) es el {cuando}"
-                         f"{' en la cancha ' + p.cancha if p.cancha else ''} contra {rival.jugador1.nombre_completo}.")
-                avisos_wa.append((yo.jugador1.nombre, link_whatsapp(yo.jugador1.celular, texto)))
+                contra = rival.jugador1.nombre_completo + (f" y {rival.jugador2.nombre_completo}" if rival.jugador2 else "")
+                for persona in [x for x in (yo.jugador1, yo.jugador2) if x]:   # en dobles, a los dos de la pareja
+                    texto = (f"Hola {persona.nombre}! Tu partido de {comp.nombre} ({cat.nombre}, "
+                             f"{cdr.nombre_ronda(cat, p.cuadro, p.ronda, p)}) es el {cuando}"
+                             f"{' en la cancha ' + p.cancha if p.cancha else ''} contra {contra}.")
+                    avisos_wa.append((persona.nombre, link_whatsapp(persona.celular, texto)))
         dias, dias_texto = dias_habilitados(comp, p)
         filas.append({
             "dias": dias, "dias_texto": dias_texto,
