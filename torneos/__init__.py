@@ -9,7 +9,7 @@ Se conecta desde app.py con:
     torneos.init_app(app, obtener_contexto_base)     (después de definir obtener_contexto_base)
 
 ACCESO PRIVADO (para probarlo en la web real antes del lanzamiento):
-en el servidor (cuando hay DATABASE_URL) o si existe TORNEOS_LLAVE, todo
+en el servidor (Render, o cuando hay DATABASE_URL) o si existe TORNEOS_LLAVE, todo
 /torneos y /admin/torneos responde "no encontrado" salvo para quien entró una
 vez por /torneos/llave/<TORNEOS_LLAVE> (queda guardado en ese navegador un
 año). Sin TORNEOS_LLAVE cargada no entra nadie. Para abrirlo a todos:
@@ -41,7 +41,8 @@ def es_privado():
     """En el servidor los torneos son privados hasta que se ponga TORNEOS_PUBLICO=1."""
     if os.environ.get("TORNEOS_PUBLICO") == "1":
         return False
-    return bool(os.environ.get("DATABASE_URL") or os.environ.get("TORNEOS_LLAVE"))
+    # RENDER la pone Render en todos sus servidores: así queda privado aunque falte otra variable
+    return bool(os.environ.get("RENDER") or os.environ.get("DATABASE_URL") or os.environ.get("TORNEOS_LLAVE"))
 
 
 def _firma(llave):
@@ -102,7 +103,7 @@ def init_app(app, contexto_base):
                 abort(404)
             resp = redirect("/torneos/")
             resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
-                            secure=request.is_secure or bool(os.environ.get("DATABASE_URL")), samesite="Lax")
+                            secure=request.is_secure or bool(os.environ.get("RENDER")), samesite="Lax")
             return resp
         if not tiene_acceso():
             abort(404)
