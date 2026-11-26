@@ -19,9 +19,10 @@
     {% endif %}
     <form method="post" action="/torneos/llave" class="tn-form">
       <label>Palabra secreta
-        <input type="text" name="palabra" required autocomplete="off" autocapitalize="off" spellcheck="false" autofocus></label>
+        <input type="text" name="palabra" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" autofocus></label>
       <button class="tn-boton" type="submit">Entrar</button>
-      <p class="tn-suave" style="margin:0;">No importan las mayúsculas ni los espacios. Este navegador queda habilitado por un año.</p>
+      <p class="tn-suave" style="margin:0;">No importan las mayúsculas, los espacios ni los guiones. Este navegador queda habilitado por un año.</p>
+      <p class="tn-suave" style="margin:0;">Si sos el administrador de la tienda, también podés <a href="/admin/login">ingresar al admin</a> y después volver a Torneos.</p>
     </form>
   </div>
 </section>

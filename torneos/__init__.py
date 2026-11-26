@@ -26,7 +26,9 @@ import hashlib
 import hmac
 import os
 
-from flask import abort, current_app, has_request_context, redirect, render_template, request
+import unicodedata
+
+from flask import abort, current_app, has_request_context, redirect, render_template, request, session
 from werkzeug.exceptions import HTTPException
 
 from . import models  # noqa: F401  (registra las tablas antes de db.create_all)
@@ -53,6 +55,8 @@ def tiene_acceso():
     """True si los torneos son públicos o si este navegador entró con el enlace secreto."""
     if not es_privado():
         return True
+    if has_request_context() and session.get("admin"):
+        return True   # el administrador de la tienda (logueado en /admin) entra siempre
     llave = os.environ.get("TORNEOS_LLAVE", "").strip()
     if not llave or not has_request_context():
         return False
@@ -60,8 +64,10 @@ def tiene_acceso():
 
 
 def _normal_llave(texto):
-    """Sin mayúsculas ni espacios de más: lo que se tipea en el celular suele variar."""
-    return " ".join((texto or "").split()).casefold()
+    """Solo letras y números, sin tildes ni mayúsculas: el teclado del celular suele
+    agregar espacios, puntos, guiones o mayúsculas."""
+    t = unicodedata.normalize("NFKD", (texto or "").strip().strip(chr(34) + chr(39))).casefold()
+    return "".join(ch for ch in t if ch.isalnum())
 
 
 def _entrar_con_llave(ruta):
@@ -73,7 +79,7 @@ def _entrar_con_llave(ruta):
     else:
         dada = ruta[len("/torneos/llave"):].strip("/")
     error = None
-    if dada and llave and hmac.compare_digest(_normal_llave(dada), _normal_llave(llave)):
+    if dada and _normal_llave(llave) and hmac.compare_digest(_normal_llave(dada), _normal_llave(llave)):
         resp = redirect("/torneos/")
         resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
                         secure=request.is_secure or bool(os.environ.get("RENDER")), samesite="Lax")
