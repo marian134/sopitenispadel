@@ -58,6 +58,7 @@
 
   <div class="tn-caja" id="cobros" style="margin-top:20px;">
     <h2>Cobros pendientes</h2>
+    {% if hecho_cobro %}<p class="tn-ok tn-aviso-hecho" role="status">✓ {{ hecho_cobro }}</p>{% endif %}
     {% if cobros_pend %}
       <div class="tn-scroll">
         <table class="tn-tabla">
@@ -94,7 +95,8 @@
             {% for f in filas %}
               {% set o = f.org %}
               <tr id="org-{{ o.id }}">
-                <td><strong>{{ o.nombre }}</strong>
+                <td>{% if hecho and hecho_org == o.id %}<p class="{{ 'tn-error' if hecho_error else 'tn-ok' }} tn-aviso-hecho" role="status">{{ "" if hecho_error else "✓ " }}{{ hecho }}</p>{% endif %}
+                  <strong>{{ o.nombre }}</strong>
                   {% if not o.aprobado %}<span class="tn-chip-espera">Sin aprobar</span>{% endif %}
                   <br><small class="tn-suave">desde {{ o.creado_en.strftime("%d/%m/%Y") }}{% if o.ip_alta %} · conexión {{ o.ip_alta }}{% endif %}</small>
                   {% for otro, motivos in f.parecidos %}

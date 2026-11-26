@@ -73,6 +73,8 @@ def inicio():
         **contexto(
             filas=filas, cobros_pend=cobros_pend, por_aprobar=por_aprobar,
             aprobado_ok=request.args.get("aprobado"),
+            hecho=request.args.get("hecho"), hecho_org=request.args.get("org", type=int),
+            hecho_error=request.args.get("error"), hecho_cobro=request.args.get("hecho_cobro"),
             pagados=[{"c": c, "org": nombres.get(c.organizador_id), "comp": comps.get(c.competencia_id)} for c in pagados],
             total_pendiente=sum(c.monto for c in pendientes),
             total_cobrado=sum(c.monto for c in Cobro.query.filter_by(pagado=True).all()),
@@ -87,14 +89,22 @@ def organizador(org_id):
     if not org:
         abort(404)
     accion = request.form.get("accion")
+    hecho, error = None, False
     if accion == "plan" and request.form.get("plan") in (PLAN_GRATIS, PLAN_PAGO):
         org.plan = request.form["plan"]
+        hecho = ("Listo: plan pago, sin tope de jugadores." if org.plan == PLAN_PAGO
+                 else f"Listo: plan gratis (1 torneo de hasta {control.TOPE_GRATIS} jugadores).")
     elif accion == "precio":
         valor = (request.form.get("precio") or "").replace(".", "").replace("$", "").strip()
         if valor.isdigit():
             org.precio_por_inscripto = int(valor)
+            hecho = (f"Listo: precio por inscripto {pesos(org.precio_por_inscripto)}."
+                     if org.precio_por_inscripto else "Listo: precio por inscripto $0 (no se le cobra).")
+        else:
+            hecho, error = "El precio tiene que ser un número, sin letras.", True
     elif accion == "activo":
         org.activo = not org.activo
+        hecho = "Listo: cuenta activa." if org.activo else "Listo: cuenta desactivada (ya no puede ingresar)."
     elif accion == "aprobar":
         org.aprobado = True
         publicados = []
@@ -104,11 +114,14 @@ def organizador(org_id):
                 publicados.append(comp)
         db.session.commit()
         control.avisar_aprobado(org, publicados)
-        return redirect(url_for("torneos_admin.inicio", aprobado=org.nombre) + f"#org-{org.id}")
+        hecho = "Listo: cuenta aprobada" + (f" y publicado {', '.join(c.nombre for c in publicados)}" if publicados else "") + ". Le avisamos por mail."
+        return redirect(url_for("torneos_admin.inicio", aprobado=org.nombre, hecho=hecho, org=org.id) + f"#org-{org.id}")
     elif accion == "desaprobar":
         org.aprobado = False
+        hecho = "Listo: le quitaste la aprobación. Sus torneos nuevos van a esperar que los apruebes."
     db.session.commit()
-    return redirect(url_for("torneos_admin.inicio") + f"#org-{org.id}")
+    return redirect(url_for("torneos_admin.inicio", hecho=hecho, org=org.id, error=1 if error else None)
+                    + f"#org-{org.id}")
 
 
 @admin_bp.route("/cobro/<int:cobro_id>", methods=["POST"])
@@ -117,12 +130,15 @@ def cobro(cobro_id):
     c = db.session.get(Cobro, cobro_id)
     if not c:
         abort(404)
+    hecho = None
     if request.form.get("accion") == "pagado":
         c.pagado, c.pagado_en = True, datetime.now()
+        hecho = f"Listo: cobro de {pesos(c.monto)} marcado como pagado."
     elif request.form.get("accion") == "impago":
         c.pagado, c.pagado_en = False, None
+        hecho = f"Listo: el cobro de {pesos(c.monto)} volvió a pendientes."
     db.session.commit()
-    return redirect(url_for("torneos_admin.inicio") + "#cobros")
+    return redirect(url_for("torneos_admin.inicio", hecho_cobro=hecho) + "#cobros")
 
 
 ESTADOS_PAGO = {"pendiente": "Pago a revisar", "confirmado": "Pago confirmado", "rechazado": "Pago rechazado"}
