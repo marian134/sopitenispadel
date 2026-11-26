@@ -11,6 +11,13 @@
     <span class="tn-etiqueta">Organizadores</span>
     <h1>Ingresá a tu panel</h1>
   </div>
+  {% if habilitado %}
+    <div class="tn-caja">
+      <p class="tn-ok" style="margin-top:0;">✓ Listo, este navegador ya tiene acceso a Torneos.</p>
+      <p style="margin:0 0 10px;">¿Es la primera vez? Creá tu cuenta de organizador. Si ya la tenés, ingresá abajo.</p>
+      <a class="tn-boton" href="{{ url_for('torneos.organizar') }}">Crear mi cuenta</a>
+    </div>
+  {% endif %}
   <div class="tn-caja">
     {% if error %}<p class="tn-error">{{ error }}</p>{% endif %}
     <form method="post" class="tn-form">

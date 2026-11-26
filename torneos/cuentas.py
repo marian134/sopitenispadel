@@ -80,7 +80,8 @@ def ingresar():
             session["torneo_org_id"] = org.id
             return redirect(_siguiente_seguro(siguiente))
         error = "Mail o contraseña incorrectos."
-    return render_template("torneos/ingresar.html", **contexto(error=error, siguiente=siguiente))
+    return render_template("torneos/ingresar.html", **contexto(error=error, siguiente=siguiente,
+                                                             habilitado=request.args.get("habilitado")))
 
 
 @bp.route("/salir", methods=["POST"])

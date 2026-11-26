@@ -80,7 +80,8 @@ def _entrar_con_llave(ruta):
         dada = ruta[len("/torneos/llave"):].strip("/")
     error = None
     if dada and _normal_llave(llave) and hmac.compare_digest(_normal_llave(dada), _normal_llave(llave)):
-        resp = redirect("/torneos/")
+        # derecho a la entrada de organizadores (o a su panel si ya ingresó)
+        resp = redirect("/torneos/panel" if session.get("torneo_org_id") else "/torneos/ingresar?habilitado=1")
         resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
                         secure=request.is_secure or bool(os.environ.get("RENDER")), samesite="Lax")
         return resp
