@@ -142,6 +142,14 @@ def organizador(org_id):
                     + f"#org-{org.id}")
 
 
+@admin_bp.route("/probar-archivos", methods=["POST"])
+@admin_requerido
+def probar_archivos():
+    """Prueba la conexión con Cloudinary y muestra el resultado en la página."""
+    from .archivos import probar_nube
+    return render_template("torneos/admin_prueba_archivos.html", **contexto(resultado=probar_nube()))
+
+
 @admin_bp.route("/cobro/<int:cobro_id>", methods=["POST"])
 @admin_requerido
 def cobro(cobro_id):

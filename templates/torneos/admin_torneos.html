@@ -180,6 +180,14 @@
     {% endif %}
   </div>
 
+  <details class="tn-caja" id="archivos">
+    <summary style="cursor:pointer; font-weight:700;">Fotos y comprobantes (Cloudinary)</summary>
+    <p class="tn-suave">Los comprobantes de pago, las fotos y los logos se guardan en Cloudinary. Si algo no se sube, tocá el botón: prueba la conexión y te dice qué está mal.</p>
+    <form method="post" action="{{ url_for('torneos_admin.probar_archivos') }}">
+      <button class="tn-boton tn-boton-chico">Probar Cloudinary</button>
+    </form>
+  </details>
+
   {% if pagados %}
     <details class="tn-caja">
       <summary style="cursor:pointer; font-weight:700;">Últimos cobros pagados</summary>

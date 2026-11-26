@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Prueba de Cloudinary | SOPI{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-barra">
+    <nav aria-label="Administración">
+      <a href="{{ url_for('torneos_admin.inicio') }}">← Volver al admin de torneos</a>
+    </nav>
+  </div>
+  <h1 class="tn-titulo">Prueba de Cloudinary</h1>
+  <div class="tn-caja">
+    <p class="{{ 'tn-ok' if resultado.ok else 'tn-error' }}" style="margin-top:0;">{{ "✓ " if resultado.ok }}{{ resultado.texto }}</p>
+    {% if resultado.datos %}<p class="tn-suave">{{ resultado.datos }}</p>{% endif %}
+    {% if resultado.detalle %}<p class="tn-suave" style="font-size:13px;">Respuesta de Cloudinary: <code>{{ resultado.detalle }}</code></p>{% endif %}
+    {% if not resultado.ok %}
+      <h2>Cómo arreglarlo</h2>
+      <ol>
+        <li>En Cloudinary: <strong>Settings → API Keys</strong>. Copiá la <strong>API Key</strong> y el <strong>API Secret</strong> (tocá el ojito para verlo completo).</li>
+        <li>En Render: servicio <strong>sopitenispadel → Environment</strong>, editá <code>CLOUDINARY_URL</code> y dejala así, todo junto y sin espacios:<br>
+          <code>cloudinary://API_KEY:API_SECRET@NOMBRE_DE_LA_CUENTA</code></li>
+        <li><strong>Save, rebuild and deploy</strong>. Cuando termine, volvé a tocar “Probar Cloudinary”.</li>
+      </ol>
+    {% endif %}
+    <form method="post" action="{{ url_for('torneos_admin.probar_archivos') }}" style="margin-top:12px;">
+      <button class="tn-boton tn-boton-chico">Probar de nuevo</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
