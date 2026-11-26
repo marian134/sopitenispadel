@@ -57,6 +57,7 @@ def inicio():
             "parecidos": control.parecidos(org, organizadores),
             "pide": [c for c in org.competencias if c.pide_publicar and c.estado == EST_BORRADOR],
             "wa": link_whatsapp(org.whatsapp, f"Hola {org.nombre}! Te escribo de SOPI Torneos."),
+            "torneos": sorted(org.competencias, key=lambda c: c.creado_en, reverse=True),
         })
     por_aprobar = [f for f in filas if not f["org"].aprobado and f["org"].activo]
     pendientes = Cobro.query.filter_by(pagado=False).order_by(Cobro.creado_en).all()
@@ -90,7 +91,24 @@ def organizador(org_id):
         abort(404)
     accion = request.form.get("accion")
     hecho, error = None, False
-    if accion == "plan" and request.form.get("plan") in (PLAN_GRATIS, PLAN_PAGO):
+    if accion == "cobro":
+        # plan y precio juntos, desde la ficha del organizador
+        plan = request.form.get("plan")
+        valor = (request.form.get("precio") or "0").replace(".", "").replace("$", "").strip() or "0"
+        if plan not in (PLAN_GRATIS, PLAN_PAGO):
+            hecho, error = "Elegí gratis o pago.", True
+        elif plan == PLAN_PAGO and not valor.isdigit():
+            hecho, error = "El precio tiene que ser un número (por ejemplo 2000), sin letras.", True
+        else:
+            org.plan = plan
+            if plan == PLAN_PAGO:
+                org.precio_por_inscripto = int(valor)
+                hecho = ("Guardado: plan pago, sin tope de jugadores, "
+                         + (f"le cobrás {pesos(org.precio_por_inscripto)} por jugador inscripto."
+                            if org.precio_por_inscripto else "y no le cobrás nada."))
+            else:
+                hecho = f"Guardado: plan gratis (1 torneo de hasta {control.TOPE_GRATIS} jugadores, no le cobrás)."
+    elif accion == "plan" and request.form.get("plan") in (PLAN_GRATIS, PLAN_PAGO):
         org.plan = request.form["plan"]
         hecho = ("Listo: plan pago, sin tope de jugadores." if org.plan == PLAN_PAGO
                  else f"Listo: plan gratis (1 torneo de hasta {control.TOPE_GRATIS} jugadores).")

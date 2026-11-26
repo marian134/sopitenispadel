@@ -206,6 +206,35 @@
     .tn-tabla-orgs td { border: 0; padding: 4px 0; }
     .tn-tabla-orgs td[data-t]::before { content: attr(data-t) ": "; color: var(--muted, #9aa7bd); font-size: 13px; }
   }
+  /* admin: fichas de organizadores */
+  .tn-ayuda-admin { margin: 0 0 16px; font-size: 14px; }
+  .tn-ayuda-admin summary { cursor: pointer; font-weight: 700; color: var(--naranja, #E57E3C); }
+  .tn-ayuda-admin ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+  .tn-fichas { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); }
+  .tn-ficha { border: 1px solid var(--line-2, #2b3a55); border-radius: 14px; padding: 16px; display: grid; gap: 12px; scroll-margin-top: 150px; background: rgba(255,255,255,.02); }
+  .tn-ficha-apagada { opacity: .65; }
+  .tn-ficha .tn-aviso-hecho { margin: 0; }
+  .tn-ficha .tn-alerta-rep { margin: 0; }
+  .tn-ficha-cabeza { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: flex-start; }
+  .tn-ficha-cabeza h3 { margin: 0 0 2px; font-size: 20px; }
+  .tn-sellos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tn-sello { padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid var(--line-2, #2b3a55); }
+  .tn-sello-verde { background: rgba(143,180,135,.18); border-color: var(--verde, #8fb487); color: #cfe6c9; }
+  .tn-sello-naranja { background: rgba(229,126,60,.18); border-color: var(--naranja, #E57E3C); color: var(--naranja, #E57E3C); }
+  .tn-sello-rojo { background: rgba(255,92,108,.14); border-color: #ff5c6c; color: #ffb3b9; }
+  .tn-ficha-datos { display: grid; gap: 6px; font-size: 15px; }
+  .tn-ficha-datos > div { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+  .tn-etq { min-width: 82px; color: var(--muted, #9aa7bd); font-size: 13px; }
+  .tn-ficha-cobro { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px dashed var(--line-2, #2b3a55); }
+  .tn-ficha-cobro .tn-boton { justify-self: start; }
+  .tn-ficha-titulo { margin: 0; font-weight: 700; }
+  .tn-opcion { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; padding: 8px; border-radius: 10px; border: 1px solid transparent; }
+  .tn-opcion:has(input:checked) { border-color: var(--naranja, #E57E3C); background: rgba(229,126,60,.08); }
+  .tn-opcion > input { margin-top: 4px; accent-color: var(--naranja, #E57E3C); width: 18px; height: 18px; flex: none; }
+  .tn-precio-linea { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; }
+  .tn-precio-linea input { width: 100px; padding: 8px; border-radius: 8px; background: var(--bg); color: var(--text); border: 1px solid var(--line-2); font-size: 16px; }
+  .tn-hoy { margin: 0; font-size: 14px; color: var(--muted, #9aa7bd); }
+  .tn-ficha-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 </style>
 <script>
 /* Formularios: * en lo obligatorio, aclaración arriba y en rojo lo que falta */
