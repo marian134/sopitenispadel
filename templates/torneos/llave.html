@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso privado | SOPI Torneos{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+{% include "torneos/_estilos.html" %}
+<section class="tn-wrap tn-angosto tn-seccion">
+  <div class="tn-hero" style="padding-top:16px;">
+    <span class="tn-etiqueta">Acceso privado</span>
+    <h1>Entrar a Torneos</h1>
+  </div>
+  <div class="tn-caja">
+    {% if sin_llave %}
+      <p class="tn-error">El servidor todavía no tiene cargada la palabra secreta (variable TORNEOS_LLAVE en Render).
+        Cargala, volvé a publicar y probá de nuevo.</p>
+    {% elif error %}
+      <p class="tn-error">{{ error }}</p>
+    {% endif %}
+    <form method="post" action="/torneos/llave" class="tn-form">
+      <label>Palabra secreta
+        <input type="text" name="palabra" required autocomplete="off" autocapitalize="off" spellcheck="false" autofocus></label>
+      <button class="tn-boton" type="submit">Entrar</button>
+      <p class="tn-suave" style="margin:0;">No importan las mayúsculas ni los espacios. Este navegador queda habilitado por un año.</p>
+    </form>
+  </div>
+</section>
+{% endblock %}

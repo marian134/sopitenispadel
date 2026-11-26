@@ -59,6 +59,30 @@ def tiene_acceso():
     return hmac.compare_digest(request.cookies.get(COOKIE_LLAVE, ""), _firma(llave))
 
 
+def _normal_llave(texto):
+    """Sin mayúsculas ni espacios de más: lo que se tipea en el celular suele variar."""
+    return " ".join((texto or "").split()).casefold()
+
+
+def _entrar_con_llave(ruta):
+    """/torneos/llave: casillero para la palabra secreta (o /torneos/llave/<palabra>)."""
+    from .bp import contexto
+    llave = os.environ.get("TORNEOS_LLAVE", "").strip()
+    if request.method == "POST":
+        dada = request.form.get("palabra", "")
+    else:
+        dada = ruta[len("/torneos/llave"):].strip("/")
+    error = None
+    if dada and llave and hmac.compare_digest(_normal_llave(dada), _normal_llave(llave)):
+        resp = redirect("/torneos/")
+        resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
+                        secure=request.is_secure or bool(os.environ.get("RENDER")), samesite="Lax")
+        return resp
+    if dada and llave:
+        error = "Esa palabra no coincide. Revisala y probá de nuevo."
+    return render_template("torneos/llave.html", **contexto(error=error, sin_llave=not llave)), (200 if not dada else 403)
+
+
 def torneos_visible():
     """La pestaña Torneos se muestra salvo que TORNEOS_VISIBLE=0, y solo a quien tiene acceso."""
     return os.environ.get("TORNEOS_VISIBLE", "1") != "0" and tiene_acceso()
@@ -96,15 +120,8 @@ def init_app(app, contexto_base):
         ruta = request.path
         if not (ruta.startswith("/torneos") or ruta.startswith("/admin/torneos")):
             return None
-        if ruta.startswith("/torneos/llave/"):
-            llave = os.environ.get("TORNEOS_LLAVE", "").strip()
-            dada = ruta[len("/torneos/llave/"):].strip("/")
-            if not llave or not hmac.compare_digest(dada, llave):
-                abort(404)
-            resp = redirect("/torneos/")
-            resp.set_cookie(COOKIE_LLAVE, _firma(llave), max_age=365 * 24 * 3600, httponly=True,
-                            secure=request.is_secure or bool(os.environ.get("RENDER")), samesite="Lax")
-            return resp
+        if ruta.rstrip("/") == "/torneos/llave" or ruta.startswith("/torneos/llave/"):
+            return _entrar_con_llave(ruta)
         if not tiene_acceso():
             abort(404)
         return None
