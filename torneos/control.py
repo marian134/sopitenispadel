@@ -5,7 +5,7 @@
 - Posibles repetidos: mismo celular, mismo navegador, misma conexión,
   nombre de club parecido o el mismo mail con otro dominio.
 - Las cuentas nuevas necesitan que Sopi las apruebe para publicar el
-  primer torneo (aviso por mail a VENTAS_EMAIL).
+  primer torneo (aviso por mail a TORNEOS_AVISOS_EMAIL o VENTAS_EMAIL).
 """
 import os
 import re
@@ -154,7 +154,9 @@ def parecidos(org, todos=None):
 # AVISOS A SOPI
 # ---------------------------------------------------------
 def _destino_sopi():
-    return os.environ.get("VENTAS_EMAIL", "").strip()
+    """Mail donde Sopi recibe los avisos de torneos: TORNEOS_AVISOS_EMAIL
+    (si no está, el de los avisos de venta de la tienda)."""
+    return (os.environ.get("TORNEOS_AVISOS_EMAIL") or os.environ.get("VENTAS_EMAIL") or "").strip()
 
 
 def _ficha(org):
