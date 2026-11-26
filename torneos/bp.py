@@ -13,6 +13,7 @@ def contexto(**extra):
     """Contexto de la tienda (menú, carrito) + lo propio de cada página."""
     import os
     from .cobros import cargo_jugador, precio_jugador
+    from .control import TOPE_GRATIS
     from .util import organizador_actual, pesos
 
     base = _estado["contexto_base"]
@@ -21,6 +22,7 @@ def contexto(**extra):
         organizador=organizador_actual(), pesos=pesos,
         precio_jugador=precio_jugador, cargo_jugador=cargo_jugador,
         cupon_sopi=os.environ.get("TORNEOS_CUPON", "").strip(),   # cupón de la tienda para el plan gratis
+        whatsapp_sopi_panel=WHATSAPP_SOPI, tope_gratis=TOPE_GRATIS,
     )
     datos.update(extra)
     return datos

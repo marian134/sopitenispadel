@@ -6,6 +6,7 @@ from flask import abort, current_app, redirect, render_template, request, send_f
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import db
+from . import control
 from .bp import bp, contexto, WHATSAPP_SOPI
 from .models import Organizador, PLAN_PAGO, PRECIO_POR_INSCRIPTO
 from .util import (
@@ -45,21 +46,29 @@ def organizar():
             error = "La contraseña tiene que tener al menos 8 caracteres."
         elif clave != request.form.get("clave2"):
             error = "Las dos contraseñas no coinciden."
+        elif len(control.normal_whatsapp(datos["whatsapp"])) < 8:
+            error = "Revisá el WhatsApp: poné el código de área y el número."
         elif Organizador.query.filter_by(email=datos["email"]).first():
             error = "Ya hay una cuenta con ese mail. Ingresá con tu contraseña."
+        elif control.whatsapp_usado(datos["whatsapp"]):
+            error = ("Ese WhatsApp ya tiene una cuenta de organizador. Ingresá con el mail de esa cuenta "
+                     "o escribinos si necesitás ayuda.")
         else:
+            equipo = control.equipo_actual()
             org = Organizador(
                 nombre=datos["nombre"],
                 slug=slug_unico(Organizador, datos["nombre"]),
                 email=datos["email"],
                 whatsapp=datos["whatsapp"],
                 clave_hash=generate_password_hash(clave),
+                aprobado=False, equipo=equipo, ip_alta=control.ip_actual(),
             )
             db.session.add(org)
             db.session.commit()
+            control.avisar_alta(org)
             # no se borra el resto de la sesión (carrito de la tienda)
             session["torneo_org_id"] = org.id
-            return redirect(url_for("torneos.panel", bienvenida=1))
+            return control.guardar_cookie_equipo(redirect(url_for("torneos.panel", bienvenida=1)), equipo)
 
     return render_template(
         "torneos/organizar.html",
@@ -78,7 +87,12 @@ def ingresar():
         if org and org.activo and check_password_hash(org.clave_hash, clave):
             # no se borra el resto de la sesión (carrito de la tienda)
             session["torneo_org_id"] = org.id
-            return redirect(_siguiente_seguro(siguiente))
+            # marca este navegador: si después crea otra cuenta desde acá, Sopi lo ve
+            equipo = control.equipo_actual()
+            if not org.equipo:
+                org.equipo = equipo
+                db.session.commit()
+            return control.guardar_cookie_equipo(redirect(_siguiente_seguro(siguiente)), equipo)
         error = "Mail o contraseña incorrectos."
     return render_template("torneos/ingresar.html", **contexto(error=error, siguiente=siguiente,
                                                              habilitado=request.args.get("habilitado")))
@@ -164,7 +178,13 @@ def perfil():
     guardado, error = False, None
     if request.method == "POST":
         org.nombre = (request.form.get("nombre") or org.nombre).strip()[:120]
-        org.whatsapp = (request.form.get("whatsapp") or "").strip()[:40]
+        whatsapp = (request.form.get("whatsapp") or "").strip()[:40]
+        if len(control.normal_whatsapp(whatsapp)) < 8:
+            error = "Revisá el WhatsApp: poné el código de área y el número."
+        elif control.whatsapp_usado(whatsapp, salvo_id=org.id):
+            error = "Ese WhatsApp ya lo usa otra cuenta de organizador."
+        else:
+            org.whatsapp = whatsapp
         org.datos_bancarios = (request.form.get("datos_bancarios") or "").strip()[:500]
         if org.plan == PLAN_PAGO:
             # Plan pago: las páginas de sus torneos llevan su logo y su color

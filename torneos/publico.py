@@ -7,6 +7,7 @@ from flask import abort, redirect, render_template, request, session, url_for
 from models import db
 from . import cuadro as cdr
 from . import zonas as zns
+from . import control
 from . import escalera as esc
 from .bp import bp, contexto, WHATSAPP_SOPI
 from .models import (
@@ -190,6 +191,8 @@ def inscripcion(slug):
             error = "Elegí una categoría."
         elif lugares_libres(cat) == 0:
             error = f"La categoría {cat.nombre} ya no tiene lugares."
+        elif not control.entra_en_plan(comp, 2 if cat.modalidad == "dobles" else 1):
+            error = control.mensaje_tope(para_organizador=False)
         else:
             error = _validar_persona(p1, "")
             if not error and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", p1["email"]):

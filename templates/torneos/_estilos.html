@@ -187,6 +187,22 @@
   }
   .tn-guardar-horario.tn-apagado { opacity: .45; filter: grayscale(.6); }
   .tn-aviso-falta { background: rgba(230, 57, 70, .14); border: 1px solid #e63946; color: #ffd3d6; padding: 10px 12px; border-radius: 10px; font-size: 14px; margin: 0; }
+  /* control de Sopi: aprobación, tope del plan gratis, posibles repetidos */
+  .tn-espera { background: rgba(229, 126, 60, .12); border: 1px solid var(--naranja, #E57E3C); padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; }
+  .tn-chip-espera { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    background: rgba(229, 126, 60, .18); color: var(--naranja, #E57E3C); }
+  .tn-plan-tope { font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px dashed var(--line-2, #2b3a55); margin: 0 0 14px; }
+  .tn-plan-lleno { border-style: solid; border-color: var(--naranja, #E57E3C); background: rgba(229, 126, 60, .10); }
+  .tn-alerta-rep { display: block; margin-top: 6px; padding: 6px 8px; border-radius: 8px; font-size: 13px;
+    background: rgba(255, 92, 108, .14); border: 1px solid #ff5c6c; color: #ffb3b9; }
+  .tn-org-ficha { display: grid; gap: 4px; }
+  @media (max-width: 700px) {
+    .tn-tabla-orgs thead { display: none; }
+    .tn-tabla-orgs, .tn-tabla-orgs tbody, .tn-tabla-orgs tr, .tn-tabla-orgs td { display: block; width: 100%; }
+    .tn-tabla-orgs tr { border: 1px solid var(--line-2, #2b3a55); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
+    .tn-tabla-orgs td { border: 0; padding: 4px 0; }
+    .tn-tabla-orgs td[data-t]::before { content: attr(data-t) ": "; color: var(--muted, #9aa7bd); font-size: 13px; }
+  }
 </style>
 <script>
 /* Formularios: * en lo obligatorio, aclaración arriba y en rojo lo que falta */

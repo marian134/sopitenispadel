@@ -24,6 +24,38 @@
     <div class="tn-tarjeta"><span class="tn-tipo">Organizadores</span><h3>{{ filas|length }}</h3><p class="tn-dato">{{ filas|selectattr("org.plan", "equalto", "pago")|list|length }} en plan pago</p></div>
   </div>
 
+  {% if aprobado_ok %}<p class="tn-ok" style="margin-top:16px;">Aprobaste a {{ aprobado_ok }}. Le avisamos por mail.</p>{% endif %}
+  <div class="tn-caja" id="aprobar" style="margin-top:20px;{% if por_aprobar %} border-color:var(--naranja, #E57E3C);{% endif %}">
+    <h2 style="margin-top:0;">Cuentas para aprobar{% if por_aprobar %} ({{ por_aprobar|length }}){% endif %}</h2>
+    {% if por_aprobar %}
+      <p class="tn-suave" style="margin-top:0;">Las cuentas nuevas pueden armar su torneo, pero no publicarlo hasta que las apruebes. Al aprobar, el torneo que pidieron publicar sale solo y les llega un mail.</p>
+      {% for f in por_aprobar %}{% set o = f.org %}
+        <div class="tn-tarjeta" style="margin-bottom:12px;">
+          <div class="tn-org-ficha">
+            <strong>{{ o.nombre }}</strong>
+            <span class="tn-dato">{{ o.email }} · {{ o.whatsapp or "sin WhatsApp" }} · se anotó el {{ o.creado_en.strftime("%d/%m/%Y %H:%M") }}</span>
+            {% if f.pide %}<span class="tn-chip-espera">Pide publicar: {{ f.pide|map(attribute="nombre")|join(", ") }}</span>{% endif %}
+            {% for otro, motivos in f.parecidos %}
+              <span class="tn-alerta-rep">⚠️ Posible repetido de <strong>{{ otro.nombre }}</strong> ({{ otro.email }}{% if otro.plan == "pago" %}, plan pago{% endif %}): {{ motivos|join(", ") }}</span>
+            {% endfor %}
+          </div>
+          <div class="tn-acciones" style="margin-top:10px;">
+            <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}">
+              <button class="tn-boton tn-boton-chico" name="accion" value="aprobar">✓ Aprobar{% if f.pide %} y publicar{% endif %}</button>
+            </form>
+            <a class="tn-boton tn-wa tn-boton-chico" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle</a>
+            <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}"
+                  onsubmit="return confirm('¿Desactivar la cuenta de {{ o.nombre }}? No va a poder ingresar.');">
+              <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="activo">Desactivar</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="tn-suave" style="margin:0;">No hay cuentas nuevas esperando.</p>
+    {% endif %}
+  </div>
+
   <div class="tn-caja" id="cobros" style="margin-top:20px;">
     <h2>Cobros pendientes</h2>
     {% if cobros_pend %}
@@ -56,25 +88,32 @@
     <h2>Organizadores</h2>
     {% if filas %}
       <div class="tn-scroll">
-        <table class="tn-tabla">
+        <table class="tn-tabla tn-tabla-orgs">
           <thead><tr><th>Organizador</th><th>Contacto</th><th>Torneos</th><th>Plan</th><th>Precio por inscripto</th><th>Deuda</th><th>Estado</th></tr></thead>
           <tbody>
             {% for f in filas %}
               {% set o = f.org %}
               <tr id="org-{{ o.id }}">
-                <td><strong>{{ o.nombre }}</strong><br><small class="tn-suave">desde {{ o.creado_en.strftime("%d/%m/%Y") }}</small></td>
-                <td>{{ o.email }}<br>{{ o.whatsapp or "" }}</td>
-                <td>{{ f.competencias }}</td>
-                <td>
-                  <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}">
+                <td><strong>{{ o.nombre }}</strong>
+                  {% if not o.aprobado %}<span class="tn-chip-espera">Sin aprobar</span>{% endif %}
+                  <br><small class="tn-suave">desde {{ o.creado_en.strftime("%d/%m/%Y") }}{% if o.ip_alta %} · conexión {{ o.ip_alta }}{% endif %}</small>
+                  {% for otro, motivos in f.parecidos %}
+                    <span class="tn-alerta-rep">⚠️ Parecido a <a href="#org-{{ otro.id }}" style="color:inherit;"><strong>{{ otro.nombre }}</strong></a>: {{ motivos|join(", ") }}</span>
+                  {% endfor %}
+                </td>
+                <td data-t="Contacto">{{ o.email }}<br>{{ o.whatsapp or "" }}
+                  {% if o.whatsapp %}<br><a class="tn-boton tn-wa tn-boton-chico" style="margin-top:4px;" href="{{ f.wa }}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Escribirle</a>{% endif %}</td>
+                <td data-t="Torneos">{{ f.competencias }}</td>
+                <td data-t="Plan">
+                  <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}" style="display:inline;">
                     <input type="hidden" name="accion" value="plan">
                     <select name="plan" onchange="this.form.submit()" aria-label="Plan de {{ o.nombre }}" style="padding:6px; border-radius:8px; background:var(--bg); color:var(--text); border:1px solid var(--line-2);">
-                      <option value="gratis" {% if o.plan == "gratis" %}selected{% endif %}>Gratis</option>
+                      <option value="gratis" {% if o.plan == "gratis" %}selected{% endif %}>Gratis (1 torneo, {{ tope_gratis }} jugadores)</option>
                       <option value="pago" {% if o.plan == "pago" %}selected{% endif %}>Pago</option>
                     </select>
                   </form>
                 </td>
-                <td>
+                <td data-t="Precio por inscripto">
                   <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}" class="tn-acciones" style="align-items:center;">
                     <input type="hidden" name="accion" value="precio">
                     <input name="precio" value="{{ o.precio_por_inscripto }}" inputmode="numeric" aria-label="Precio por inscripto de {{ o.nombre }}"
@@ -82,11 +121,16 @@
                     <button class="tn-boton tn-boton-sec tn-boton-chico">Guardar</button>
                   </form>
                 </td>
-                <td>{% if f.deuda %}<strong style="color:#ffb3b9;">{{ pesos(f.deuda) }}</strong>{% if f.cobros_impagos > 1 %}<br><small>bloqueado para torneos nuevos</small>{% endif %}{% else %}—{% endif %}</td>
-                <td>
-                  <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}">
-                    <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="activo">{{ "Activo · desactivar" if o.activo else "Desactivado · activar" }}</button>
-                  </form>
+                <td data-t="Deuda">{% if f.deuda %}<strong style="color:#ffb3b9;">{{ pesos(f.deuda) }}</strong>{% if f.cobros_impagos > 1 %}<br><small>bloqueado para torneos nuevos</small>{% endif %}{% else %}—{% endif %}</td>
+                <td data-t="Estado">
+                  <div class="tn-acciones">
+                    <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}">
+                      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="{{ 'desaprobar' if o.aprobado else 'aprobar' }}">{{ "Aprobado · quitar" if o.aprobado else "Aprobar" }}</button>
+                    </form>
+                    <form method="post" action="{{ url_for('torneos_admin.organizador', org_id=o.id) }}">
+                      <button class="tn-boton tn-boton-sec tn-boton-chico" name="accion" value="activo">{{ "Activo · desactivar" if o.activo else "Desactivado · activar" }}</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}

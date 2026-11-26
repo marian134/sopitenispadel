@@ -12,6 +12,13 @@
   {% if bienvenida %}
     <p class="tn-ok">¡Listo, {{ org.nombre }}! Ya tenés tu cuenta. Seguí los primeros pasos de abajo.</p>
   {% endif %}
+  {% if not org.aprobado %}
+    <p class="tn-espera" style="margin-bottom:14px;">⏳ <strong>Cuenta en revisión.</strong> Ya podés armar tu torneo.
+      Cuando lo publiques, SOPI revisa la cuenta y lo habilita (te avisamos por mail).</p>
+  {% endif %}
+  {% if org.plan == "gratis" %}
+    <p class="tn-suave" style="margin:0 0 12px;">Plan gratis: 1 torneo de hasta {{ tope_gratis }} jugadores. Para más, pedile a SOPI el plan pago.</p>
+  {% endif %}
 
   <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
     <h1 class="tn-titulo">Mis torneos</h1>

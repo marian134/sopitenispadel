@@ -8,7 +8,7 @@ from flask import Response, redirect, request, url_for
 
 from models import db
 from . import cuadro as cdr
-from . import planilla
+from . import control, planilla
 from . import zonas as zns
 from .bp import bp
 from .models import Categoria, Inscripcion, Partido, PAGO_CONFIRMADO, PAGO_PENDIENTE, EST_CANCELADA, EST_FINALIZADA
@@ -209,6 +209,8 @@ def inscripcion_importar(comp_id, cat_id):
                     vistos.setdefault(d, numero)
         if not error and lugares_libres(cat) == 0:
             error = f"la categoría llegó al cupo ({cat.cupo})"
+        if not error and not control.entra_en_plan(comp, 2 if p2 else 1):
+            error = f"el plan gratis permite hasta {control.TOPE_GRATIS} jugadores por torneo"
         if not error:
             j1 = _buscar_o_crear_jugador(**p1)
             j2 = _buscar_o_crear_jugador(**p2) if p2 else None

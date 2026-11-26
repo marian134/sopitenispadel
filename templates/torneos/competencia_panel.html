@@ -68,6 +68,21 @@
       </div>
     </div>
   {% endif %}
+  {% if comp.estado == "borrador" and comp.pide_publicar and not comp.organizador.aprobado %}
+    <div class="tn-espera" id="espera">
+      <h2 style="margin:0 0 6px;">⏳ Tu torneo está esperando la aprobación de SOPI</h2>
+      <p style="margin:0 0 10px;">Como es tu primera vez, SOPI revisa la cuenta antes de publicar. Cuando la aprueben,
+        el torneo se publica solo y te llega un mail. Mientras tanto podés seguir cargando datos y jugadores.</p>
+      <a class="tn-boton tn-wa tn-boton-chico" href="https://wa.me/{{ whatsapp_sopi_panel }}?text={{ ('Hola SOPI! Pedí publicar el torneo ' ~ comp.nombre ~ ' (' ~ comp.organizador.nombre ~ ').')|urlencode }}"
+         target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Avisarle a SOPI</a>
+    </div>
+  {% endif %}
+  {% if plan_libres is not none and comp.estado not in ("cancelada",) %}
+    <p class="tn-plan-tope{% if plan_libres == 0 %} tn-plan-lleno{% endif %}">
+      Plan gratis: <strong>{{ plan_anotados }} de {{ tope_gratis }}</strong> jugadores.
+      {% if plan_libres == 0 %}Llegaste al máximo: para anotar más, pedile a SOPI el plan pago.{% else %}Te quedan {{ plan_libres }} lugar{{ "es" if plan_libres != 1 }}.{% endif %}
+    </p>
+  {% endif %}
   {% if agregado %}<p class="tn-ok">Agregaste a {{ agregado }}.</p>{% endif %}
   {% if aviso_pago %}<p class="tn-ok">{{ aviso_pago }}</p>{% endif %}
   {% if a_revisar or deben %}
@@ -119,7 +134,9 @@
           <li class="{{ 'tn-paso-hecho' if paso.hecho else ('tn-paso-actual' if loop.index0 == actual else '') }}">
             <span class="tn-paso-num">{{ "✓" if paso.hecho else loop.index }}</span>
             <span><strong>{{ paso.titulo }}</strong><br><small class="tn-suave">{{ paso.texto }}</small>
-              {% if loop.index0 == actual and loop.index == 1 %}
+              {% if loop.index0 == actual and loop.index == 1 and comp.pide_publicar and not comp.organizador.aprobado %}
+                <br><span class="tn-chip-espera">⏳ Esperando la aprobación de SOPI</span>
+              {% elif loop.index0 == actual and loop.index == 1 %}
                 <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}" style="margin-top:6px;">
                   <button class="tn-boton tn-boton-chico" name="accion" value="abrir">Publicar y abrir inscripción</button>
                 </form>

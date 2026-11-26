@@ -68,6 +68,10 @@ class Organizador(db.Model):
     precio_por_inscripto = db.Column(db.Integer, nullable=False, default=PRECIO_POR_INSCRIPTO)
     datos_bancarios = db.Column(db.Text, default="")   # alias, CBU, titular
     activo = db.Column(db.Boolean, nullable=False, default=True)
+    # Control de Sopi: las cuentas nuevas se aprueban antes de publicar
+    aprobado = db.Column(db.Boolean, nullable=False, default=False)
+    equipo = db.Column(db.String(40))           # navegador desde el que se creó la cuenta
+    ip_alta = db.Column(db.String(64))          # conexión desde la que se creó
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     competencias = db.relationship("Competencia", backref="organizador", lazy=True)
@@ -112,6 +116,7 @@ class Competencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     organizador_id = db.Column(db.Integer, db.ForeignKey("torneo_organizador.id"), nullable=False)
     tipo = db.Column(db.String(10), nullable=False)          # cuadro | escalera
+    pide_publicar = db.Column(db.Boolean, nullable=False, default=False)   # espera que Sopi apruebe la cuenta
     nombre = db.Column(db.String(150), nullable=False)
     slug = db.Column(db.String(160), unique=True, nullable=False)
     deporte = db.Column(db.String(20), nullable=False, default="Tenis")
@@ -288,4 +293,9 @@ COLUMNAS_NUEVAS = [
     ("torneo_partido", "cuadro", "VARCHAR(12)"),
     ("torneo_inscripcion", "zona", "INTEGER"),
     ("torneo_partido", "recordado", "BOOLEAN NOT NULL DEFAULT FALSE"),
+    # las cuentas que ya existían quedan aprobadas; las nuevas arrancan sin aprobar
+    ("torneo_organizador", "aprobado", "BOOLEAN NOT NULL DEFAULT TRUE"),
+    ("torneo_organizador", "equipo", "VARCHAR(40)"),
+    ("torneo_organizador", "ip_alta", "VARCHAR(64)"),
+    ("torneo_competencia", "pide_publicar", "BOOLEAN NOT NULL DEFAULT FALSE"),
 ]

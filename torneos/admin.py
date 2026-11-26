@@ -15,8 +15,9 @@ from flask import Blueprint, Response, abort, redirect, render_template, request
 
 from models import db
 from .bp import contexto
+from . import control
 from .cobros import impagos
-from .models import Categoria, Cobro, Competencia, Inscripcion, Organizador, PLAN_GRATIS, PLAN_PAGO
+from .models import Categoria, Cobro, Competencia, Inscripcion, Organizador, PLAN_GRATIS, PLAN_PAGO, EST_BORRADOR, EST_INSCRIPCION
 from .util import link_whatsapp, pesos
 
 admin_bp = Blueprint("torneos_admin", __name__, url_prefix="/admin/torneos")
@@ -53,7 +54,11 @@ def inicio():
         filas.append({
             "org": org, "competencias": len(org.competencias),
             "deuda": sum(c.monto for c in deuda), "cobros_impagos": len(deuda),
+            "parecidos": control.parecidos(org, organizadores),
+            "pide": [c for c in org.competencias if c.pide_publicar and c.estado == EST_BORRADOR],
+            "wa": link_whatsapp(org.whatsapp, f"Hola {org.nombre}! Te escribo de SOPI Torneos."),
         })
+    por_aprobar = [f for f in filas if not f["org"].aprobado and f["org"].activo]
     pendientes = Cobro.query.filter_by(pagado=False).order_by(Cobro.creado_en).all()
     pagados = Cobro.query.filter_by(pagado=True).order_by(Cobro.pagado_en.desc()).limit(30).all()
     nombres = {o.id: o for o in organizadores}
@@ -66,7 +71,8 @@ def inicio():
     return render_template(
         "torneos/admin_torneos.html",
         **contexto(
-            filas=filas, cobros_pend=cobros_pend,
+            filas=filas, cobros_pend=cobros_pend, por_aprobar=por_aprobar,
+            aprobado_ok=request.args.get("aprobado"),
             pagados=[{"c": c, "org": nombres.get(c.organizador_id), "comp": comps.get(c.competencia_id)} for c in pagados],
             total_pendiente=sum(c.monto for c in pendientes),
             total_cobrado=sum(c.monto for c in Cobro.query.filter_by(pagado=True).all()),
@@ -89,6 +95,18 @@ def organizador(org_id):
             org.precio_por_inscripto = int(valor)
     elif accion == "activo":
         org.activo = not org.activo
+    elif accion == "aprobar":
+        org.aprobado = True
+        publicados = []
+        for comp in org.competencias:
+            if comp.pide_publicar and comp.estado == EST_BORRADOR and comp.categorias:
+                comp.estado, comp.pide_publicar = EST_INSCRIPCION, False
+                publicados.append(comp)
+        db.session.commit()
+        control.avisar_aprobado(org, publicados)
+        return redirect(url_for("torneos_admin.inicio", aprobado=org.nombre) + f"#org-{org.id}")
+    elif accion == "desaprobar":
+        org.aprobado = False
     db.session.commit()
     return redirect(url_for("torneos_admin.inicio") + f"#org-{org.id}")
 

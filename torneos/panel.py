@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import abort, redirect, render_template, request, send_from_directory, url_for
 
 from models import db
-from . import avisos, cobros
+from . import avisos, cobros, control
 from . import escalera as esc
 from . import reglas as reglas_mod
 from .bp import bp, contexto
@@ -274,8 +274,16 @@ def competencia_estado(comp_id):
     """Abrir inscripción, cerrarla (empieza el juego), volver a borrador o cancelar."""
     comp = _mi_competencia(comp_id)
     accion = request.form.get("accion")
+    if accion == "abrir" and comp.estado == EST_BORRADOR and comp.categorias and not comp.organizador.aprobado:
+        # cuenta nueva: Sopi la aprueba y el torneo se publica solo
+        if not comp.pide_publicar:
+            comp.pide_publicar = True
+            db.session.commit()
+            control.avisar_pide_publicar(comp.organizador, comp)
+        return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, espera=1))
     if accion == "abrir" and comp.estado == EST_BORRADOR and comp.categorias:
         comp.estado = EST_INSCRIPCION
+        comp.pide_publicar = False
         db.session.commit()
         return redirect(url_for("torneos.competencia_panel", comp_id=comp.id, publicado=1))
     elif accion == "cerrar" and comp.estado == EST_INSCRIPCION:
@@ -371,6 +379,8 @@ def competencia_panel(comp_id, agregar=None):
             divisiones=esc.nombres_divisiones(comp), escalera=escalera, cuadro=cuadro, liga=liga_datos,
             error=request.args.get("error"), aviso_mezcla=mezcla_modalidades(comp),
             publicado=request.args.get("publicado"), guardado=request.args.get("guardado", type=int),
+            espera=request.args.get("espera"), plan_libres=control.lugares_plan(comp),
+            plan_anotados=control.jugadores_anotados(comp), tope_gratis=control.TOPE_GRATIS,
             cargado=request.args.get("cargado", type=int),
             error_horario=request.args.get("error_horario"), partido_error=request.args.get("partido_error", type=int),
             error_resultado=request.args.get("error_resultado"),
@@ -496,6 +506,8 @@ def inscripcion_agregar(comp_id, cat_id):
             error = "El DNI del compañero/a es igual al del jugador."
     if not error and lugares_libres(cat) == 0:
         error = f"{cat.nombre} ya llegó al cupo ({cat.cupo}). Subí el cupo en \"Editar datos y categorías\"."
+    if not error and not control.entra_en_plan(comp, 2 if cat.modalidad == "dobles" else 1):
+        error = control.mensaje_tope()
     if not error:
         j1 = _buscar_o_crear_jugador(**p1)
         j2 = _buscar_o_crear_jugador(**p2) if cat.modalidad == "dobles" else None
