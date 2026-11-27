@@ -357,4 +357,37 @@
   aplicarCompacta();
 })();
 </script>
+<script>
+(function () {
+  // Barra "Ahora": lleva al lugar del paso que sigue y desaparece al llegar.
+  // No se muestra mientras ese lugar (o la lista de pasos) ya está a la vista.
+  var barra = document.querySelector(".tn-barra-ahora");
+  if (!barra || !("IntersectionObserver" in window)) return;
+  var destino = null;
+  try { destino = document.querySelector(barra.getAttribute("href")); } catch (e) {}
+  var mirar = [destino, document.getElementById("siguiente-paso"), document.getElementById("pasos")].filter(Boolean);
+  var visibles = new Set();
+  var llego = false;
+  function actualizar() {
+    barra.classList.toggle("tn-barra-oculta", llego || visibles.size > 0);
+  }
+  var obs = new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (e.isIntersecting) { visibles.add(e.target); } else { visibles.delete(e.target); }
+      if (e.isIntersecting && e.target === destino) { llego = true; }
+    });
+    actualizar();
+  }, { threshold: 0, rootMargin: "-25% 0px -25% 0px" });
+  mirar.forEach(function (el) { obs.observe(el); });
+  barra.addEventListener("click", function (ev) {
+    if (!destino) return;
+    ev.preventDefault();
+    llego = true;
+    actualizar();
+    destino.scrollIntoView({ behavior: "smooth", block: "center" });
+    try { history.replaceState(null, "", barra.getAttribute("href")); } catch (e) {}
+  });
+  actualizar();
+})();
+</script>
 {% endblock %}

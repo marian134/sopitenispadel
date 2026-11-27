@@ -193,6 +193,9 @@
   .tn-barra-ahora strong { color: var(--lime, #E57E3C); font-size: 15px; }
   .tn-barra-ir { flex: none; background: var(--lime, #E57E3C); color: #0b1530; font-weight: 800; padding: 8px 14px; border-radius: 10px; }
   body:has(.tn-barra-ahora) { padding-bottom: 90px; }
+  .tn-barra-ahora { transition: opacity .2s ease, transform .2s ease; }
+  .tn-barra-ahora.tn-barra-oculta { opacity: 0; transform: translateY(16px); pointer-events: none; }
+  [id^="cuadro-"], #siguiente-paso { scroll-margin-top: 150px; }
   /* recuadro "Siguiente paso" debajo de los inscriptos */
   .tn-siguiente-paso { margin-top: 18px; padding: 16px 18px; border-radius: 14px; border: 2px solid var(--lime, #E57E3C);
     background: linear-gradient(135deg, rgba(229,126,60,.14), rgba(229,126,60,.04)); scroll-margin-top: 150px; }
