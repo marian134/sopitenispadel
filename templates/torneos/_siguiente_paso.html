@@ -1,0 +1,43 @@
+{# Recuadro "Siguiente paso": repite abajo, donde está trabajando el organizador,
+   el paso que sigue con su botón, para no tener que subir a buscarlo. #}
+{% set marcas_sp = pasos|map(attribute='hecho')|list %}
+{% set actual_sp = marcas_sp.index(false) if false in marcas_sp else -1 %}
+{% if actual_sp != -1 and comp.estado != "cancelada" %}
+  {% set paso = pasos[actual_sp] %}
+  <div class="tn-siguiente-paso" id="siguiente-paso">
+    <p class="tn-sp-et">👉 Siguiente paso · {{ actual_sp + 1 }} de {{ pasos|length }}</p>
+    <h3>{{ paso.titulo }}</h3>
+    <p class="tn-suave" style="margin:0 0 10px;">{{ paso.texto }}</p>
+    {% if actual_sp == 0 and comp.pide_publicar and not comp.organizador.aprobado %}
+      <span class="tn-chip-espera">⏳ Esperando la aprobación de SOPI</span>
+    {% elif actual_sp == 0 %}
+      <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}">
+        <button class="tn-boton">Publicar y abrir inscripción</button>
+        <input type="hidden" name="accion" value="abrir">
+      </form>
+    {% elif actual_sp == 1 and comp.tipo == "cuadro" %}
+      <form method="post" action="{{ url_for('torneos.competencia_estado', comp_id=comp.id) }}"
+            onsubmit="return confirm('¿Cerrar la inscripción? Nadie más se va a poder anotar.');">
+        <input type="hidden" name="accion" value="cerrar">
+        <button class="tn-boton">Ya están todos: cerrar la inscripción</button>
+      </form>
+      <p class="tn-dato" style="margin:8px 0 0;">Después de cerrar, el paso siguiente es armar el cuadro.</p>
+    {% elif paso.titulo == "Armar el cuadro" and cuadro %}
+      {% set pendientes = cuadro.categorias|rejectattr("principal")|selectattr("participantes", "ge", 2)|list %}
+      {% if pendientes %}
+        <p class="tn-dato" style="margin:0 0 10px;">Si querés cabezas de serie, poné 1, 2… en la lista de inscriptos antes de armar: el 1 y el 2 solo se cruzan en la final.</p>
+        <div class="tn-acciones">
+          {% for c in pendientes %}
+            <form method="post" action="{{ url_for('torneos.cuadro_armar', comp_id=comp.id, cat_id=c.cat.id) }}">
+              <button class="tn-boton">Armar el cuadro{% if cuadro.categorias|length > 1 %} de {{ c.cat.nombre }}{% endif %}</button>
+            </form>
+          {% endfor %}
+        </div>
+      {% else %}
+        <a class="tn-boton" href="{{ paso.ir }}">{{ paso.boton or "Ir" }} ↑</a>
+      {% endif %}
+    {% elif paso.ir %}
+      <a class="tn-boton" href="{{ paso.ir }}">{{ paso.boton or "Ir" }} ↑</a>
+    {% endif %}
+  </div>
+{% endif %}

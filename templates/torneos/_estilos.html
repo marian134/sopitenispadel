@@ -185,18 +185,26 @@
   }
   .tn-bloqueado-chico { border: 0; padding: 2px 0 0; font-size: 13px; }
   .tn-deslizar { display: none; margin: 0 0 6px; font-size: 13px; color: var(--muted, #9fb0cc); }
-  .tn-barra-ahora { display: none; }
+  /* barra fija con lo que sigue: en la computadora, abajo a la izquierda (a la derecha está WhatsApp) */
+  .tn-barra-ahora { display: flex; position: fixed; left: 24px; bottom: 24px; z-index: 900; align-items: center; max-width: 420px;
+    justify-content: space-between; gap: 14px; padding: 10px 14px; border-radius: 14px; text-decoration: none;
+    background: #13203d; border: 2px solid var(--lime, #E57E3C); color: var(--text, #fff); box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+  .tn-barra-ahora small { color: var(--muted, #9fb0cc); font-size: 12px; }
+  .tn-barra-ahora strong { color: var(--lime, #E57E3C); font-size: 15px; }
+  .tn-barra-ir { flex: none; background: var(--lime, #E57E3C); color: #0b1530; font-weight: 800; padding: 8px 14px; border-radius: 10px; }
+  body:has(.tn-barra-ahora) { padding-bottom: 90px; }
+  /* recuadro "Siguiente paso" debajo de los inscriptos */
+  .tn-siguiente-paso { margin-top: 18px; padding: 16px 18px; border-radius: 14px; border: 2px solid var(--lime, #E57E3C);
+    background: linear-gradient(135deg, rgba(229,126,60,.14), rgba(229,126,60,.04)); scroll-margin-top: 150px; }
+  .tn-siguiente-paso h3 { margin: 2px 0 4px; font-size: 20px; }
+  .tn-siguiente-paso form { align-items: flex-start; }
+  .tn-sp-et { margin: 0; font-size: 13px; font-weight: 800; color: var(--lime, #E57E3C); text-transform: uppercase; letter-spacing: .04em; }
   /* las burbujas de la tienda tapan el panel en el celular */
   #wa-burbuja { display: none !important; }
   @media (max-width: 760px) {
     .tn-deslizar { display: block; }
     .wa-float { display: none !important; }
-    .tn-barra-ahora { display: flex; position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 900; align-items: center;
-      justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; text-decoration: none;
-      background: #13203d; border: 2px solid var(--lime, #E57E3C); color: var(--text, #fff); box-shadow: 0 8px 24px rgba(0,0,0,.45); }
-    .tn-barra-ahora small { color: var(--muted, #9fb0cc); font-size: 12px; }
-    .tn-barra-ahora strong { color: var(--lime, #E57E3C); font-size: 15px; }
-    .tn-barra-ir { flex: none; background: var(--lime, #E57E3C); color: #0b1530; font-weight: 800; padding: 8px 14px; border-radius: 10px; }
+    .tn-barra-ahora { left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); max-width: none; gap: 10px; }
     body:has(.tn-barra-ahora) { padding-bottom: 84px; }
   }
   .tn-guardar-horario.tn-apagado { opacity: .45; filter: grayscale(.6); }

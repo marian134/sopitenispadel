@@ -124,8 +124,8 @@
         <details style="margin-top:8px;"><summary class="tn-suave" style="cursor:pointer; font-size:13px;">Ver los pasos</summary>
       {% endif %}
       {% if actual != -1 %}
-        {# en el celular: barra fija abajo con lo que sigue #}
-        <a class="tn-barra-ahora" href="{{ pasos[actual].ir or '#pasos' }}">
+        {# barra fija abajo con lo que sigue (celular y computadora) #}
+        <a class="tn-barra-ahora" href="{{ '#siguiente-paso' if actual in (0, 1) else (pasos[actual].ir or '#pasos') }}">
           <span>👉 <small>Ahora</small><br><strong>{{ pasos[actual].titulo }}</strong></span><span class="tn-barra-ir">Ir ↓</span></a>
       {% endif %}
       {% if actual != -1 and actual >= 3 %}<p class="tn-ahora">👉 Ahora: <strong>{{ pasos[actual].titulo }}</strong></p>{% endif %}
@@ -312,6 +312,10 @@
       {% endif %}
     </div>
   {% endfor %}
+
+  {% if comp.estado in ("borrador", "inscripcion") or (cuadro and comp.estado in ("en_curso", "finalizada")) %}
+    {% include "torneos/_siguiente_paso.html" %}
+  {% endif %}
 </section>
 <script>
 (function () {

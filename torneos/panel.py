@@ -299,7 +299,9 @@ def competencia_estado(comp_id):
         comp.estado = EST_FINALIZADA
         cobros.crear_cobro(comp)
     db.session.commit()
-    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id))
+    # al cerrar la inscripción, directo al recuadro con el paso que sigue (armar el cuadro)
+    ancla = "#siguiente-paso" if accion == "cerrar" else ""
+    return redirect(url_for("torneos.competencia_panel", comp_id=comp.id) + ancla)
 
 
 @bp.route("/panel/<int:comp_id>/copiar", methods=["POST"])
