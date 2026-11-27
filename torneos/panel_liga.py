@@ -85,6 +85,8 @@ def liga_proponer(comp_id, numero):
     comp = _mi_liga(comp_id)
     if not liga.fecha_numero(comp, numero):
         abort(404)
+    if comp.estado in ("finalizada", "cancelada"):
+        return _volver(comp, f"fecha-{numero}", "La liga ya terminó: no se pueden armar partidos nuevos.")
     parejas, _sin = liga.proponer(comp, numero)
     nuevos = [liga.crear_partido(comp, numero, a.id, b.id) for a, b in parejas]
     db.session.commit()
@@ -98,6 +100,8 @@ def liga_partido_nuevo(comp_id, numero):
     comp = _mi_liga(comp_id)
     if not liga.fecha_numero(comp, numero):
         abort(404)
+    if comp.estado in ("finalizada", "cancelada"):
+        return _volver(comp, f"fecha-{numero}", "La liga ya terminó: no se pueden armar partidos nuevos.")
     a, b = request.form.get("a", type=int), request.form.get("b", type=int)
     validos = {i.id for i in liga.participantes(comp)}
     if not a or not b or a == b or a not in validos or b not in validos:

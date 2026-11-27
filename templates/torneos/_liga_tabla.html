@@ -8,7 +8,7 @@
         <tr{% if yo %} style="color:var(--lime);font-weight:700;"{% endif %}>
           <td>{{ f.posicion }}</td>
           <td>{{ f.insc.jugador1.nombre_completo }}</td>
-          <td><span class="tn-puntos" aria-label="Jugó {{ f.fechas_jugadas|length }} fechas">
+          <td><span class="tn-puntos" aria-label="Jugó {{ f.fechas_jugadas|length }} fecha{{ "s" if f.fechas_jugadas|length != 1 }}">
             {% for x in fechas %}
               <span class="tn-punto {{ 'tn-punto-si' if x.numero in f.fechas_jugadas else ('tn-punto-futura' if x.estado in ('futura', 'proxima') else 'tn-punto-no') }}"
                     title="Fecha {{ x.numero }}"></span>

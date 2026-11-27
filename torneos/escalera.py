@@ -405,8 +405,10 @@ def propuesta_divisiones(cat, semana):
         regla = cambios[i] if i < len(cambios) else {"suben": 0, "bajan": 0}
         de_arriba = grupos.get(arriba, [])
         de_abajo = grupos.get(abajo, [])
-        bajan = int(regla.get("bajan") or 0)
-        suben = int(regla.get("suben") or 0)
+        # Nunca se mueve más de la mitad de una división en un mismo cambio:
+        # así ninguna queda vacía cuando hay pocos jugadores.
+        bajan = min(int(regla.get("bajan") or 0), len(de_arriba) // 2)
+        suben = min(int(regla.get("suben") or 0), len(de_abajo) // 2)
         for f in de_abajo[:suben]:
             if f["insc"].id not in movidos:
                 propuesta.append((f["insc"], abajo, arriba))

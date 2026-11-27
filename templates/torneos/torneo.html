@@ -81,8 +81,8 @@
                   <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th title="Se suma el lunes">Esta semana</th><th>PJ</th></tr></thead>
                   <tbody>
                     {% for f in grupo %}
-                      <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ "%.1f"|format(f.puntos) }}</td>
-                          <td>{% if f.esta_semana %}<strong style="color:{{ 'var(--verde)' if f.esta_semana > 0 else '#ff8a93' }};">{{ ("%+.1f"|format(f.esta_semana)).replace(".", ",") }}</strong>{% else %}<span class="tn-suave">—</span>{% endif %}</td>
+                      <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ f.puntos|pts }}</td>
+                          <td>{% if f.esta_semana %}<strong style="color:{{ 'var(--verde)' if f.esta_semana > 0 else '#ff8a93' }};">{{ f.esta_semana|pts(true) }}</strong>{% else %}<span class="tn-suave">—</span>{% endif %}</td>
                           <td>{{ f.jugados }}</td></tr>
                     {% endfor %}
                   </tbody>

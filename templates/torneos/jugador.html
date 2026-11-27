@@ -48,8 +48,8 @@
             <div class="tn-dos" style="margin-top:14px;">
               <div>
                 <p class="tn-dato" style="margin:0;">Semana {{ b.semana if b.semana <= b.total else b.total }} de {{ b.total }}{% if b.especial %} · <strong style="color:var(--amarillo);">{{ b.especial }}</strong>{% endif %}</p>
-                <p style="margin:4px 0; font-size:22px; font-weight:800;">Nivel {{ "%.1f"|format(b.mia.puntos) }}</p>
-                <p class="tn-dato" style="margin:0;">Puesto {{ b.mia.posicion }} en {{ b.division }}{% if b.puntos_semana %} · esta semana {{ "%+.1f"|format(b.puntos_semana) }} (suma el lunes){% endif %}</p>
+                <p style="margin:4px 0; font-size:22px; font-weight:800;">Nivel {{ b.mia.puntos|pts }}</p>
+                <p class="tn-dato" style="margin:0;">Puesto {{ b.mia.posicion }} en {{ b.division }}{% if b.puntos_semana %} · esta semana {{ b.puntos_semana|pts(true) }} (suma el lunes){% endif %}</p>
               </div>
               <div>
                 {% if b.libre_actual %}<p class="tn-dato" style="margin:0;">Esta semana la tenés libre.</p>{% endif %}
@@ -81,7 +81,7 @@
                             onsubmit="return confirm('¿Desafiar a {{ f.insc.jugador1.nombre_completo|replace("'", "") }}?');">
                         <input type="hidden" name="insc" value="{{ i.id }}">
                         <input type="hidden" name="rival" value="{{ f.insc.id }}">
-                        <button class="tn-boton tn-boton-sec tn-boton-chico">#{{ f.posicion }} {{ f.insc.jugador1.nombre_completo }} ({{ "%.1f"|format(f.puntos) }})</button>
+                        <button class="tn-boton tn-boton-sec tn-boton-chico">#{{ f.posicion }} {{ f.insc.jugador1.nombre_completo }} ({{ f.puntos|pts }})</button>
                       </form>
                     {% endfor %}
                   </div>
@@ -103,8 +103,8 @@
                 {% for f in b.grupo %}
                   {% set yo = f.insc.id == i.id %}
                   <tr><td class="{{ 'tn-yo' if yo }}">{{ f.posicion }}</td><td class="{{ 'tn-yo' if yo }}">{{ f.insc.jugador1.nombre_completo }}</td>
-                      <td class="{{ 'tn-yo' if yo }}">{{ "%.1f"|format(f.puntos) }}</td>
-                      <td>{% if f.esta_semana %}{{ ("%+.1f"|format(f.esta_semana)).replace(".", ",") }}{% else %}<span class="tn-suave">—</span>{% endif %}</td><td>{{ f.jugados }}</td></tr>
+                      <td class="{{ 'tn-yo' if yo }}">{{ f.puntos|pts }}</td>
+                      <td>{% if f.esta_semana %}{{ f.esta_semana|pts(true) }}{% else %}<span class="tn-suave">—</span>{% endif %}</td><td>{{ f.jugados }}</td></tr>
                 {% endfor %}
                 </tbody>
               </table>

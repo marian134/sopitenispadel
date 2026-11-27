@@ -36,7 +36,10 @@ def fecha_numero(comp, numero):
 
 
 def proxima_fecha(comp, hoy=None):
-    """Número de la próxima fecha (hoy incluido), o None si ya pasaron todas."""
+    """Número de la próxima fecha (hoy incluido), o None si ya pasaron todas
+    o si la liga ya terminó (o se canceló)."""
+    if comp.estado in ("finalizada", "cancelada"):
+        return None
     hoy = hoy or date.today()
     for n, d in fechas(comp):
         if d >= hoy:
@@ -55,7 +58,7 @@ def estado_fechas(comp, hoy=None):
     for n, d in fechas(comp):
         if n == prox:
             estado = "proxima"
-        elif d < hoy:
+        elif d < hoy or comp.estado in ("finalizada", "cancelada"):
             estado = "jugada" if n in con_partidos else "sin_partidos"
         else:
             estado = "futura"

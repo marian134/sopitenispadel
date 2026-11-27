@@ -143,6 +143,16 @@ def init_app(app, contexto_base):
     def _torneos():
         return {"torneos_visible": torneos_visible(), "torneos_abiertos": torneos_abiertos}
 
+    @app.template_filter("pts")
+    def _pts(valor, signo=False):
+        """Puntos como se escriben acá: 13, 11,5, +1,5 (coma decimal, sin ",0")."""
+        try:
+            v = round(float(valor), 2)
+        except (TypeError, ValueError):
+            return valor
+        texto = (f"{v:+.2f}" if signo else f"{v:.2f}").rstrip("0").rstrip(".").replace(".", ",")
+        return "0" if texto in ("+0", "-0") else texto
+
     @app.template_filter("tipo_torneo")
     def _tipo_torneo(tipo):
         return {"escalera": "Escalera de desafíos", "liga": "Liga por fechas"}.get(tipo, "Torneo con cuadro")

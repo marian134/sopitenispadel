@@ -62,7 +62,7 @@
           </div>
         {% endfor %}
 
-        {% if f.estado in ("proxima", "futura", "sin_partidos") and L.participantes|length >= 2 %}
+        {% if f.estado in ("proxima", "futura", "sin_partidos") and L.participantes|length >= 2 and comp.estado not in ("finalizada", "cancelada") %}
           <div class="tn-acciones" style="margin-top:8px; align-items:center;">
             <form method="post" action="{{ url_for('torneos.liga_proponer', comp_id=comp.id, numero=f.numero) }}">
               <button class="tn-boton tn-boton-chico">Proponer partidos{% if f.anotados %} con los anotados{% endif %}</button>

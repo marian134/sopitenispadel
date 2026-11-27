@@ -88,7 +88,7 @@
               <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>PJ</th></tr></thead>
               <tbody>
                 {% for f in grupo %}
-                  <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ "%.1f"|format(f.puntos) }}</td><td>{{ f.jugados }}</td></tr>
+                  <tr><td>{{ f.posicion }}</td><td>{{ f.insc.jugador1.nombre_completo }}</td><td>{{ f.puntos|pts }}</td><td>{{ f.jugados }}</td></tr>
                 {% endfor %}
               </tbody>
             </table>
