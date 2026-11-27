@@ -1,7 +1,7 @@
 {# Zonas de una categoría: tabla y partidos por fecha.
    Recibe: zonas (zonas.estructura), comp; admin=true muestra "Definir este partido". #}
 {% macro num(x) %}{{ x|int if x == x|int else x }}{% endmacro %}
-<div class="tn-grilla" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+<div class="tn-grilla" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));">
   {% for z in zonas %}
     <div class="tn-caja" style="margin:0; background:var(--bg);" id="zona-{{ z.numero }}">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">

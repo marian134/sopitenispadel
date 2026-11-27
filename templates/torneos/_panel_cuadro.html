@@ -74,9 +74,13 @@
             </form>
           </details>
         {% else %}
-          <form method="post" action="{{ url_for('torneos.cuadro_armar', comp_id=comp.id, cat_id=c.cat.id) }}">
-            <button class="tn-boton tn-boton-chico" {% if c.participantes < 2 %}disabled{% endif %}>Armar cuadro</button>
-          </form>
+          {% if c.participantes < 2 %}
+            <p class="tn-dato" style="margin:6px 0 0;">Para armar el cuadro hacen falta al menos 2 {{ "parejas" if c.cat.modalidad == "dobles" else "jugadores" }} con el pago confirmado.</p>
+          {% else %}
+            <form method="post" action="{{ url_for('torneos.cuadro_armar', comp_id=comp.id, cat_id=c.cat.id) }}">
+              <button class="tn-boton tn-boton-chico">Armar cuadro</button>
+            </form>
+          {% endif %}
         {% endif %}
       {% endif %}
 
@@ -130,7 +134,7 @@
         {% elif f.etapa == "resultado" %}<span class="tn-chip tn-chip-resultado">2 · Falta resultado</span>
         {% else %}<span class="tn-chip">Esperando rival</span>{% endif %}
         {% for lado in [p.lado_a, p.lado_b] %}<strong>{% if lado %}{{ lado.jugador1.nombre_completo }}{% if lado.jugador2 %} / {{ lado.jugador2.nombre_completo }}{% endif %}{% else %}A definir{% endif %}</strong>{% if loop.first %} vs {% endif %}{% endfor %}
-        <span class="tn-suave"> · {{ f.cat.nombre }} · {{ f.ronda }}{% if p.cuadro == 'consuelo' %} (consuelo){% endif %}</span></p>
+        <span class="tn-pj-cat">{% if cuadro.categorias|length > 1 %}<span class="tn-pj-cat-nombre" title="{{ f.cat.nombre }}">{{ f.cat.nombre }}</span><span aria-hidden="true">·</span>{% endif %}<span class="tn-pj-ronda">{{ f.ronda }}{% if p.cuadro == 'consuelo' %} (consuelo){% endif %}</span></span></p>
       {% for lado in [p.lado_a, p.lado_b] %}{% if lado and lado.restricciones %}<p class="tn-dato" style="margin:2px 0;">{{ lado.jugador1.nombre }} no puede: {{ lado.restricciones }}</p>{% endif %}{% endfor %}
       {% for a in f.avisos %}<p class="tn-error" style="margin:6px 0; padding:6px 10px;">{{ a }}</p>{% endfor %}
       {% set es_siguiente = p.id == cuadro.siguiente or ((error_horario or error_resultado) and partido_error == p.id) %}

@@ -77,6 +77,29 @@ def link_whatsapp(celular, texto):
     return f"{base}?text={quote(texto)}"
 
 
+_PARTICULAS = {"de", "del", "la", "las", "los", "y", "e", "da", "das", "do", "dos", "di", "van", "von", "der", "den"}
+
+
+def nombre_propio(texto):
+    """Ordena las mayúsculas de un nombre sin romper lo que la persona escribió bien.
+
+    Respeta "MacDonald" o "María de los Ángeles"; solo corrige si está todo en
+    minúscula o todo en mayúscula, y deja "de", "del", "la", "y"... en minúscula."""
+    t = " ".join((texto or "").split())
+    letras = [c for c in t if c.isalpha()]
+    if not letras or not (all(c.islower() for c in letras) or all(c.isupper() for c in letras)):
+        return t
+    palabras = t.lower().split(" ")
+    salida = []
+    for k, p in enumerate(palabras):
+        if k and p in _PARTICULAS:
+            salida.append(p)
+        else:
+            # "o'connor" -> "O'Connor", "etcheverry-bustamante" -> "Etcheverry-Bustamante"
+            salida.append("-".join("'".join(x[:1].upper() + x[1:] for x in parte.split("'")) for parte in p.split("-")))
+    return " ".join(salida)
+
+
 def guardar_archivo(archivo):
     """Guarda un archivo subido y devuelve su nombre interno, o lanza
     ValueError con un mensaje para mostrar."""

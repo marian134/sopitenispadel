@@ -162,7 +162,7 @@
   {% for c in categorias %}
     <div class="tn-caja" id="cat-{{ c.cat.id }}">
       <h2>{{ c.cat.nombre }} <span class="tn-suave" style="font-size:14px; font-family:inherit;">
-        · {{ c.cat.modalidad|capitalize }} · {{ c.activos }}{% if c.cat.cupo %}/{{ c.cat.cupo }}{% endif %} inscriptos · {{ c.confirmados }} con pago confirmado</span></h2>
+        · {{ c.cat.modalidad|capitalize }} · {{ c.activos }}{% if c.cat.cupo %}/{{ c.cat.cupo }}{% endif %} inscripto{{ 's' if c.activos != 1 }} · {{ c.confirmados }} con pago confirmado</span></h2>
       {% if c.filas %}
         <div class="tn-scroll">
           <table class="tn-tabla tn-tabla-tarjetas">

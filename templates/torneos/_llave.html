@@ -6,7 +6,7 @@
             {% for lado in [p.lado_a, p.lado_b] %}
               {% set gano = lado and p.ganador_id == lado.id %}
               <div class="tn-llave-lado{% if gano %} tn-gano{% endif %}">
-                <span>
+                <span{% if lado %} title="{{ lado.jugador1.nombre_completo }}{% if lado.jugador2 %} / {{ lado.jugador2.nombre_completo }}{% endif %}"{% endif %}>
                   {% if lado %}{% if lado.siembra and r.numero == 1 %}<small>({{ lado.siembra }})</small> {% endif %}{{ lado.jugador1.nombre_completo }}{% if lado.jugador2 %} / {{ lado.jugador2.apellido }}{% endif %}
                   {% elif p.estado == 'bye' %}<em>Pase libre</em>
                   {% else %}<em class="tn-suave">—</em>{% endif %}

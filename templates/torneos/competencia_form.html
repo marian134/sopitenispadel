@@ -43,8 +43,8 @@
         <h2>Datos</h2>
         <label>Nombre <input name="nombre" value="{{ valor('nombre', comp.nombre) }}" required maxlength="150" placeholder="Ej. Abierto de Verano 2026"></label>
         <div class="tn-dos">
-          <label>Sede <input name="sede" value="{{ valor('sede', comp.sede) }}" placeholder="Club, dirección"></label>
-          <label>Localidad <input name="localidad" value="{{ valor('localidad', comp.localidad) }}" placeholder="Quilmes"></label>
+          <label>Sede <input name="sede" maxlength="150" value="{{ valor('sede', comp.sede) }}" placeholder="Club, dirección"></label>
+          <label>Localidad <input name="localidad" maxlength="100" value="{{ valor('localidad', comp.localidad) }}" placeholder="Quilmes"></label>
         </div>
         <div class="tn-dos">
           <label>Empieza <input type="date" name="fecha_inicio" value="{{ valor('fecha_inicio', comp.fecha_inicio.isoformat() if comp.fecha_inicio else '') }}"></label>
@@ -65,7 +65,7 @@
             <input name="precio" inputmode="numeric" value="{{ valor('precio', comp.precio) }}" placeholder="40000">
           </label>
           <label>Incluye <small>(opcional)</small>
-            <input name="incluye" value="{{ valor('incluye', comp.incluye) }}" placeholder="Un tubo de pelotas">
+            <input name="incluye" maxlength="150" value="{{ valor('incluye', comp.incluye) }}" placeholder="Un tubo de pelotas">
           </label>
         </div>
         {% if organizador.plan == "pago" %}

@@ -13,7 +13,7 @@ from . import zonas as zns
 from .bp import bp
 from .models import Categoria, Inscripcion, Partido, PAGO_CONFIRMADO, PAGO_PENDIENTE, EST_CANCELADA, EST_FINALIZADA
 from .panel import _mi_competencia
-from .util import organizador_requerido, slug_unico  # noqa: F401
+from .util import nombre_propio, organizador_requerido, slug_unico  # noqa: F401
 
 ESTADOS = {"pendiente": "Pago a revisar", "confirmado": "Pago confirmado", "rechazado": "Pago rechazado"}
 TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -159,8 +159,8 @@ def _persona(datos, sufijo):
     if completo_ap and not (nombre and apellido):
         partes = completo_ap.split()
         apellido, nombre = (partes[0], " ".join(partes[1:])) if len(partes) > 1 else (completo_ap, "")
-    return {"dni": re.sub(r"\D", "", datos.get("dni" + sufijo, ""))[:12], "nombre": nombre.strip().title()[:80],
-            "apellido": apellido.strip().title()[:80], "celular": datos.get("celular" + sufijo, "").strip()[:40],
+    return {"dni": re.sub(r"\D", "", datos.get("dni" + sufijo, ""))[:12], "nombre": nombre_propio(nombre)[:80],
+            "apellido": nombre_propio(apellido)[:80], "celular": datos.get("celular" + sufijo, "").strip()[:40],
             "email": datos.get("email" + sufijo, "").strip().lower()[:120]}
 
 

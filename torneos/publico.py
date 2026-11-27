@@ -14,7 +14,7 @@ from .models import (
     Categoria, Competencia, Inscripcion, Jugador, Partido,
     ESTADOS_PUBLICOS, EST_EN_CURSO, EST_FINALIZADA, EST_INSCRIPCION,
 )
-from .util import enviar_mail, guardar_archivo, link_whatsapp, organizador_actual, pesos, solo_digitos
+from .util import enviar_mail, guardar_archivo, link_whatsapp, nombre_propio, organizador_actual, pesos, solo_digitos
 
 WHATSAPP_ORGANIZAR = (
     f"https://wa.me/{WHATSAPP_SOPI}?text="
@@ -157,8 +157,8 @@ def _buscar_o_crear_jugador(dni, nombre, apellido, celular, email):
 def _leer_persona(form, sufijo):
     return {
         "dni": solo_digitos(form.get(f"dni{sufijo}"))[:12],
-        "nombre": (form.get(f"nombre{sufijo}") or "").strip().title()[:80],
-        "apellido": (form.get(f"apellido{sufijo}") or "").strip().title()[:80],
+        "nombre": nombre_propio(form.get(f"nombre{sufijo}"))[:80],
+        "apellido": nombre_propio(form.get(f"apellido{sufijo}"))[:80],
         "celular": (form.get(f"celular{sufijo}") or "").strip()[:40],
         "email": (form.get(f"email{sufijo}") or "").strip().lower()[:120],
     }
