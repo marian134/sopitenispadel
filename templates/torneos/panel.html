@@ -57,6 +57,14 @@
       <ul class="tn-dato" style="padding-left:18px;">
         {% for c in deuda %}<li>{{ c.inscriptos }} jugadores × {{ pesos(c.precio_unitario) }} = {{ pesos(c.monto) }} ({{ c.creado_en.strftime("%d/%m/%Y") }})</li>{% endfor %}
       </ul>
+      {% if datos_pago_sopi %}
+        <p style="margin:0 0 8px;">Transferí a SOPI:</p>
+        <div class="tn-copiar" style="margin-bottom:10px;">
+          <input id="datos-pago-sopi" value="{{ datos_pago_sopi }}" readonly aria-label="Datos para transferir a SOPI">
+          <button type="button" class="tn-boton tn-boton-chico" onclick="navigator.clipboard.writeText(document.getElementById('datos-pago-sopi').value); this.textContent='¡Copiado!';">Copiar</button>
+        </div>
+        <p class="tn-suave" style="margin:0 0 10px; font-size:14px;">Cuando transfieras, avisanos por WhatsApp con el comprobante.</p>
+      {% endif %}
       <a class="tn-boton tn-wa tn-boton-chico" target="_blank" rel="noopener"
          href="https://wa.me/5491128321531?text={{ ('Hola SOPI! Soy ' ~ org.nombre ~ ', quiero pagar lo pendiente de torneos.')|urlencode }}"><i class="fab fa-whatsapp"></i> Pagar a SOPI</a>
     </div>

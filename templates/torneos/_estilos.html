@@ -252,6 +252,18 @@
   .tn-pj-cat { display: flex; gap: 4px; min-width: 0; margin-top: 2px; font-size: 13px; color: var(--muted, #9fb0cc); }
   .tn-pj-cat-nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tn-pj-cat > span:not(.tn-pj-cat-nombre) { flex-shrink: 0; white-space: nowrap; }
+  /* buscador y vista compacta de inscriptos */
+  .tn-buscador-insc { display: grid; gap: 8px; position: sticky; top: 70px; z-index: 5; }
+  .tn-buscador-insc > label { font-weight: 700; }
+  .tn-buscador-insc input[type="search"] { width: 100%; padding: 12px 14px; border-radius: 10px; background: var(--bg, #060d1c); color: var(--text, #fff); border: 1px solid var(--line-2, #2a3d63); font-size: 16px; }
+  .tn-buscador-pie { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center; font-size: 14px; }
+  .tn-compacto-check { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+  .tn-compacto-check input { width: 18px; height: 18px; accent-color: var(--lime, #E57E3C); }
+  body.tn-compacto .tn-fila-insc td[data-et="Celular"],
+  body.tn-compacto .tn-fila-insc td:first-child small,
+  body.tn-compacto .tn-fila-insc td:first-child br + small,
+  body.tn-compacto .tn-fila-insc .tn-boton-sec { display: none; }
+  body.tn-compacto .tn-tabla-tarjetas tr.tn-fila-insc { padding-top: 8px; padding-bottom: 8px; }
 </style>
 <script>
 /* Formularios: * en lo obligatorio, aclaración arriba y en rojo lo que falta */

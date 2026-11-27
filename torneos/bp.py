@@ -23,6 +23,7 @@ def contexto(**extra):
         precio_jugador=precio_jugador, cargo_jugador=cargo_jugador,
         cupon_sopi=os.environ.get("TORNEOS_CUPON", "").strip(),   # cupón de la tienda para el plan gratis
         whatsapp_sopi_panel=WHATSAPP_SOPI, tope_gratis=TOPE_GRATIS,
+        datos_pago_sopi=os.environ.get("TORNEOS_DATOS_PAGO", "").strip(),
     )
     datos.update(extra)
     return datos

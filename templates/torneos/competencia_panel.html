@@ -159,8 +159,20 @@
   {% if cuadro %}{% include "torneos/_panel_cuadro.html" %}{% endif %}
   {% if liga %}{% include "torneos/_panel_liga.html" %}{% endif %}
 
+  {% set total_insc = categorias|map(attribute="filas")|map("length")|sum %}
+  {% if total_insc >= 10 %}
+    <div class="tn-caja tn-buscador-insc" id="buscar-inscriptos">
+      <label for="buscar-insc">Buscar inscripto</label>
+      <input type="search" id="buscar-insc" placeholder="Nombre, apellido, DNI o celular" autocomplete="off" enterkeyhint="search">
+      <div class="tn-buscador-pie">
+        <span id="buscar-insc-cuenta" class="tn-suave" aria-live="polite">{{ total_insc }} inscripto{{ "s" if total_insc != 1 }}</span>
+        <label class="tn-compacto-check"><input type="checkbox" id="vista-compacta"> Vista compacta</label>
+      </div>
+    </div>
+  {% endif %}
+
   {% for c in categorias %}
-    <div class="tn-caja" id="cat-{{ c.cat.id }}">
+    <div class="tn-caja tn-cat-insc" id="cat-{{ c.cat.id }}">
       <h2>{{ c.cat.nombre }} <span class="tn-suave" style="font-size:14px; font-family:inherit;">
         · {{ c.cat.modalidad|capitalize }} · {{ c.activos }}{% if c.cat.cupo %}/{{ c.cat.cupo }}{% endif %} inscripto{{ 's' if c.activos != 1 }} · {{ c.confirmados }} con pago confirmado</span></h2>
       {% if c.filas %}
@@ -175,7 +187,7 @@
             <tbody>
             {% for f in c.filas %}
               {% set i = f.i %}
-              <tr id="insc-{{ i.id }}">
+              <tr id="insc-{{ i.id }}" class="tn-fila-insc" data-buscar="{{ i.jugador1.nombre_completo }} {{ i.jugador1.dni }} {{ i.jugador1.celular }}{% if i.jugador2 %} {{ i.jugador2.nombre_completo }} {{ i.jugador2.dni }} {{ i.jugador2.celular }}{% endif %}">
                 <td>
                   <strong>{{ i.jugador1.nombre_completo }}</strong>
                   {% if i.jugador2 %}<br>y {{ i.jugador2.nombre_completo }}{% endif %}
@@ -301,4 +313,44 @@
     </div>
   {% endfor %}
 </section>
+<script>
+(function () {
+  // Buscador y vista compacta de inscriptos (solo en el navegador; no cambia nada guardado)
+  var campo = document.getElementById("buscar-insc");
+  if (!campo) return;
+  var cuenta = document.getElementById("buscar-insc-cuenta");
+  var compacta = document.getElementById("vista-compacta");
+  var filas = Array.prototype.slice.call(document.querySelectorAll(".tn-fila-insc"));
+  var cajas = Array.prototype.slice.call(document.querySelectorAll(".tn-cat-insc"));
+  function normal(t) { return (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+  filas.forEach(function (f) { f._texto = normal(f.getAttribute("data-buscar")); });
+  function filtrar() {
+    var q = normal(campo.value).trim();
+    var partes = q.split(/\s+/).filter(Boolean);
+    var digitos = q.replace(/\D/g, "");
+    var visibles = 0;
+    filas.forEach(function (f) {
+      var ok = !partes.length || partes.every(function (p) { return f._texto.indexOf(p) !== -1; })
+        || (digitos.length >= 4 && f._texto.replace(/\D/g, " ").indexOf(digitos) !== -1);
+      f.hidden = !ok;
+      if (ok) visibles++;
+    });
+    cajas.forEach(function (c) {
+      var tiene = c.querySelector(".tn-fila-insc:not([hidden])");
+      var conFilas = c.querySelector(".tn-fila-insc");
+      c.hidden = !!(q && conFilas && !tiene) || !!(q && !conFilas);
+    });
+    cuenta.textContent = q ? (visibles ? "Coinciden " + visibles + " de " + filas.length : "Nadie coincide con “" + campo.value + "”")
+                           : filas.length + (filas.length === 1 ? " inscripto" : " inscriptos");
+  }
+  campo.addEventListener("input", filtrar);
+  try { compacta.checked = localStorage.getItem("tn-vista-compacta") === "1"; } catch (e) {}
+  function aplicarCompacta() {
+    document.body.classList.toggle("tn-compacto", compacta.checked);
+    try { localStorage.setItem("tn-vista-compacta", compacta.checked ? "1" : "0"); } catch (e) {}
+  }
+  compacta.addEventListener("change", aplicarCompacta);
+  aplicarCompacta();
+})();
+</script>
 {% endblock %}
