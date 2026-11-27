@@ -41,6 +41,7 @@
 
   <div class="ap-top">
     <h1>Pedidos <small style="font-size:15px"><a href="{{ url_for('admin_dashboard') }}">Ver dashboard</a></small></h1>
+    <a href="{{ url_for('admin_lista_precios') }}" class="btn btn-outline" title="Excel con todos los productos y precios para mandar a clientes">📥 Lista de precios</a>
     <a href="{{ url_for('torneos_admin.inicio') }}" class="btn btn-outline">Torneos</a>
     <form method="post" action="{{ url_for('admin_logout') }}">
       <button type="submit" class="btn btn-outline">Cerrar sesión</button>

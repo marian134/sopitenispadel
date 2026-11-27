@@ -3457,6 +3457,38 @@ def admin_productos():
     return render_template("admin_productos.html", **contexto, productos=productos)
 
 
+@app.route("/admin/lista-precios.xlsx")
+@admin_requerido
+def admin_lista_precios():
+    """Excel con todos los productos publicados con stock, para mandar a clientes.
+    Solo precios públicos (nunca costos)."""
+    from lista_precios import armar_excel
+    productos = (Producto.query
+                 .filter(Producto.stock > 0, Producto.precio > 0, Producto.slug != None, con_foto())  # noqa: E711
+                 .all())
+    aviso = None
+    if estado_black_friday() == "activo":
+        fin = BLACK_FRIDAY["fin"] - timedelta(minutes=1)
+        aviso = (f"Black Friday hasta el {fin:%d/%m/%Y}: {round(BLACK_FRIDAY['descuento_paletas'] * 100)}% "
+                 "en paletas por transferencia. La columna \"Precio por transferencia\" ya lo incluye.")
+    hoy = ahora_argentina().date()
+    excel = armar_excel(
+        productos,
+        precio_transferencia=precio_transferencia_de,
+        url_producto=lambda p: url_abs(url_for("producto_detalle", slug=p.slug)),
+        hoy=hoy,
+        negocio=legales.NEGOCIO,
+        envio_gratis_desde=ENVIO_GRATIS_DESDE,
+        aviso_promo=aviso,
+    )
+    nombre = f"Lista de precios SOPI Sports {hoy:%d-%m-%Y}.xlsx"
+    return Response(
+        excel.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
+    )
+
+
 @app.route("/admin/productos/<int:producto_id>/talles", methods=["POST"])
 @admin_requerido
 def admin_producto_talles(producto_id):
