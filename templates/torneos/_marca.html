@@ -6,7 +6,9 @@
     <style>
       .tn-etiqueta { color: {{ org.color }}; }
       .tn-boton:not(.tn-boton-sec):not(.tn-wa) { background: {{ org.color }}; }
-      .tn-boton:not(.tn-boton-sec):not(.tn-wa):hover { filter: brightness(.92); background: {{ org.color }}; }
+      @media (hover: hover) and (pointer: fine) {
+        .tn-boton:not(.tn-boton-sec):not(.tn-wa):hover { filter: brightness(.92); background: {{ org.color }}; }
+      }
     </style>
   {% endif %}
   {% if org.logo %}

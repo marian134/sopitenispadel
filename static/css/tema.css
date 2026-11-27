@@ -94,8 +94,11 @@ html body .nav-sport-link {
     color: var(--text);
 }
 html body .nav-sport-link::after { background: var(--lime); }
-html body .nav-sport-link:hover,
+
 html body .nav-sport-link.activo { color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .nav-sport-link:hover { color: var(--lime); }
+}
 html body .nav-cart, html body .nav-toggle, html body .nav-close { color: var(--text); }
 html body .nav-cart-count { background: var(--lime); color: var(--on-lime); }
 
@@ -129,20 +132,12 @@ html body .home-product-cart {
     letter-spacing: .05em;
     text-transform: uppercase;
 }
-html body .shop-add:hover,
-html body .product-add-button:hover,
-html body .btn-primary:hover:not(:disabled),
-html body .btn-checkout:hover,
-html body .co-confirmar:hover,
-html body .pago-metodos .btn-checkout:hover,
-html body .carrito-seguir-comprando:hover,
-html body .pago-resumen .carrito-seguir-comprando:hover,
-html body .co-cupon-form button:hover,
-html body .cupon-form button:hover,
-html body .home-product-cart:hover {
+@media (hover: hover) and (pointer: fine) {
+  html body .shop-add:hover, html body .product-add-button:hover, html body .btn-primary:hover:not(:disabled), html body .btn-checkout:hover, html body .co-confirmar:hover, html body .pago-metodos .btn-checkout:hover, html body .carrito-seguir-comprando:hover, html body .pago-resumen .carrito-seguir-comprando:hover, html body .co-cupon-form button:hover, html body .cupon-form button:hover, html body .home-product-cart:hover {
     background: var(--lime-dark);
     border-color: var(--lime-dark);
     color: var(--on-lime);
+}
 }
 html body .btn-whatsapp { border-radius: 10px; }
 
@@ -152,7 +147,9 @@ html body .home-sopi { background: var(--bg); }
 /* carrusel */
 html body .bn-slide { background: var(--surface); }
 html body .bn-btn { background: var(--lime); color: var(--on-lime); border-radius: 999px; font-family: var(--f-boton); letter-spacing: .05em; text-transform: uppercase; }
-html body .bn-slide:hover .bn-btn, html body .bn-tile:hover .bn-btn { background: var(--lime-dark); }
+@media (hover: hover) and (pointer: fine) {
+  html body .bn-slide:hover .bn-btn, html body .bn-tile:hover .bn-btn { background: var(--lime-dark); }
+}
 html body .bn-nav { background: rgba(6, 13, 28, .8); color: var(--text); }
 html body .bn-dots button.on { background: var(--lime); }
 
@@ -177,13 +174,17 @@ html body .home-btn {
     background: var(--lime);
     color: var(--on-lime);
 }
-html body .home-btn:hover { background: var(--lime-dark); }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-btn:hover { background: var(--lime-dark); }
+}
 html body .home-btn-padel {
     background: transparent;
     color: var(--text);
     box-shadow: inset 0 0 0 2px var(--text);
 }
-html body .home-btn-padel:hover { background: var(--text); color: var(--bg); }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-btn-padel:hover { background: var(--text); color: var(--bg); }
+}
 html body .home-hero-side { border-color: var(--line-2); }
 html body .home-hero-side strong { font-family: var(--f-boton); font-size: 28px; letter-spacing: .02em; }
 html body .home-hero-side span { color: var(--muted); }
@@ -214,7 +215,9 @@ html body .home-cats-grid a {
     border-radius: 999px;
     background: var(--surface);
 }
-html body .home-cats-grid a:hover { border-color: var(--lime); color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-cats-grid a:hover { border-color: var(--lime); color: var(--lime); }
+}
 
 /* productos destacados del inicio */
 html body .home-product-card {
@@ -242,7 +245,9 @@ html body .home-cta { background: var(--lime); color: var(--on-lime); }
 html body .home-cta h2 { color: var(--on-lime); }
 html body .home-cta-content p { color: rgba(255, 255, 255, .85); }
 html body .home-cta-btn { background: var(--bg); color: var(--text); border-radius: 999px; font-family: var(--f-boton); letter-spacing: .05em; }
-html body .home-cta-btn:hover { background: #13213d; }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-cta-btn:hover { background: #13213d; }
+}
 
 /* ---------- CATÁLOGO ---------- */
 html body .shop-page { background: var(--bg); }
@@ -261,12 +266,16 @@ html body .shop-kicker, html body .shop-count, html body .shop-intro { color: va
 html body .shop-toolbar, html body .shop-filter summary, html body .shop-sort { border-color: var(--line); }
 html body .shop-filter-menu { background: var(--surface); border-color: var(--line); }
 html body .shop-filter-menu a { color: var(--text); }
-html body .shop-filter-menu a:hover { background: var(--surface-2); }
+@media (hover: hover) and (pointer: fine) {
+  html body .shop-filter-menu a:hover { background: var(--surface-2); }
+}
 html body .shop-sort select { background: var(--bg); color: var(--text); }
 
 /* barra de categorías */
 html body .cat-btn { border-color: var(--line-2); border-radius: 999px; }
-html body .cat-btn:hover { border-color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  html body .cat-btn:hover { border-color: var(--text); }
+}
 html body .cat-btn.is-active { background: var(--accent, var(--lime)); border-color: var(--accent, var(--lime)); color: #fff; }
 html body .cat-count { background: rgba(255, 255, 255, .1); }
 html body .cat-group-label { font-family: var(--f-boton); font-size: 15px; letter-spacing: .08em; }
@@ -281,7 +290,9 @@ html body .shop-product-card {
     overflow: hidden;
     transition: border-color .2s ease, transform .2s ease;
 }
-html body .shop-product-card:hover { border-color: var(--line-2); transform: translateY(-3px); }
+@media (hover: hover) and (pointer: fine) {
+  html body .shop-product-card:hover { border-color: var(--line-2); transform: translateY(-3px); }
+}
 html body .shop-product-image { background: #fff; }
 html body .shop-favorite { background: rgba(6, 13, 28, .75); color: var(--text); }
 html body .shop-badge-low { background: var(--lime); color: var(--on-lime); }
@@ -314,12 +325,16 @@ html body .product-description p, html body .descripcion { color: #c7c7c2; }
 html body .product-extra-item small { color: var(--muted); }
 html body .quantity-control { background: var(--surface-2); border-color: var(--line-2); border-radius: 10px; }
 html body .quantity-btn { color: var(--text); }
-html body .quantity-btn:hover { background: var(--line); }
+@media (hover: hover) and (pointer: fine) {
+  html body .quantity-btn:hover { background: var(--line); }
+}
 html body .quantity-control input { background: transparent; color: var(--text); }
 html body .ficha-tecnica th { background: var(--surface-2); color: var(--muted); }
 html body .ficha-tecnica td { border-color: var(--line); }
 html body .talle-opcion span { background: var(--surface-2); border-color: var(--line-2); color: var(--text); }
-html body .talle-opcion span:hover { border-color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .talle-opcion span:hover { border-color: var(--lime); }
+}
 html body .talle-opcion input:checked + span { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
 html body .talle-aviso { color: var(--muted); }
 html body .precio { color: var(--lime); }
@@ -342,22 +357,30 @@ html body .carrito-subtotal > span { color: var(--muted); }
 html body .resumen-separador { background: var(--line); }
 html body .cantidad-control { background: var(--surface-2); border-color: var(--line-2); }
 html body .cantidad-btn { background: var(--surface-2); color: var(--text); }
-html body .cantidad-btn:hover { background: var(--line); }
+@media (hover: hover) and (pointer: fine) {
+  html body .cantidad-btn:hover { background: var(--line); }
+}
 html body .cantidad-control input { background: transparent; color: var(--text); border-color: var(--line-2); }
 html body .carrito-eliminar { color: var(--muted); }
-html body .carrito-eliminar:hover { background: rgba(255, 90, 90, .12); color: #ff8080; }
+@media (hover: hover) and (pointer: fine) {
+  html body .carrito-eliminar:hover { background: rgba(255, 90, 90, .12); color: #ff8080; }
+}
 html body .btn-vaciar, html body .producto-volver {
     background: transparent;
     border-color: var(--line-2);
     color: var(--muted);
 }
-html body .btn-vaciar:hover, html body .producto-volver:hover { background: var(--surface-2); color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  html body .btn-vaciar:hover, html body .producto-volver:hover { background: var(--surface-2); color: var(--text); }
+}
 
 /* ---------- PAGO ---------- */
 html body .co-page { color: var(--text); }
 html body .co-head p, html body .co-envio-estado, html body .co-confirmar-ayuda,
 html body .co-opcion-texto span, html body .co-cupon-nota, html body .co-volver { color: var(--muted); }
-html body .co-volver:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  html body .co-volver:hover { color: var(--text); }
+}
 html body .co-card, html body .co-resumen {
     background: var(--surface);
     border-color: var(--line);
@@ -365,7 +388,9 @@ html body .co-card, html body .co-resumen {
 }
 html body .co-num { background: var(--lime); color: var(--on-lime); }
 html body .co-opcion-box { background: var(--surface-2); border-color: var(--line-2); }
-html body .co-opcion:hover .co-opcion-box { border-color: #555; }
+@media (hover: hover) and (pointer: fine) {
+  html body .co-opcion:hover .co-opcion-box { border-color: #555; }
+}
 html body .co-opcion-box::before { background: var(--bg); border-color: #666; }
 html body .co-opcion input:checked + .co-opcion-box { border-color: var(--lime); background: rgba(229, 126, 60, .06); }
 html body .co-opcion input:checked + .co-opcion-box::before {
@@ -419,7 +444,9 @@ html body .footer-section p { color: var(--muted); }
 html body .footer-benefits { border-color: var(--line); }
 html body .footer-benefits i { color: var(--lime); }
 html body .footer-bottom { border-color: var(--line); }
-html body .social-icon:hover { color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .social-icon:hover { color: var(--lime); }
+}
 
 /* ---------- Ajustes finos ---------- */
 /* títulos grandes: sin el apretado de letras que tenían con Arial */
@@ -448,9 +475,13 @@ html body .home-product-info h3 a {
     text-decoration: none;
     line-height: 1.3;
 }
-html body .home-product-info h3 a:hover { color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-product-info h3 a:hover { color: var(--lime); }
+}
 html body .shop-product-name { text-decoration: none; font-weight: 600; }
-html body .shop-product-name:hover { color: var(--lime); }
+@media (hover: hover) and (pointer: fine) {
+  html body .shop-product-name:hover { color: var(--lime); }
+}
 
 /* ficha de producto (plantilla product.html) */
 html body .header-sopi { border-bottom-color: var(--line); }
@@ -546,7 +577,9 @@ html body .co-linea.co-ahorro strong, html body .pago-efectivo-total strong { co
 
 /* el botón "Ver pádel" del inicio va en azul de marca */
 html body .home-btn-padel { background: var(--azul); color: #fff; box-shadow: none; }
-html body .home-btn-padel:hover { background: #1b56a6; color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  html body .home-btn-padel:hover { background: #1b56a6; color: #fff; }
+}
 
 /* barra de categorías: la marcada en pádel con el azul de marca */
 html body[data-deporte="padel"] .cat-btn.is-active { background: var(--azul); border-color: var(--azul); }
@@ -571,7 +604,9 @@ html body .pr-botones .btn { width: auto; display: inline-flex; align-items: cen
 html body .footer-legal { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; text-align: left; }
 html body .footer-legal p { margin: 4px 0; }
 html body .footer-legal a { color: var(--muted); text-decoration: underline; }
-html body .footer-legal a:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  html body .footer-legal a:hover { color: var(--text); }
+}
 html body .footer-legal-datos { color: var(--muted); font-size: 13px; }
 html body .footer-data-fiscal img { display: block; background: #fff; border-radius: 4px; }
 
@@ -614,7 +649,9 @@ html body .bf-barra strong {
 }
 html body .bf-barra .bf-reloj { font-variant-numeric: tabular-nums; color: var(--amarillo); font-weight: 800; }
 html body .bf-barra em { font-style: normal; text-decoration: underline; }
-html body .bf-barra:hover em { color: var(--amarillo); }
+@media (hover: hover) and (pointer: fine) {
+  html body .bf-barra:hover em { color: var(--amarillo); }
+}
 html body .shop-badge-bf {
     position: absolute; left: 10px; top: 10px; z-index: 2;
     background: #000; color: #fff; border: 1px solid var(--lime);
@@ -623,3 +660,40 @@ html body .shop-badge-bf {
 html body .shop-bf-precio { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.3; }
 html body .shop-bf-precio strong { color: var(--lime); font-size: 14px; }
 html body .pf-bf { color: var(--lime); font-weight: 800; letter-spacing: .04em; }
+
+/* =========================================================
+   CELULAR: que la tienda se sienta como una app
+   ========================================================= */
+/* Sin el destello gris/azul al tocar y sin agrandar letras al girar el teléfono */
+html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Con viewport-fit=cover la página llega a los bordes: el contenido se aparta de la muesca (iPhone acostado) */
+body { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+
+/* El toque responde al instante (sin la espera del doble toque) */
+a, button, label, summary, select, [role="button"], input[type="submit"], input[type="button"] { touch-action: manipulation; }
+
+/* Mantener apretado un botón no selecciona su texto */
+button, [role="button"], input[type="submit"], input[type="button"],
+.btn-primary, .btn-checkout, .shop-add, .product-add-button, .home-btn, .home-cta-btn,
+.cat-btn, .quantity-btn, .cantidad-btn, .talle-opcion, .tn-boton, .wa-float, .nav-toggle {
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+
+/* Respuesta apenas el dedo toca el botón (antes solo se notaba con el mouse) */
+button:active:not(:disabled), .btn-primary:active, .btn-checkout:active, .shop-add:active,
+.product-add-button:active, .home-btn:active, .home-cta-btn:active, .cat-btn:active,
+.quantity-btn:active, .cantidad-btn:active, .tn-boton:active, .wa-float:active {
+    filter: brightness(.88);
+}
+
+/* En pantallas táctiles, casilleros con letra de 16 px: si es más chica, el iPhone hace zoom al tocarlos */
+@media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
+}
+
+/* Botón de WhatsApp, menú y hoja de filtros: lejos de la barrita de abajo y de la muesca */
+.wa-float { margin-bottom: env(safe-area-inset-bottom, 0px); margin-right: env(safe-area-inset-right, 0px); }
+.nav-drawer { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); overscroll-behavior: contain; }
+.mf-sheet { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.mf-sheet-body { overscroll-behavior: contain; }

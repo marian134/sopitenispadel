@@ -26,7 +26,9 @@
 .co-opcion:last-child { margin-bottom: 0; }
 .co-opcion input { position: absolute; opacity: 0; pointer-events: none; }
 .co-opcion-box { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fff; transition: border-color .15s, background .15s; }
-.co-opcion:hover .co-opcion-box { border-color: #94a3b8; }
+@media (hover: hover) and (pointer: fine) {
+  .co-opcion:hover .co-opcion-box { border-color: #94a3b8; }
+}
 .co-opcion-box::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: 2px; border: 2px solid #94a3b8; border-radius: 50%; background: #fff; box-sizing: border-box; }
 .co-opcion input:checked + .co-opcion-box { border-color: #102a43; background: #f1f5f9; }
 .co-opcion input:checked + .co-opcion-box::before { border-color: #102a43; background: radial-gradient(circle, #102a43 0 45%, #fff 50%); }
@@ -62,7 +64,9 @@
 .co-cupon-form input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; text-transform: uppercase; }
 .co-cupon-form input::placeholder { text-transform: none; }
 .co-cupon-form button { flex: none; padding: 12px 22px; border: 0; border-radius: 10px; background: #102a43; color: #fff; font-weight: 800; cursor: pointer; }
-.co-cupon-form button:hover { background: #163d66; }
+@media (hover: hover) and (pointer: fine) {
+  .co-cupon-form button:hover { background: #163d66; }
+}
 .co-cupon-error { margin: 10px 0 0; color: #b3261e; font-size: 14px; line-height: 1.4; }
 .co-cupon-ok { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .co-cupon-ok strong { display: block; color: #166534; }
@@ -77,7 +81,9 @@
 /* botón final */
 .co-confirmar-wrap { display: flex; flex-direction: column; gap: 8px; }
 .co-confirmar { width: 100%; min-height: 56px; border: 0; border-radius: 12px; background: #102a43; color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; }
-.co-confirmar:hover { background: #163d66; }
+@media (hover: hover) and (pointer: fine) {
+  .co-confirmar:hover { background: #163d66; }
+}
 .co-confirmar-ayuda { margin: 0; text-align: center; font-size: 14px; color: #64748b; }
 
 /* resumen */
@@ -95,7 +101,9 @@
 .co-nota { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #f1f5f9; font-size: 13px; line-height: 1.45; color: #475569; }
 .co-nota[hidden] { display: none; }
 .co-volver { display: inline-block; margin-top: 16px; font-size: 14px; font-weight: 700; color: #475569; text-decoration: none; }
-.co-volver:hover { color: #102a43; text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) {
+  .co-volver:hover { color: #102a43; text-decoration: underline; }
+}
 
 @media (max-width: 860px) {
     .co-layout { grid-template-columns: 1fr; }

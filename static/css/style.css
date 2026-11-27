@@ -150,9 +150,14 @@ a {
     transition: width .2s ease;
 }
 
-.nav-sport-link:hover::after,
+
 .nav-sport-link.activo::after {
     width: 100%;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-sport-link:hover::after {
+    width: 100%;
+}
 }
 
 .nav-actions {
@@ -272,9 +277,11 @@ a {
         background .2s ease;
 }
 
-.home-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .home-btn:hover {
     transform: translateY(-2px);
     background: #f1f1ef;
+}
 }
 
 /* =========================================================
@@ -316,8 +323,10 @@ a {
     transition: transform .3s ease;
 }
 
-.home-sport-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .home-sport-card:hover {
     transform: translateY(-5px);
+}
 }
 
 .home-sport-tenis {
@@ -428,9 +437,11 @@ a {
     transition: transform .25s ease, box-shadow .25s ease;
 }
 
-.home-product-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .home-product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 24px rgba(230, 57, 70, .25);
+}
 }
 
 .home-product-image {
@@ -516,9 +527,11 @@ a {
     background: linear-gradient(115deg, var(--padel) 0%, var(--padel-dark) 100%);
 }
 
-.home-products .home-products-link a:hover {
+@media (hover: hover) and (pointer: fine) {
+  .home-products .home-products-link a:hover {
     transform: translateY(-4px);
     box-shadow: 0 14px 28px rgba(0, 0, 0, .25);
+}
 }
 
 .home-products-link small {
@@ -549,8 +562,10 @@ a {
     transition: transform .25s ease;
 }
 
-.home-products-link a:hover span {
+@media (hover: hover) and (pointer: fine) {
+  .home-products-link a:hover span {
     transform: translateX(8px);
+}
 }
 
 @media (max-width: 800px) {
@@ -564,8 +579,10 @@ a {
     font-size: 18px;
 }
 
-.home-product-card:hover img {
+@media (hover: hover) and (pointer: fine) {
+  .home-product-card:hover img {
     transform: scale(1.05);
+}
 }
 
 .home-product-info {
@@ -695,8 +712,10 @@ a {
     transition: transform .2s ease;
 }
 
-.shop-hero-action a:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-hero-action a:hover {
     transform: translateY(-3px);
+}
 }
 
 .shop-hero-action span {
@@ -811,8 +830,10 @@ a {
     text-decoration: none;
 }
 
-.shop-filter-menu a:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-filter-menu a:hover {
     background: #f4f4f2;
+}
 }
 
 .shop-sort {
@@ -859,8 +880,10 @@ a {
     transition: transform .25s ease;
 }
 
-.shop-product-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-product-card:hover {
     transform: translateY(-4px);
+}
 }
 
 /* ---------------------------------------------------------
@@ -890,8 +913,10 @@ a {
     transition: transform .5s cubic-bezier(.2, .7, .2, 1);
 }
 
-.shop-product-card:hover .shop-product-image img {
+@media (hover: hover) and (pointer: fine) {
+  .shop-product-card:hover .shop-product-image img {
     transform: scale(1.035);
+}
 }
 
 /* ---------------------------------------------------------
@@ -917,8 +942,10 @@ a {
     transition: transform .2s ease;
 }
 
-.shop-favorite:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-favorite:hover {
     transform: scale(1.08);
+}
 }
 
 /* ---------------------------------------------------------
@@ -973,8 +1000,10 @@ a {
     text-decoration: none;
 }
 
-.shop-product-name:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-product-name:hover {
     text-decoration: underline;
+}
 }
 
 .shop-product-bottom {
@@ -1009,9 +1038,11 @@ a {
         color .2s ease;
 }
 
-.shop-add:hover {
+@media (hover: hover) and (pointer: fine) {
+  .shop-add:hover {
     background: #fff;
     color: #111;
+}
 }
 
 /* ---------------------------------------------------------
@@ -1207,8 +1238,10 @@ a {
     transition: color .3s;
 }
 
-.breadcrumb:hover {
+@media (hover: hover) and (pointer: fine) {
+  .breadcrumb:hover {
     color: var(--sopi-red);
+}
 }
 
 /* MARCA */
@@ -1339,10 +1372,12 @@ form {
     width: 100%;
 }
 
-.btn-primary:hover:not(:disabled) {
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
     background: #d62c35;
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(230, 57, 70, 0.3);
+}
 }
 
 .btn-outline {
@@ -1364,6 +1399,7 @@ form {
 .product-page {
     background: #f5f5f2;
     min-height: calc(100vh - 74px);
+    min-height: calc(100svh - 74px);
     padding: 28px 0 80px;
 }
 
@@ -1389,8 +1425,10 @@ form {
     transition: opacity .2s ease;
 }
 
-.product-back a:hover {
+@media (hover: hover) and (pointer: fine) {
+  .product-back a:hover {
     opacity: .55;
+}
 }
 
 /* CONTENEDOR */
@@ -1432,8 +1470,10 @@ form {
     transition: transform .35s ease;
 }
 
-.product-main-image:hover img {
+@media (hover: hover) and (pointer: fine) {
+  .product-main-image:hover img {
     transform: scale(1.025);
+}
 }
 
 .product-placeholder {
@@ -1565,8 +1605,10 @@ form {
     cursor: pointer;
 }
 
-.quantity-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .quantity-btn:hover {
     background: #f2f2ef;
+}
 }
 
 .quantity-control input {
@@ -1607,9 +1649,11 @@ form {
         background .2s ease;
 }
 
-.product-add-button:hover {
+@media (hover: hover) and (pointer: fine) {
+  .product-add-button:hover {
     background: #222;
     transform: translateY(-1px);
+}
 }
 
 .product-disabled {
@@ -1717,9 +1761,11 @@ form {
         transform .2s ease;
 }
 
-.carrito-producto:hover {
+@media (hover: hover) and (pointer: fine) {
+  .carrito-producto:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(15, 23, 42, .08);
+}
 }
 
 /* IMAGEN */
@@ -1797,8 +1843,10 @@ form {
     cursor: pointer;
 }
 
-.cantidad-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .cantidad-btn:hover {
     background: #e2e8f0;
+}
 }
 
 .cantidad-control input {
@@ -1838,9 +1886,11 @@ form {
     cursor: pointer;
 }
 
-.carrito-eliminar:hover {
+@media (hover: hover) and (pointer: fine) {
+  .carrito-eliminar:hover {
     background: #fee2e2;
     color: #dc2626;
+}
 }
 
 /* RESUMEN */
@@ -1909,8 +1959,10 @@ form {
     color: #ffffff;
 }
 
-.btn-checkout:hover {
+@media (hover: hover) and (pointer: fine) {
+  .btn-checkout:hover {
     background: #163d66;
+}
 }
 
 .btn-whatsapp {
@@ -1926,8 +1978,10 @@ form {
     color: #64748b;
 }
 
-.btn-vaciar:hover {
+@media (hover: hover) and (pointer: fine) {
+  .btn-vaciar:hover {
     background: #f8fafc;
+}
 }
 
 /* VACÍO */
@@ -1972,9 +2026,11 @@ form {
     text-decoration: none;
 }
 
-.carrito-seguir-comprando:hover {
+@media (hover: hover) and (pointer: fine) {
+  .carrito-seguir-comprando:hover {
     background: #163d66;
     color: #ffffff;
+}
 }
 
 .producto-volver {
@@ -1991,8 +2047,10 @@ form {
     text-decoration: none;
 }
 
-.producto-volver:hover {
+@media (hover: hover) and (pointer: fine) {
+  .producto-volver:hover {
     background: #f8fafc;
+}
 }
 
 /* =========================================================
@@ -2073,10 +2131,12 @@ form {
         transform 0.2s ease;
 }
 
-.pago-opcion:hover {
+@media (hover: hover) and (pointer: fine) {
+  .pago-opcion:hover {
     border-color: #222;
     box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
     transform: translateY(-1px);
+}
 }
 
 .pago-opcion input[type="radio"] {
@@ -2126,9 +2186,11 @@ form {
         transform 0.2s ease;
 }
 
-.pago-metodos .btn-checkout:hover {
+@media (hover: hover) and (pointer: fine) {
+  .pago-metodos .btn-checkout:hover {
     background: #333;
     transform: translateY(-1px);
+}
 }
 
 /* RESUMEN */
@@ -2219,9 +2281,11 @@ form {
     text-decoration: none;
 }
 
-.pago-resumen .carrito-seguir-comprando:hover {
+@media (hover: hover) and (pointer: fine) {
+  .pago-resumen .carrito-seguir-comprando:hover {
     background: #163d66;
     color: #fff;
+}
 }
 
 /* =========================================================
@@ -2290,8 +2354,10 @@ form {
     transition: opacity .2s ease;
 }
 
-.social-icon:hover {
+@media (hover: hover) and (pointer: fine) {
+  .social-icon:hover {
     opacity: .65;
+}
 }
 
 /* FOOTER — BENEFICIOS */
@@ -2955,9 +3021,11 @@ form {
         background .2s ease;
 }
 
-.home-cta-btn:hover {
+@media (hover: hover) and (pointer: fine) {
+  .home-cta-btn:hover {
     transform: translateY(-2px);
     background: #e9e9e9;
+}
 }
 
 .home-cta-btn span {
@@ -3130,8 +3198,10 @@ form {
     transition: background 0.2s ease;
 }
 
-.cupon-form button:hover {
+@media (hover: hover) and (pointer: fine) {
+  .cupon-form button:hover {
     background: #333;
+}
 }
 
 .cupon-error {
@@ -3178,8 +3248,10 @@ form {
     cursor: pointer;
 }
 
-.cupon-quitar:hover {
+@media (hover: hover) and (pointer: fine) {
+  .cupon-quitar:hover {
     color: #111;
+}
 }
 
 .cupon-detalle {

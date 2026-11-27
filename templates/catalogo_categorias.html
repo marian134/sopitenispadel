@@ -114,7 +114,9 @@
     cursor: pointer;
     transition: background .15s, border-color .15s;
   }
+  @media (hover: hover) and (pointer: fine) {
   .cat-btn:hover { border-color: currentColor; }
+}
   .cat-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   .cat-btn.is-active {
     background: var(--accent, #0f766e);
@@ -200,7 +202,9 @@
     cursor: pointer;
     transition: background .15s, border-color .15s;
   }
+  @media (hover: hover) and (pointer: fine) {
   .pag-btn:hover:not(:disabled) { border-color: currentColor; }
+}
   .pag-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   .pag-btn:disabled { opacity: .35; cursor: default; }
   .pag-btn[aria-current="page"] {

@@ -75,7 +75,9 @@
   .bn-sub{font-size:clamp(1rem,1.6vw,1.2rem);max-width:42ch}
   .bn-btn{display:inline-block;margin-top:6px;background:#fff;color:#111;font-weight:700;
     padding:12px 26px;border-radius:999px;transition:background .2s}
-  .bn-slide:hover .bn-btn,.bn-tile:hover .bn-btn{background:#e6e6e6}
+  @media (hover: hover) and (pointer: fine) {
+  .bn-slide:hover .bn-btn, .bn-tile:hover .bn-btn {background:#e6e6e6}
+}
   .bn-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;
     border-radius:50%;border:0;background:rgba(255,255,255,.9);color:#111;font-size:1.6rem;
     line-height:1;cursor:pointer}
@@ -93,7 +95,9 @@
     text-decoration:none;overflow:hidden;border-radius:6px}
   .bn-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
     transition:transform .5s ease}
-  .bn-tile:hover img{transform:scale(1.04)}
+  @media (hover: hover) and (pointer: fine) {
+  .bn-tile:hover img {transform:scale(1.04)}
+}
   .bn-tile::after{content:"";position:absolute;inset:0;
     background:linear-gradient(to top,rgba(0,0,0,.6) 0%,rgba(0,0,0,0) 55%)}
   .bn-tile-copy{position:relative;z-index:1;display:flex;flex-direction:column;

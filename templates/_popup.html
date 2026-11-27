@@ -41,7 +41,9 @@
   .sp-count span{font-size:.75rem;opacity:.75}
   .sp-cta{display:block;background:var(--sp-accent);color:#fff;text-decoration:none;
     font-weight:700;padding:14px 18px;border-radius:10px}
-  .sp-cta:hover{filter:brightness(1.08)}
+  @media (hover: hover) and (pointer: fine) {
+  .sp-cta:hover {filter:brightness(1.08)}
+}
   .sp-skip{margin-top:12px;background:none;border:0;color:var(--sp-ink);opacity:.65;
     cursor:pointer;font-size:.9rem;text-decoration:underline}
   .sp-close:focus-visible,.sp-cta:focus-visible,.sp-skip:focus-visible{outline:3px solid #f2c200;outline-offset:2px}

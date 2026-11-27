@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <title>{% block title %}Paletas de Pádel y Tenis online | SOPI Sports{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Paletas, pelotas y accesorios de pádel y tenis con envíos a todo el país. Pagá con Mercado Pago o transferencia con 5% de descuento.{% endblock %}">
@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Krona+One&family=Archivo:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261127">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/orden.css') }}?v=20261117">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
@@ -49,7 +49,9 @@
       z-index: 1000;
       transition: transform .2s;
     }
-    .wa-float:hover { transform: scale(1.08); }
+    @media (hover: hover) and (pointer: fine) {
+  .wa-float:hover { transform: scale(1.08); }
+}
     .wa-burbuja {
       position: fixed; right: 18px; bottom: 88px; z-index: 1000; max-width: 250px;
       background: #fff; color: #0b1530; border-radius: 14px 14px 4px 14px; padding: 13px 34px 13px 15px;
@@ -133,7 +135,7 @@
   </script>
 
   {# Tema oscuro: va último para pisar al resto #}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261119c">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}?v=20261127">
 </head>
 
 <body{% if deporte_slug %} data-deporte="{{ deporte_slug }}"{% endif %}>

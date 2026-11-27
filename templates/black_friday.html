@@ -68,7 +68,10 @@
   .bfp-marcas { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; }
   .bfp-marcas a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-2, rgba(128,128,128,.35));
     color: inherit; text-decoration: none; font-size: 14px; font-weight: 600; }
-  .bfp-marcas a.on, .bfp-marcas a:hover { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+  .bfp-marcas a.on { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+@media (hover: hover) and (pointer: fine) {
+  .bfp-marcas a:hover { border-color: var(--lime, #E57E3C); color: var(--lime, #E57E3C); }
+}
   .bfp-cuenta { margin: 18px 0 12px; color: var(--muted, #b7c0d1); font-size: 14px; }
   .bfp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .bfp-grid .shop-product-image { height: auto; aspect-ratio: 1 / 1; }

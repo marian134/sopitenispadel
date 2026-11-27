@@ -92,7 +92,9 @@
   .ct-canales { display: grid; gap: 12px; }
   .ct-canal { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 14px; text-decoration: none; color: inherit;
               background: var(--surface, #fff); border: 1px solid var(--line, #ddd); transition: border-color .2s; }
+  @media (hover: hover) and (pointer: fine) {
   a.ct-canal:hover { border-color: var(--lime, #E57E3C); }
+}
   .ct-canal i { font-size: 24px; width: 30px; text-align: center; color: var(--lime, #E57E3C); }
   .ct-canal strong { display: block; font-size: 16px; }
   .ct-canal span { font-size: 14px; color: var(--muted, #666); }

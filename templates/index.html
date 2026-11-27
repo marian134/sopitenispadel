@@ -226,7 +226,9 @@
             .pf-chip { padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line-2, rgba(159,176,204,.35));
                 color: inherit; text-decoration: none; font-size: 14px; font-weight: 600; }
             .pf-chip small { color: var(--muted, #9fb0cc); font-weight: 500; margin-left: 2px; }
-            .pf-chip:hover { border-color: var(--lime, #E57E3C); }
+            @media (hover: hover) and (pointer: fine) {
+  .pf-chip:hover { border-color: var(--lime, #E57E3C); }
+}
             .pf-chip.activo { background: var(--lime, #E57E3C); border-color: var(--lime, #E57E3C); color: #fff; }
             .pf-chip.activo small { color: rgba(255,255,255,.85); }
             .pf-chip.vacio { opacity: .4; pointer-events: none; }
