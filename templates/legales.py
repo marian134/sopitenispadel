@@ -33,9 +33,11 @@ NEGOCIO = {
     "whatsapp_url": "https://wa.me/5491128321531",
     "instagram_url": "https://www.instagram.com/sopi.tenispadel/",
     # Datos legales del vendedor (Ley 24.240): se muestran en el pie y en Contacto.
-    "razon_social": "Mariano Vallejos",  # nombre del titular o razón social
-    "cuit": "20-28046135-1",          # ej: 20-12345678-9
-    "domicilio": "Urquiza 2939, Quilmes, Buenos Aires",  # domicilio comercial completo
+    # Vacíos a pedido del dueño (27/11/2026): no se muestran en ninguna página.
+    # Si algún día se quieren mostrar, completar acá y aparecen solos.
+    "razon_social": "",  # nombre del titular o razón social
+    "cuit": "",          # ej: 20-12345678-9
+    "domicilio": "",     # domicilio comercial completo
     # Data Fiscal de AFIP (formulario 960/D): pegá el link que te da AFIP y la
     # imagen del QR (archivo en static/img). Si están vacíos no se muestran.
     "data_fiscal_url": "",

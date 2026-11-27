@@ -71,15 +71,15 @@
 
   </div>
 
-  {% if negocio.razon_social or negocio.cuit or negocio.domicilio %}
   <p class="ct-legal">
+    {% if negocio.razon_social or negocio.cuit or negocio.domicilio %}
     Datos del vendedor:
     {% if negocio.razon_social %}{{ negocio.razon_social }}{% endif %}
     {% if negocio.cuit %} · CUIT {{ negocio.cuit }}{% endif %}
     {% if negocio.domicilio %} · {{ negocio.domicilio }}{% endif %}.
+    {% endif %}
     ¿Querés arrepentirte de una compra? Usá el <a href="{{ url_for('legales.arrepentimiento') }}">botón de arrepentimiento</a>.
   </p>
-  {% endif %}
 
 </div>
 
